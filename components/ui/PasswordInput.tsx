@@ -18,9 +18,9 @@ const PasswordInput = React.forwardRef<
       <input
         type={showPassword ? "text" : "password"}
         className={cn(
-          "bg-transparent border-0 border-b-2 border-gray-200 dark:border-gray-700 " +
-            "focus:ring-0 focus:border-primary transition-all duration-300 " +
-            "px-0 py-3 w-full text-gray-900 dark:text-white placeholder-gray-400 " +
+          "bg-transparent border-0 border-b-2 border-gray-200" +
+            "focus:ring-0 focus:border-yellow-500 transition-all duration-300 " +
+            "px-0 py-3 w-full text-gray-900 placeholder-gray-400 " +
             "outline-none pr-10", // extra padding on right for the icon
           className
         )}
@@ -29,7 +29,7 @@ const PasswordInput = React.forwardRef<
       />
       <button
         type="button"
-        className="absolute right-0 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary focus:outline-none cursor-pointer"
+        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary focus:outline-none cursor-pointer"
         onClick={() => setShowPassword(!showPassword)}
         aria-label={showPassword ? "Hide password" : "Show password"}
       >

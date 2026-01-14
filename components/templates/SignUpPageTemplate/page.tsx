@@ -6,19 +6,22 @@ import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import { AuthService } from "@/services";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "react-toastify";
 
 export default function SignUpPageTemplate() {
+  const router = useRouter();
 
-  const authService = new AuthService()
-  
+  const authService = new AuthService();
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   //   const [role, setRole] = useState("");
   const [password, setPassword] = useState("");
   const [terms, setTerms] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // ✅ Validate required fields
@@ -27,25 +30,25 @@ export default function SignUpPageTemplate() {
       return;
     }
 
+    const role = {
+      role_type: "super_admin",
+    };
+
     // ✅ Log payload
     const payload = {
       full_name: name,
       email,
-      //   role,
+      role: role,
       password,
-      // terms,
     };
     console.log("✅ Form submitted:", payload);
 
-    const response = authService.register(payload)
+    const response = await authService.register(payload);
 
-
-
-    // TODO: Send to API
-    // await fetch("/api/signup", { method: "POST", body: JSON.stringify(payload) })
-
-    // Simulate success
-    alert("Account created successfully!");
+    if (response?.status) {
+      toast.success("Account created successfully!");
+      router.push("/signin");
+    }
   };
 
   return (
@@ -151,7 +154,6 @@ export default function SignUpPageTemplate() {
                 <PasswordInput
                   id="password"
                   name="password"
-                  type="password"
                   placeholder="••••••••"
                   required
                   value={password}

@@ -115,6 +115,16 @@
   --sidebar-ring: oklch(0.551 0.027 264.364);
 }
 
+/* Optional: Customize toast colors */
+.Toastify__toast--success {
+  background-color: #000 !important;
+  color: #FFAA00 !important;
+}
+.Toastify__toast--error {
+  background-color: #000 !important;
+  color: #ff5555 !important;
+}
+
 /* app/globals.css */
 [type="checkbox"] {
   appearance: none;

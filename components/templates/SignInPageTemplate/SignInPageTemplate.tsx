@@ -1,22 +1,28 @@
 "use client";
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
 import { ThemeToggle } from "@/components/atoms";
-import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import { AuthService } from "@/services";
+import { setUser } from "@/store/slices";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useDispatch } from "react-redux";
+import { toast } from "react-toastify";
 
 export default function SignInPageTemplate() {
   const authService = new AuthService();
+  const dispatch = useDispatch();
+  const router = useRouter();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const payload = {
@@ -25,11 +31,25 @@ export default function SignInPageTemplate() {
       rememberMe,
     };
 
-    const response = authService.login(email, password, rememberMe);
+    const response = await authService.login(payload);
 
-    console.log("Response: ", response);
+    if (!response?.data?.accessToken) {
+      toast.error("Login failed: No token received");
+      return;
+    }
 
-    console.log(payload);
+    const { accessToken } = response.data;
+
+    localStorage.setItem("accessToken", accessToken);
+
+    const profileData = await authService.getProfile(accessToken);
+
+    // ✅ Correct (passes only the user object)
+    dispatch(setUser({ user: profileData.data, accessToken }));
+
+    router.push("/");
+
+    console.log("Profile Data: ", profileData);
   };
 
   return (
@@ -93,6 +113,7 @@ export default function SignInPageTemplate() {
                   required
                   placeholder="name@company.com"
                   value={email}
+                  className="p-3"
                   onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
@@ -119,6 +140,7 @@ export default function SignInPageTemplate() {
                   required
                   placeholder="••••••••"
                   value={password}
+                  className="p-3"
                   onChange={(e) => setPassword(e.target.value)}
                 />
               </div>

@@ -14,7 +14,7 @@ const config: Config = {
         // Your brand colors
         primary: {
           DEFAULT: "#FFAA00", // amber-500 equivalent
-          foreground: "#000000",
+          hover: "#E69900",
         },
         background: {
           light: "#ffffff",

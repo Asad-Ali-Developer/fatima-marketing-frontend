@@ -11,9 +11,9 @@ const Input = React.forwardRef<
     <input
       type={type}
       className={cn(
-        "bg-transparent border-0 border-b-2 border-gray-200 dark:border-gray-700 " +
-          "focus:ring-0 focus:border-primary transition-all duration-300 " +
-          "px-0 py-3 w-full text-gray-900 dark:text-white placeholder-gray-400 " +
+        "bg-transparent p-3 border-0 border-b-2 border-gray-200 " +
+          "focus:ring-0 focus:border-yellow-500 transition-all duration-300 " +
+          "px-0 py-3 w-full text-gray-900 placeholder-gray-400 " +
           "outline-none",
         className
       )}
