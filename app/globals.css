@@ -137,6 +137,31 @@
   box-shadow: none;
 }
 
+/* Override selected date background */
+.react-calendar__tile--selected {
+  @apply bg-yellow-500 text-white;
+}
+
+/* Optional: Hover state */
+.react-calendar__tile--selected:hover {
+  @apply bg-yellow-600;
+}
+
+/* Customize selected date */
+.day-selected {
+  @apply bg-yellow-500 text-black font-bold;
+}
+
+/* Customize today */
+.day-today {
+  @apply bg-blue-100 text-blue-700 border border-blue-300;
+}
+
+/* Customize hover */
+.day:hover:not(.day-selected) {
+  @apply bg-yellow-100;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

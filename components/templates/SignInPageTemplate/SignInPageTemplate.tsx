@@ -40,6 +40,10 @@ export default function SignInPageTemplate() {
 
     const { accessToken } = response.data;
 
+    if (accessToken) {
+      toast.success("Login successful!");
+    }
+
     localStorage.setItem("accessToken", accessToken);
 
     const profileData = await authService.getProfile(accessToken);

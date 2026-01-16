@@ -1,5 +1,5 @@
 interface RoleType {
-  role_type: string;
+  role_type: "admin" | "sales_officer" | "super_admin";
 }
 
 export interface User {
@@ -11,4 +11,5 @@ export interface User {
   role: RoleType;
   status?: "active" | "inactive";
   password?: string;
+  showPassword?: string; 
 }

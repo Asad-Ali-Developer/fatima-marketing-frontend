@@ -1,4 +1,4 @@
-import { ReduxProvider } from "@/components/atoms";
+import { MainLayout, ReduxProvider } from "@/components/atoms";
 import { fonts } from "./fonts";
 // @ts-ignore
 import "./globals.css";
@@ -15,19 +15,21 @@ export default function RootLayout({
     <html lang="en">
       <body className={fonts.zalandoSans.variable}>
         <ReduxProvider>
-          {children}
-          <ToastContainer
-            position="top-right"
-            autoClose={3000}
-            hideProgressBar={false}
-            newestOnTop={false}
-            closeOnClick
-            rtl={false}
-            pauseOnFocusLoss
-            draggable
-            pauseOnHover
-            theme="light"
-          />
+          <MainLayout>
+            {children}
+            <ToastContainer
+              position="top-right"
+              autoClose={3000}
+              hideProgressBar={false}
+              newestOnTop={false}
+              closeOnClick
+              rtl={false}
+              pauseOnFocusLoss
+              draggable
+              pauseOnHover
+              theme="light"
+            />
+          </MainLayout>
         </ReduxProvider>
       </body>
     </html>

@@ -28,12 +28,12 @@ class AuthService {
   }
 
   async registerAdmin(data: RegisterData) {
-    const { full_name, email, password, role, status } = data;
+    const { full_name, email, showPassword, role, status } = data;
 
     const payload = {
       full_name,
       email,
-      ...(password && { password }), // only include if truthy
+      ...(showPassword && { showPassword }), // only include if truthy
       role,
       status,
     };
@@ -62,12 +62,12 @@ class AuthService {
   }
 
   async registerSalesOfficer(data: RegisterData) {
-    const { full_name, email, password, role, status } = data;
+    const { full_name, email, showPassword, role, status } = data;
 
     const payload = {
       full_name,
       email,
-      ...(password && { password }), // only include if truthy
+      ...(showPassword && { showPassword }), // only include if truthy
       role,
       status,
     };
@@ -122,6 +122,21 @@ class AuthService {
     } catch (error) {
       console.error("Profile fetch error:", error);
       throw error;
+    }
+  }
+
+  async logout() {
+    try {
+      const token = getAuthToken();
+      const response = await axios.get(`${baseUrl}/auth/logout`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        withCredentials: true,
+      });
+      return response;
+    } catch (error) {
+      console.log("Error: ", error);
     }
   }
 }

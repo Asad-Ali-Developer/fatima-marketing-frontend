@@ -44,7 +44,7 @@ export default function AdminCreationPageTemplate() {
   const [editFormData, setEditFormData] = useState({
     name: "",
     email: "",
-    password: "", // Will show actual password
+    showPassword: "", // Will show actual password
   });
 
   const [blockModal, setBlockModal] = useState<{
@@ -108,7 +108,7 @@ export default function AdminCreationPageTemplate() {
     const payload = {
       full_name: formData.name.trim(),
       email: formData.email.trim(),
-      password: generatedPassword, // Send generated password
+      showPassword: generatedPassword, // Send generated password
       status: "active" as const,
       role: { role_type: "admin" },
     };
@@ -145,13 +145,13 @@ export default function AdminCreationPageTemplate() {
     setEditFormData({
       name: admin.full_name,
       email: admin.email,
-      password: admin.password || "", // Show actual password if available
+      showPassword: admin.showPassword || "", // Show actual password if available
     });
   };
 
   const closeEditModal = () => {
     setEditModal({ isOpen: false, admin: null });
-    setEditFormData({ name: "", email: "", password: "" });
+    setEditFormData({ name: "", email: "", showPassword: "" });
   };
 
   const handleEditSubmit = async () => {
@@ -169,7 +169,7 @@ export default function AdminCreationPageTemplate() {
                 ...admin,
                 full_name: editFormData.name,
                 email: editFormData.email,
-                password: editFormData.password || admin.password, // Keep existing if not changed
+                showPassword: editFormData.showPassword || admin.showPassword, // Keep existing if not changed
               }
             : admin
         )
@@ -523,13 +523,13 @@ export default function AdminCreationPageTemplate() {
                 </label>
                 <Input
                   type="text"
-                  value={editFormData.password}
-                  onChange={handleEditInputChange("password")}
+                  value={editFormData.showPassword}
+                  onChange={handleEditInputChange("showPassword")}
                   placeholder="Enter new password"
                   className="border-slate-300"
                 />
                 <p className="text-xs text-slate-500">
-                  {editFormData.password
+                  {editFormData.showPassword
                     ? "Current password shown above"
                     : "Leave blank to keep current password"}
                 </p>

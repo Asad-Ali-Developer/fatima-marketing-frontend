@@ -4,6 +4,7 @@ export interface RegisterData {
   password?: string;
   role: { role_type: string };
   status?: string;
+  showPassword?: string;
 }
 
 export interface LoginData {

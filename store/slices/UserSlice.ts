@@ -15,16 +15,19 @@ const userSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
-    // Action to set user + token after successful login/profile fetch
     setUser(state, action: PayloadAction<{ user: User; accessToken: string }>) {
       state.user = action.payload.user;
       state.accessToken = action.payload.accessToken;
     },
 
-    // Optional: clear on logout
     clearUser(state) {
       state.user = null;
       state.accessToken = null;
+
+      // Clear localStorage if available
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("accessToken");
+      }
     },
   },
 });

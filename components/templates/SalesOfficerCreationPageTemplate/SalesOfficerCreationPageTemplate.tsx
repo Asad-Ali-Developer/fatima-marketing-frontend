@@ -45,7 +45,7 @@ export default function SalesOfficerCreationPageTemplate() {
   const [editFormData, setEditFormData] = useState({
     name: "",
     email: "",
-    password: "", // Will show actual password
+    showPassword: "", // Will show actual password
   });
 
   const [blockModal, setBlockModal] = useState<{
@@ -109,7 +109,7 @@ export default function SalesOfficerCreationPageTemplate() {
     const payload = {
       full_name: formData.name.trim(),
       email: formData.email.trim(),
-      password: generatedPassword, // Send generated password
+      showPassword: generatedPassword, // Send generated password
       status: "active" as const,
       role: { role_type: "sales_officer" },
     };
@@ -126,7 +126,7 @@ export default function SalesOfficerCreationPageTemplate() {
       // ✅ INSTANTLY ADD TO UI WITH GENERATED PASSWORD
       const newAdmin: User = {
         ...response.data.data,
-        password: generatedPassword, // Include password in UI object
+        showPassword: generatedPassword, // Include password in UI object
       };
 
       const newAdminDisplay = toAdminDisplay(newAdmin);
@@ -149,13 +149,13 @@ export default function SalesOfficerCreationPageTemplate() {
     setEditFormData({
       name: salesOfficer.full_name,
       email: salesOfficer.email,
-      password: salesOfficer.password || "", // Show actual password if available
+      showPassword: salesOfficer.showPassword || "", // Show actual password if available
     });
   };
 
   const closeEditModal = () => {
     setEditModal({ isOpen: false, admin: null });
-    setEditFormData({ name: "", email: "", password: "" });
+    setEditFormData({ name: "", email: "", showPassword: "" });
   };
 
   const handleEditSubmit = async () => {
@@ -173,7 +173,8 @@ export default function SalesOfficerCreationPageTemplate() {
                 ...salesOfficer,
                 full_name: editFormData.name,
                 email: editFormData.email,
-                password: editFormData.password || salesOfficer.password, // Keep existing if not changed
+                showPassword:
+                  editFormData.showPassword || salesOfficer.showPassword, // Keep existing if not changed
               }
             : salesOfficer
         )
@@ -526,13 +527,13 @@ export default function SalesOfficerCreationPageTemplate() {
                 </label>
                 <Input
                   type="text"
-                  value={editFormData.password}
-                  onChange={handleEditInputChange("password")}
+                  value={editFormData.showPassword}
+                  onChange={handleEditInputChange("showPassword")}
                   placeholder="Enter new password"
                   className="border-slate-300"
                 />
                 <p className="text-xs text-slate-500">
-                  {editFormData.password
+                  {editFormData.showPassword
                     ? "Current password shown above"
                     : "Leave blank to keep current password"}
                 </p>
