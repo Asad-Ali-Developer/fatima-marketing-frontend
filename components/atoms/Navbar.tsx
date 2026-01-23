@@ -13,10 +13,9 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { FaSearch } from "react-icons/fa";
-import { IoMdSettings } from "react-icons/io";
+import { HiUserCircle } from "react-icons/hi2";
 import { IoNotifications } from "react-icons/io5";
 import { useDispatch, useSelector } from "react-redux";
-import { HiUserCircle } from "react-icons/hi2";
 
 const Navbar = () => {
   const pathname = usePathname();
@@ -76,20 +75,47 @@ const Navbar = () => {
 
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center gap-6">
-            {user?.role.role_type === "admin" ||
-              (user?.role.role_type === "super_admin" && (
-                <Link
-                  href={"/sales-officers"}
-                  className={cn(
-                    "text-sm font-semibold transition-colors whitespace-nowrap",
-                    pathname === "/sales-officers"
-                      ? "text-[#00B7E8]"
-                      : "text-slate-500 hover:text-[#00B7E8]",
-                  )}
-                >
-                  Sales Officers
-                </Link>
-              ))}
+            {user?.role.role_type === "super_admin" && (
+              <Link
+                href={"/sales-officers"}
+                className={cn(
+                  "text-sm font-semibold transition-colors whitespace-nowrap",
+                  pathname === "/sales-officers"
+                    ? "text-[#00B7E8]"
+                    : "text-slate-500 hover:text-[#00B7E8]",
+                )}
+              >
+                Sales Officers
+              </Link>
+            )}
+
+            {user?.role.role_type === "super_admin" && (
+              <Link
+                href={"/admin-leads"}
+                className={cn(
+                  "text-sm font-semibold transition-colors whitespace-nowrap",
+                  pathname === "/admin-leads"
+                    ? "text-[#00B7E8]"
+                    : "text-slate-500 hover:text-[#00B7E8]",
+                )}
+              >
+                Admin Leads
+              </Link>
+            )}
+
+            {user?.role.role_type === "sales_officer" && (
+              <Link
+                href={"/so-leads"}
+                className={cn(
+                  "text-sm font-semibold transition-colors whitespace-nowrap",
+                  pathname === "/so-leads"
+                    ? "text-[#00B7E8]"
+                    : "text-slate-500 hover:text-[#00B7E8]",
+                )}
+              >
+                Leads
+              </Link>
+            )}
 
             {/* {user?.role.role_type === "super_admin" && (
               <Link
@@ -119,7 +145,7 @@ const Navbar = () => {
               </Link>
             )}
 
-            {user?.role.role_type === "admin" || user?.role.role_type === "super_admin" && (
+            {user?.role.role_type === "super_admin" && (
               <Link
                 href={"/admin-invoices"}
                 className={cn(
@@ -132,17 +158,6 @@ const Navbar = () => {
                 Invoices
               </Link>
             )}
-            <Link
-              href={"/analytics"}
-              className={cn(
-                "text-sm font-semibold transition-colors whitespace-nowrap",
-                pathname === "/analytics"
-                  ? "text-[#00B7E8]"
-                  : "text-slate-500 hover:text-[#00B7E8]",
-              )}
-            >
-              Analytics
-            </Link>
           </nav>
         </div>
 

@@ -31,7 +31,6 @@ export default function SalesOfficerCreationPageTemplate() {
 
   const authService = new AuthService();
   const adminService = new AdminService();
-  const salesOfficerService = new SalesOfficerService();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -63,7 +62,7 @@ export default function SalesOfficerCreationPageTemplate() {
   });
 
   // Fetch admins on initial load
-  const fetchAdmins = async (page: number) => {
+  const fetchSalesOfficers = async (page: number) => {
     setIsLoading(true);
     try {
       const response = await adminService.getAllSalesOfficerMadeByAdmin(
@@ -71,7 +70,9 @@ export default function SalesOfficerCreationPageTemplate() {
         itemsPerPage,
       );
 
-      const { data, pagination } = response.data;
+      console.log("Sales Officers Fetched: ", response)
+
+      const { data, pagination } = response;
       const adminDisplays = data.map(toAdminDisplay);
 
       setSalesOfficers(adminDisplays);
@@ -85,7 +86,7 @@ export default function SalesOfficerCreationPageTemplate() {
   };
 
   useEffect(() => {
-    fetchAdmins(1);
+    fetchSalesOfficers(1);
   }, []);
 
   const handleInputChange =
@@ -468,7 +469,7 @@ export default function SalesOfficerCreationPageTemplate() {
             </span>
             <div className="flex gap-2">
               <button
-                onClick={() => fetchAdmins(currentPage - 1)}
+                onClick={() => fetchSalesOfficers(currentPage - 1)}
                 disabled={currentPage === 1}
                 className="px-4 py-2 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-semibold cursor-pointer"
               >
@@ -479,7 +480,7 @@ export default function SalesOfficerCreationPageTemplate() {
               </button>
               <button
                 disabled={!hasNextPage}
-                onClick={() => fetchAdmins(currentPage + 1)}
+                onClick={() => fetchSalesOfficers(currentPage + 1)}
                 className="px-4 py-2 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 transition-colors text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 Next

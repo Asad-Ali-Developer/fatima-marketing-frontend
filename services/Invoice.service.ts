@@ -95,6 +95,7 @@ class InvoiceService {
       throw error; // Re-throw for upstream handling if needed
     }
   }
+  
   async getInvoices(
     page: number = 1,
     limit: number = 10,

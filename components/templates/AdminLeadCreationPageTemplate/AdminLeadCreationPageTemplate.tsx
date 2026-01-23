@@ -1,10 +1,12 @@
 "use client";
+
 import {
-  CreatInvoiceModal,
-  DeleteInvoiceConfirmationModal,
-  EditInvoice,
-  RemarksModal,
-  ViewInvoiceModal,
+  CreateLeadModal,
+  DeleteLeadConfirmationModal,
+  EditLeadModal,
+  LeadRemarksModal,
+  LeadRemarksViewModal,
+  ViewLeadModal,
 } from "@/components/molecules";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -23,10 +25,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { InvoiceService } from "@/services";
-import { Invoice, InvoiceFormData, leadsStatusOptions } from "@/types";
+import { LeadsService } from "@/services";
+import { Lead, LeadFormData, leadsStatusOptions, User } from "@/types";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, Loader2 } from "lucide-react";
+import { CalendarIcon, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { BiSolidCommentDetail } from "react-icons/bi";
 import {
@@ -39,8 +41,8 @@ import {
 } from "react-icons/fi";
 import { LuRefreshCcw } from "react-icons/lu";
 
-// ✨ Shimmer Skeleton Component
-const InvoiceTableSkeleton = () => {
+// ✨ Shimmer Skeleton
+const LeadTableSkeleton = () => {
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-left border-collapse">
@@ -69,96 +71,107 @@ const InvoiceTableSkeleton = () => {
   );
 };
 
-const InvoicePageTemplate = () => {
-  const invoiceService = new InvoiceService();
+const AdminLeadCreationPageTemplate = () => {
+  const leadService = new LeadsService();
 
   // Modal states
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
-  const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [editingLead, setEditingLead] = useState<Lead | null>(null);
 
   // Confirmation modal
   const [showConfirmModal, setShowConfirmModal] = useState<{
     isOpen: boolean;
     type: "delete" | "status";
-    invoiceId?: string;
+    leadId?: string;
     newStatus?: string;
   }>({
     isOpen: false,
     type: "delete",
   });
 
-  // Form states
-  const [formData, setFormData] = useState<InvoiceFormData>({
-    customerName: "",
-    phoneNumber: "",
+  // Form states — ✅ Now correctly typed
+  const [formData, setFormData] = useState<LeadFormData>({
+    userName: "",
     location: "",
-    amount: "",
-    date: new Date(),
+    time: new Date(),
     status: "pending",
+    assignedTo: {
+      id: "",
+      email: "",
+      full_name: "",
+    },
   });
 
   // Table states
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [leads, setLeads] = useState<Lead[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dateFilter, setDateFilter] = useState<Date | null>(null);
+  const [salesOfficers, setSalesOfficers] = useState<User[]>([]);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const [totalPages, setTotalPages] = useState(1);
-  const [totalInvoices, setTotalInvoices] = useState(0);
+  const [totalLeads, setTotalLeads] = useState(0);
 
-  // 🔃 Loading states for actions
+  // Loading states for actions
   const [isCreating, setIsCreating] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isChangingStatus, setIsChangingStatus] = useState(false);
-
   const [isRemarksModalOpen, setIsRemarksModalOpen] = useState(false);
-  const [remarksInvoice, setRemarksInvoice] = useState<Invoice | null>(null);
+  const [remarksLead, setRemarksLead] = useState<Lead | null>(null);
   const [remarksInput, setRemarksInput] = useState("");
-  const [updatingRemarks, setUpdatingRemarks] = useState<boolean>(false);
+  const [updatingRemarks, setUpdatingRemarks] = useState(false);
 
-  // 🔄 Fetch invoices from API
-  const fetchInvoices = async (page = 1) => {
+  // Fetch leads
+  const fetchLeads = async (page = 1) => {
     setIsLoading(true);
     try {
-      const response = await invoiceService.getInvoices(page, itemsPerPage, {
+      const response = await leadService.getLeads(page, itemsPerPage, {
         searchTerm,
         status: statusFilter === "all" ? undefined : statusFilter,
         date: dateFilter ? format(dateFilter, "yyyy-MM-dd") : undefined,
       });
-      setInvoices(response.data);
-      setTotalInvoices(response.pagination.total);
+      setLeads(response.data);
+      setTotalLeads(response.pagination.total);
       setTotalPages(response.pagination.totalPages);
       setCurrentPage(page);
     } catch (error) {
-      console.error("Failed to fetch invoices:", error);
-      setInvoices([]);
+      console.error("Failed to fetch leads:", error);
+      setLeads([]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Initialize data
+  // Fetch sales officers (for assignment dropdown)
+  const fetchSalesOfficers = async () => {
+    try {
+      const officers = await leadService.getSalesOfficers();
+      setSalesOfficers(officers.data);
+    } catch (error) {
+      console.error("Failed to fetch sales officers:", error);
+    }
+  };
+
   useEffect(() => {
-    fetchInvoices(1);
+    fetchLeads(1);
+    fetchSalesOfficers();
   }, []);
 
-  // Refetch when filters change
   useEffect(() => {
     const handler = setTimeout(() => {
-      fetchInvoices(1);
+      fetchLeads(1);
     }, 300);
     return () => clearTimeout(handler);
   }, [searchTerm, statusFilter, dateFilter]);
 
-  // Handle form input changes
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
@@ -168,201 +181,205 @@ const InvoicePageTemplate = () => {
 
   const handleDateChange = (date: Date | undefined) => {
     if (date) {
-      setFormData((prev) => ({ ...prev, date }));
+      setFormData((prev) => ({ ...prev, time: date }));
     }
   };
 
-  const handleCreateInvoice = async () => {
-    if (
-      !formData.customerName.trim() ||
-      !formData.phoneNumber.trim() ||
-      !formData.amount
-    ) {
+  // ✅ Handle assignedTo selection (from dropdown)
+  const handleAssignedToChange = (officerId: string) => {
+    const officer = salesOfficers.find((so) => so._id === officerId);
+    if (officer) {
+      setFormData((prev) => ({
+        ...prev,
+        assignedTo: {
+          id: officer._id,
+          email: officer.email,
+          full_name: officer.full_name,
+        },
+      }));
+    }
+  };
+
+  const handleCreateLead = async () => {
+    if (!formData.userName.trim() || !formData.assignedTo.id) {
       alert("Please fill in all required fields");
       return;
     }
-
     setIsCreating(true);
-    const newInvoice: Invoice = {
+
+    // ✅ Optimistic lead: match `Lead` type exactly
+    const newLead: Lead = {
       _id: `optimistic-${Date.now()}`,
-      customerName: formData.customerName.trim(),
-      phoneNumber: formData.phoneNumber.trim(),
-      location: formData.location.trim(),
-      amount: parseFloat(formData.amount),
-      date: format(formData.date, "yyyy-MM-dd"),
+      userName: formData.userName.trim(),
+      location: formData.location.trim() || "",
+      time: format(formData.time, "yyyy-MM-dd"), // string
       status: formData.status,
+      assignedTo: formData.assignedTo, // full object
+      remarks: undefined,
       createdAt: new Date().toISOString(),
     };
 
     const wasOnPage1 = currentPage === 1;
     if (wasOnPage1) {
-      setInvoices((prev) => [newInvoice, ...prev]);
-      setTotalInvoices((prev) => prev + 1);
-      if (totalInvoices >= itemsPerPage) {
-        setTotalPages(Math.ceil((totalInvoices + 1) / itemsPerPage));
+      setLeads((prev) => [newLead, ...prev]);
+      setTotalLeads((prev) => prev + 1);
+      if (totalLeads >= itemsPerPage) {
+        setTotalPages(Math.ceil((totalLeads + 1) / itemsPerPage));
       }
     }
 
     try {
+      // ✅ Payload matches `Omit<LeadFormData, "_id" | "createdAt">`
       const payload = {
-        customerName: formData.customerName.trim(),
-        phoneNumber: formData.phoneNumber.trim(),
-        location: formData.location.trim(),
-        amount: parseFloat(formData.amount),
-        date: format(formData.date, "yyyy-MM-dd"),
+        userName: formData.userName.trim(),
+        location: formData.location.trim() || "",
+        time: formData.time, // Date object
         status: formData.status,
+        assignedTo: formData.assignedTo, // full object
       };
-      const response = await invoiceService.createInvoice(payload);
 
+      const response = await leadService.createLead(payload);
       if (wasOnPage1) {
-        setInvoices((prev) =>
-          prev.map((inv) =>
-            inv._id === newInvoice._id
+        setLeads((prev) =>
+          prev.map((lead) =>
+            lead._id === newLead._id
               ? { ...response.data, _id: response.data._id }
-              : inv,
+              : lead,
           ),
         );
       }
-
       setIsCreateModalOpen(false);
       setFormData({
-        customerName: "",
-        phoneNumber: "",
+        userName: "",
         location: "",
-        amount: "",
-        date: new Date(),
+        time: new Date(),
         status: "pending",
+        assignedTo: {
+          id: "",
+          email: "",
+          full_name: "",
+        },
       });
     } catch (error) {
-      console.error("Failed to create invoice:", error);
+      console.error("Failed to create lead:", error);
       if (wasOnPage1) {
-        setInvoices((prev) => prev.filter((inv) => inv._id !== newInvoice._id));
-        setTotalInvoices((prev) => Math.max(0, prev - 1));
+        setLeads((prev) => prev.filter((lead) => lead._id !== newLead._id));
+        setTotalLeads((prev) => Math.max(0, prev - 1));
       }
-      alert("Failed to create invoice. Please try again.");
+      alert("Failed to create lead. Please try again.");
     } finally {
       setIsCreating(false);
     }
   };
 
-  const handleUpdateInvoice = async () => {
-    if (!editingInvoice) return;
-
+  const handleUpdateLead = async () => {
+    if (!editingLead) return;
     setIsUpdating(true);
-    const updatedInvoice: Invoice = {
-      ...editingInvoice,
-      customerName: formData.customerName.trim(),
-      phoneNumber: formData.phoneNumber.trim(),
-      location: formData.location.trim(),
-      amount: parseFloat(formData.amount),
-      date: format(formData.date, "yyyy-MM-dd"),
+
+    const updatedLead: Lead = {
+      ...editingLead,
+      userName: formData.userName.trim(),
+      location: formData.location.trim() || "",
+      time: format(formData.time, "yyyy-MM-dd"),
       status: formData.status,
+      assignedTo: formData.assignedTo,
     };
 
-    setInvoices((prev) =>
-      prev.map((inv) =>
-        inv._id === editingInvoice._id ? updatedInvoice : inv,
-      ),
+    setLeads((prev) =>
+      prev.map((lead) => (lead._id === editingLead._id ? updatedLead : lead)),
     );
 
     try {
       const payload = {
-        customerName: formData.customerName.trim(),
-        phoneNumber: formData.phoneNumber.trim(),
-        location: formData.location.trim(),
-        amount: parseFloat(formData.amount),
-        date: format(formData.date, "yyyy-MM-dd"),
+        userName: formData.userName.trim(),
+        location: formData.location.trim() || "",
+        time: formData.time,
         status: formData.status,
+        assignedTo: formData.assignedTo,
       };
-      await invoiceService.updateInvoice(editingInvoice._id, payload);
+      await leadService.updateLead(editingLead._id, payload);
       setIsEditModalOpen(false);
-      setEditingInvoice(null);
+      setEditingLead(null);
     } catch (error) {
-      console.error("Failed to update invoice:", error);
-      setInvoices((prev) =>
-        prev.map((inv) =>
-          inv._id === editingInvoice._id ? editingInvoice : inv,
-        ),
+      console.error("Failed to update lead:", error);
+      setLeads((prev) =>
+        prev.map((lead) => (lead._id === editingLead._id ? editingLead : lead)),
       );
-      alert("Failed to update invoice. Please try again.");
+      alert("Failed to update lead. Please try again.");
     } finally {
       setIsUpdating(false);
     }
   };
 
-  const handleStatusChange = (invoiceId: string, newStatus: string) => {
+  const handleStatusChange = (leadId: string, newStatus: string) => {
     setShowConfirmModal({
       isOpen: true,
       type: "status",
-      invoiceId,
+      leadId,
       newStatus,
     });
   };
 
   const confirmAction = async () => {
-    if (showConfirmModal.type === "delete" && showConfirmModal.invoiceId) {
+    if (showConfirmModal.type === "delete" && showConfirmModal.leadId) {
       setIsDeleting(true);
-      const invoiceToDelete = invoices.find(
-        (inv) => inv._id === showConfirmModal.invoiceId,
+      const leadToDelete = leads.find(
+        (lead) => lead._id === showConfirmModal.leadId,
       );
-      if (!invoiceToDelete) {
+      if (!leadToDelete) {
         setShowConfirmModal({ isOpen: false, type: "delete" });
         setIsDeleting(false);
         return;
       }
-
-      const prevInvoices = [...invoices];
-      setInvoices((prev) =>
-        prev.filter((inv) => inv._id !== showConfirmModal.invoiceId),
+      const prevLeads = [...leads];
+      setLeads((prev) =>
+        prev.filter((lead) => lead._id !== showConfirmModal.leadId),
       );
-      setTotalInvoices((prev) => Math.max(0, prev - 1));
-
+      setTotalLeads((prev) => Math.max(0, prev - 1));
       try {
-        await invoiceService.deleteInvoice(showConfirmModal.invoiceId);
+        await leadService.deleteLead(showConfirmModal.leadId!);
       } catch (error) {
-        console.error("Failed to delete invoice:", error);
-        setInvoices(prevInvoices);
-        setTotalInvoices((prev) => prev + 1);
-        alert("Failed to delete invoice.");
+        console.error("Failed to delete lead:", error);
+        setLeads(prevLeads);
+        setTotalLeads((prev) => prev + 1);
+        alert("Failed to delete lead.");
       } finally {
         setShowConfirmModal({ isOpen: false, type: "delete" });
         setIsDeleting(false);
       }
     } else if (
       showConfirmModal.type === "status" &&
-      showConfirmModal.invoiceId &&
+      showConfirmModal.leadId &&
       showConfirmModal.newStatus
     ) {
       setIsChangingStatus(true);
-      const invoiceToUpdate = invoices.find(
-        (inv) => inv._id === showConfirmModal.invoiceId,
+      const leadToUpdate = leads.find(
+        (lead) => lead._id === showConfirmModal.leadId,
       );
-      if (!invoiceToUpdate) {
+      if (!leadToUpdate) {
         setShowConfirmModal({ isOpen: false, type: "delete" });
         setIsChangingStatus(false);
         return;
       }
-
-      const updatedInvoice = {
-        ...invoiceToUpdate,
+      const updatedLead = {
+        ...leadToUpdate,
         status: showConfirmModal.newStatus as any,
       };
-
-      setInvoices((prev) =>
-        prev.map((inv) =>
-          inv._id === showConfirmModal.invoiceId ? updatedInvoice : inv,
+      setLeads((prev) =>
+        prev.map((lead) =>
+          lead._id === showConfirmModal.leadId ? updatedLead : lead,
         ),
       );
-
       try {
-        await invoiceService.updateInvoice(showConfirmModal.invoiceId, {
-          status: showConfirmModal.newStatus,
-        });
+        await leadService.updateLeadStatus(
+          showConfirmModal.leadId!,
+          showConfirmModal.newStatus as "pending" | "in_progress" | "completed",
+        );
       } catch (error) {
         console.error("Failed to update status:", error);
-        setInvoices((prev) =>
-          prev.map((inv) =>
-            inv._id === showConfirmModal.invoiceId ? invoiceToUpdate : inv,
+        setLeads((prev) =>
+          prev.map((lead) =>
+            lead._id === showConfirmModal.leadId ? leadToUpdate : lead,
           ),
         );
         alert("Failed to update status.");
@@ -377,81 +394,71 @@ const InvoicePageTemplate = () => {
     setShowConfirmModal({ isOpen: false, type: "delete" });
   };
 
-  const handleDeleteInvoice = (invoiceId: string) => {
+  const handleDeleteLead = (leadId: string) => {
     setShowConfirmModal({
       isOpen: true,
       type: "delete",
-      invoiceId,
+      leadId,
     });
   };
 
-  const handleViewInvoice = (invoice: Invoice) => {
-    setSelectedInvoice(invoice);
+  const handleViewLead = (lead: Lead) => {
+    setSelectedLead(lead);
     setIsViewModalOpen(true);
   };
 
-  const handleEditInvoice = (invoice: Invoice) => {
-    setEditingInvoice(invoice);
+  const handleEditLead = (lead: Lead) => {
+    setEditingLead(lead);
     setFormData({
-      customerName: invoice.customerName,
-      phoneNumber: invoice.phoneNumber,
-      location: invoice.location || "",
-      amount: invoice.amount.toString(),
-      date: new Date(invoice.date),
-      status: invoice.status,
+      userName: lead.userName,
+      location: lead.location || "",
+      time: new Date(lead.time), // convert string → Date
+      status: lead.status,
+      assignedTo: lead.assignedTo, // full object
     });
     setIsEditModalOpen(true);
   };
 
-  const handleOpenRemarksModal = (invoice: Invoice) => {
-    setRemarksInvoice(invoice);
-    setRemarksInput(invoice.remarks || "");
+  const handleOpenRemarksModal = (lead: Lead) => {
+    setRemarksLead(lead);
+    setRemarksInput(lead.remarks || "");
     setIsRemarksModalOpen(true);
   };
 
   const handleSaveRemarks = async () => {
-    if (!remarksInvoice) return;
-
+    if (!remarksLead) return;
     const inputValue = remarksInput.trim();
-    const remarksForState = inputValue || undefined; // ← for UI state: string | undefined
-    const remarksForApi = inputValue || null; // ← for API: string | null
+    const remarksForState = inputValue || undefined;
+    const remarksForApi = inputValue || null;
 
-    const updatedInvoice = {
-      ...remarksInvoice,
-      remarks: remarksForState, // matches Invoice type
+    const updatedLead = {
+      ...remarksLead,
+      remarks: remarksForState,
     };
 
-    // Optimistic update
-    setInvoices((prev) =>
-      prev.map((inv) =>
-        inv._id === remarksInvoice._id ? updatedInvoice : inv,
-      ),
+    setLeads((prev) =>
+      prev.map((lead) => (lead._id === remarksLead._id ? updatedLead : lead)),
     );
 
     try {
       setUpdatingRemarks(true);
-      // Send null to API to clear the field in DB
-      await invoiceService.updateInvoiceRemarks(
-        remarksInvoice._id,
-        remarksForApi,
-      );
+      await leadService.updateLeadRemarks(remarksLead._id, remarksForApi);
       setUpdatingRemarks(false);
       setIsRemarksModalOpen(false);
     } catch (error) {
       console.error("Failed to update remarks:", error);
       setUpdatingRemarks(false);
       setIsRemarksModalOpen(false);
-      // Revert
-      setInvoices((prev) =>
-        prev.map((inv) =>
-          inv._id === remarksInvoice._id ? remarksInvoice : inv,
-        ),
+      setLeads((prev) =>
+        prev.map((lead) => (lead._id === remarksLead._id ? remarksLead : lead)),
       );
     }
   };
 
-  const paginatedInvoices = invoices;
-  const filteredInvoicesLength = totalInvoices;
+  const getSalesOfficerName = (email: string) => {
+    const officer = salesOfficers.find((so) => so.email === email);
+    return officer ? officer.full_name : "Unknown";
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 text-slate-900 font-sans">
@@ -461,14 +468,14 @@ const InvoicePageTemplate = () => {
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-[#00B7E8] font-bold text-xs uppercase tracking-widest mb-2 bg-slate-100 border border-slate-100 px-3 py-1 rounded-full w-max">
               <FiFileText className="text-base" />
-              Invoice Management
+              Lead Management
             </div>
             <h2 className="text-4xl font-black tracking-tight text-[#142C4B]">
-              Manage Invoices
+              Manage Leads
             </h2>
             <p className="text-slate-500 max-w-xl">
-              Create, track, and manage all customer invoices with real-time
-              status updates.
+              Create, assign, and track customer leads with real-time status
+              updates.
             </p>
           </div>
           <Button
@@ -484,17 +491,17 @@ const InvoicePageTemplate = () => {
             ) : (
               <>
                 <FiPlus className="text-lg" />
-                Create Invoice
+                Create Lead
               </>
             )}
           </Button>
         </div>
 
-        {/* Filters Section */}
+        {/* Filters */}
         <section className="bg-white rounded-xl border border-slate-200 overflow-hidden mb-8 shadow-sm">
           <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-              {/* Name Filter */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              {/* Search */}
               <div className="relative">
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1 ml-1">
                   Name
@@ -509,22 +516,8 @@ const InvoicePageTemplate = () => {
                   className="pl-10 pr-4 py-2 border rounded-lg text-sm border-slate-300 focus:border-[#00B7E8] w-full"
                 />
               </div>
-              {/* Phone Filter */}
-              <div className="relative">
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1 ml-1">
-                  Phone
-                </label>
-                <div className="absolute left-3 top-2/3 -translate-y-2/3 text-slate-400">
-                  <FiSearch className="text-sm" />
-                </div>
-                <Input
-                  placeholder="Search by phone..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 text-sm border border-slate-300 focus:border-[#00B7E8] w-full rounded-lg"
-                />
-              </div>
-              {/* Status Filter */}
+
+              {/* Status */}
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1 ml-1">
                   Status
@@ -537,19 +530,20 @@ const InvoicePageTemplate = () => {
                     <SelectGroup>
                       <SelectItem value="all">All Statuses</SelectItem>
                       <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="received_so">Received (SO)</SelectItem>
-                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                      <SelectItem value="in_progress">In Progress</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
                     </SelectGroup>
                   </SelectContent>
                 </Select>
               </div>
-              {/* Date Filter */}
+
+              {/* Date */}
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1 ml-1">
                   Date
                 </label>
                 <Popover>
-                  <PopoverTrigger asChild className="rounded-lg">
+                  <PopoverTrigger asChild>
                     <Button
                       variant={"outline"}
                       className={cn(
@@ -558,11 +552,7 @@ const InvoicePageTemplate = () => {
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {dateFilter ? (
-                        format(dateFilter, "PPP")
-                      ) : (
-                        <span>Select date</span>
-                      )}
+                      {dateFilter ? format(dateFilter, "PPP") : "Select date"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">
@@ -580,7 +570,8 @@ const InvoicePageTemplate = () => {
                   </PopoverContent>
                 </Popover>
               </div>
-              {/* Clear Filters */}
+
+              {/* Clear */}
               <div className="flex items-end">
                 <Button
                   variant="outline"
@@ -598,35 +589,35 @@ const InvoicePageTemplate = () => {
           </div>
         </section>
 
-        {/* Invoices Table */}
+        {/* Leads Table */}
         <section className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
           <div className="p-6 border-b border-slate-200 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <FiFileText className="text-primary text-xl" />
-              <h3 className="text-lg font-bold">Invoice Records</h3>
+              <h3 className="text-lg font-bold">Lead Records</h3>
             </div>
             <div className="flex items-center gap-2">
               <span
                 className={`hover:bg-gray-100 p-1.5 rounded-full cursor-pointer text-slate-600 transition-transform ${
                   isLoading ? "animate-spin" : ""
                 }`}
-                onClick={() => fetchInvoices(currentPage)}
+                onClick={() => fetchLeads(currentPage)}
               >
                 <LuRefreshCcw />
               </span>
               <span className="text-sm text-slate-500">
-                {filteredInvoicesLength} invoices found
+                {totalLeads} leads found
               </span>
             </div>
           </div>
 
           {isLoading ? (
             <div className="p-6">
-              <InvoiceTableSkeleton />
+              <LeadTableSkeleton />
             </div>
-          ) : paginatedInvoices.length === 0 ? (
+          ) : leads.length === 0 ? (
             <div className="p-8 text-center text-slate-500">
-              No invoices found. Create your first invoice!
+              No leads found. Create your first lead!
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -634,22 +625,16 @@ const InvoicePageTemplate = () => {
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200">
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
-                      Customer
-                    </th>
-                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
-                      Phone
-                    </th>
-                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
-                      Report to
+                      User
                     </th>
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
                       Location
                     </th>
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
-                      Amount
+                      Assigned To
                     </th>
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
-                      Date
+                      Time
                     </th>
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
                       Remarks
@@ -657,54 +642,33 @@ const InvoicePageTemplate = () => {
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
                       Status
                     </th>
-                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
-                      Approval Status
-                    </th>
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600 text-right">
                       Actions
                     </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {paginatedInvoices.map((invoice) => (
+                  {leads.map((lead) => (
                     <tr
-                      key={invoice._id}
+                      key={lead._id}
                       className="hover:bg-slate-50/50 transition-colors"
                     >
-                      <td className="px-6 py-4">
-                        <span className="font-semibold text-slate-900">
-                          {invoice.customerName}
-                        </span>
+                      <td className="px-6 py-4 font-semibold">
+                        {lead.userName}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-slate-600">
+                        {lead.location || "-"}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-slate-600">
+                        {getSalesOfficerName(lead.assignedTo.email)}
                       </td>
                       <td className="px-6 py-4">
-                        <span className="text-sm text-slate-600">
-                          {invoice.phoneNumber}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-sm text-slate-600">
-                          {invoice.reported_to?.name || "N/A"}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-sm text-slate-600">
-                          {invoice.location || "-"}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="font-semibold text-slate-900">
-                          Rs. {invoice.amount.toFixed()}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          {format(new Date(invoice.date), "dd MMM yyyy")}
-                        </div>
+                        {format(new Date(lead.time), "dd MMM yyyy")}
                       </td>
                       <td className="px-6 py-4">
                         <button
                           type="button"
-                          onClick={() => handleOpenRemarksModal(invoice)}
+                          onClick={() => handleOpenRemarksModal(lead)}
                           className="text-xs font-medium text-[#00B7E8] hover:text-[#029ec9] hover:underline transition-colors cursor-pointer"
                           title="Add or edit remarks"
                         >
@@ -713,17 +677,17 @@ const InvoicePageTemplate = () => {
                       </td>
                       <td className="px-1 py-4">
                         <Select
-                          value={invoice.status}
+                          value={lead.status}
                           onValueChange={(value) =>
-                            handleStatusChange(invoice._id, value)
+                            handleStatusChange(lead._id, value)
                           }
                           disabled={isChangingStatus}
                         >
                           <SelectTrigger
                             className={cn(
-                              "w-[130px] px-3  rounded-full text-xs font-semibold border-none",
+                              "w-[130px] px-3 rounded-full text-xs font-semibold border-none",
                               leadsStatusOptions.find(
-                                (opt) => opt.value === invoice.status,
+                                (opt) => opt.value === lead.status,
                               )?.color || "bg-slate-100 text-slate-700",
                             )}
                           >
@@ -743,43 +707,18 @@ const InvoicePageTemplate = () => {
                           </SelectContent>
                         </Select>
                       </td>
-                      <td className="px-6 py-4">
-                        {invoice.reported_to?.admin_approval_status ? (
-                          <span
-                            className={cn(
-                              "inline-block px-6 py-2.5 rounded-full text-xs font-semibold",
-                              invoice.reported_to.admin_approval_status ===
-                                "pending"
-                                ? "bg-yellow-500/10 text-yellow-700"
-                                : invoice.reported_to.admin_approval_status ===
-                                    "approved"
-                                  ? "bg-green-500/10 text-green-700"
-                                  : "bg-red-500/10 text-red-700",
-                            )}
-                          >
-                            {invoice.reported_to.admin_approval_status
-                              .charAt(0)
-                              .toUpperCase() +
-                              invoice.reported_to.admin_approval_status.slice(
-                                1,
-                              )}
-                          </span>
-                        ) : (
-                          <span className="text-slate-500 text-sm">—</span>
-                        )}
-                      </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <button
                             type="button"
-                            onClick={() => handleViewInvoice(invoice)}
+                            onClick={() => handleViewLead(lead)}
                             className="p-2 hover:bg-primary/10 rounded-lg text-slate-600 hover:text-primary transition-colors"
                             title="View"
                           >
                             <FiEye className="text-base" />
                           </button>
                           <button
-                            onClick={() => handleEditInvoice(invoice)}
+                            onClick={() => handleEditLead(lead)}
                             className="p-2 hover:bg-blue-50 rounded-lg text-slate-600 hover:text-blue-600 transition-colors"
                             title="Edit"
                             disabled={isUpdating}
@@ -787,7 +726,7 @@ const InvoicePageTemplate = () => {
                             <FiEdit2 className="text-base" />
                           </button>
                           <button
-                            onClick={() => handleDeleteInvoice(invoice._id)}
+                            onClick={() => handleDeleteLead(lead._id)}
                             className="p-2 hover:bg-red-50 rounded-lg text-slate-600 hover:text-red-600 transition-colors"
                             title="Delete"
                             disabled={isDeleting}
@@ -804,12 +743,12 @@ const InvoicePageTemplate = () => {
           )}
 
           {/* Pagination */}
-          {paginatedInvoices.length > 0 && (
+          {leads.length > 0 && (
             <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
               <span className="text-xs font-semibold text-slate-600">
                 Showing {(currentPage - 1) * itemsPerPage + 1}-
-                {Math.min(currentPage * itemsPerPage, totalInvoices)} of{" "}
-                {totalInvoices} invoices
+                {Math.min(currentPage * itemsPerPage, totalLeads)} of{" "}
+                {totalLeads} leads
               </span>
               <div className="flex gap-2">
                 <button
@@ -826,7 +765,7 @@ const InvoicePageTemplate = () => {
                   return (
                     <button
                       key={pageNum}
-                      onClick={() => fetchInvoices(pageNum)}
+                      onClick={() => fetchLeads(pageNum)}
                       className={cn(
                         "w-10 h-10 rounded-lg text-sm font-bold transition-colors",
                         currentPage === pageNum
@@ -854,44 +793,42 @@ const InvoicePageTemplate = () => {
       </main>
 
       {/* Modals */}
-      {/* Create Invoice Modal */}
       {isCreateModalOpen && (
-        <CreatInvoiceModal
+        <CreateLeadModal
           setIsCreateModalOpen={setIsCreateModalOpen}
           formData={formData}
           handleInputChange={handleInputChange}
           handleDateChange={handleDateChange}
-          handleCreateInvoice={handleCreateInvoice}
+          handleAssignedToChange={handleAssignedToChange} // ✅ Pass this down
+          handleCreateLead={handleCreateLead}
           isCreating={isCreating}
           setFormData={setFormData}
+          salesOfficers={salesOfficers}
         />
       )}
-
-      {/* Edit Invoice Modal */}
-      {isEditModalOpen && editingInvoice && (
-        <EditInvoice
+      {isEditModalOpen && editingLead && (
+        <EditLeadModal
           setIsEditModalOpen={setIsEditModalOpen}
-          formData={editingInvoice}
+          formData={editingLead}
           handleInputChange={handleInputChange}
           handleDateChange={handleDateChange}
-          handleUpdateInvoice={handleUpdateInvoice}
+          handleAssignedToChange={handleAssignedToChange}
+          handleUpdateLead={handleUpdateLead}
           isUpdating={isUpdating}
           setFormData={setFormData}
+          salesOfficers={salesOfficers}
         />
       )}
-
-      {/* View Invoice Modal */}
-      {isViewModalOpen && selectedInvoice && (
-        <ViewInvoiceModal
-          selectedInvoice={selectedInvoice}
+      {isViewModalOpen && selectedLead && (
+        <ViewLeadModal
+          selectedLead={selectedLead}
           setIsViewModalOpen={setIsViewModalOpen}
           statusOptions={leadsStatusOptions}
+          salesOfficers={salesOfficers}
         />
       )}
-
-      {/* Confirmation Modal */}
       {showConfirmModal.isOpen && (
-        <DeleteInvoiceConfirmationModal
+        <DeleteLeadConfirmationModal
           showConfirmModal={showConfirmModal}
           cancelAction={cancelAction}
           confirmAction={confirmAction}
@@ -899,10 +836,8 @@ const InvoicePageTemplate = () => {
           isChangingStatus={isChangingStatus}
         />
       )}
-
-      {/* Remarks Modal */}
-      {isRemarksModalOpen && remarksInvoice && (
-        <RemarksModal
+      {isRemarksModalOpen && remarksLead && (
+        <LeadRemarksViewModal
           remarksInput={remarksInput}
           setRemarksInput={setRemarksInput}
           setIsRemarksModalOpen={setIsRemarksModalOpen}
@@ -914,4 +849,4 @@ const InvoicePageTemplate = () => {
   );
 };
 
-export default InvoicePageTemplate;
+export default AdminLeadCreationPageTemplate;
