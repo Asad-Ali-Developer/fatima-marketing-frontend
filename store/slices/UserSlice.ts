@@ -6,31 +6,52 @@ interface AuthState {
   accessToken: string | null;
 }
 
-const initialState: AuthState = {
-  user: null,
-  accessToken: null,
+const getInitialState = (): AuthState => {
+  if (typeof window !== "undefined") {
+    const savedAccessToken = localStorage.getItem("accessToken");
+    const savedUser = localStorage.getItem("user");
+
+    return {
+      user: savedUser ? JSON.parse(savedUser) : null,
+      accessToken: savedAccessToken,
+    };
+  }
+
+  return {
+    user: null,
+    accessToken: null,
+  };
 };
 
-const userSlice = createSlice({
+const initialState: AuthState = getInitialState();
+
+const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
     setUser(state, action: PayloadAction<{ user: User; accessToken: string }>) {
-      state.user = action.payload.user;
-      state.accessToken = action.payload.accessToken;
+      const { user, accessToken } = action.payload;
+      state.user = user;
+      state.accessToken = accessToken;
+
+      // Persist to localStorage
+      if (typeof window !== "undefined") {
+        localStorage.setItem("user", JSON.stringify(user));
+        localStorage.setItem("accessToken", accessToken);
+      }
     },
 
     clearUser(state) {
       state.user = null;
       state.accessToken = null;
 
-      // Clear localStorage if available
       if (typeof window !== "undefined") {
+        localStorage.removeItem("user");
         localStorage.removeItem("accessToken");
       }
     },
   },
 });
 
-export const { setUser, clearUser } = userSlice.actions;
-export const userReducer = userSlice.reducer;
+export const { setUser, clearUser } = authSlice.actions;
+export const userReducer = authSlice.reducer;

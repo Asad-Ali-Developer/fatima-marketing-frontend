@@ -4,6 +4,9 @@ import AdminCreationPageTemplate from "./AdminCreationPageTemplate/AdminCreation
 import SalesOfficerCreationPageTemplate from "./SalesOfficerCreationPageTemplate/SalesOfficerCreationPageTemplate";
 import AnalyticsPageTemplate from "./AnalyticsPageTemplate/AnalyticsPageTemplate";
 import InvoicePageTemplate from "./InvoicesPageTemplate/InvoicesPageTemplate";
+import AdminInvoicePageTemplate from "./AdminInvoicePageTemplate/AdminInvoicePageTemplate";
+import HomePageTemplate from "./HomePageTemplate/HomePageTemplate";
+import AdminDashboardPageTemplate from "./AdminDashboardPageTemplate/AdminDashboardPageTemplate";
 
 export {
   SignInPageTemplate,
@@ -12,4 +15,7 @@ export {
   SalesOfficerCreationPageTemplate,
   AnalyticsPageTemplate,
   InvoicePageTemplate,
+  AdminInvoicePageTemplate,
+  HomePageTemplate,
+  AdminDashboardPageTemplate,
 };

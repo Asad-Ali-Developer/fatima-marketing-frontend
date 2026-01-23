@@ -16,6 +16,7 @@ import { FaSearch } from "react-icons/fa";
 import { IoMdSettings } from "react-icons/io";
 import { IoNotifications } from "react-icons/io5";
 import { useDispatch, useSelector } from "react-redux";
+import { HiUserCircle } from "react-icons/hi2";
 
 const Navbar = () => {
   const pathname = usePathname();
@@ -26,10 +27,10 @@ const Navbar = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const user = useSelector(
-    (state: RootState) => state.auth.user
+    (state: RootState) => state.auth.user,
   ) as User | null;
 
-  console.log("User: ", user);
+  // console.log("User: ", user);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -75,33 +76,34 @@ const Navbar = () => {
 
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center gap-6">
-            {user?.role.role_type === "admin" && (
-              <Link
-                href={"/sales-officers"}
-                className={cn(
-                  "text-sm font-semibold transition-colors whitespace-nowrap",
-                  pathname === "/sales-officers"
-                    ? "text-primary border-b-2 border-primary pb-0.5"
-                    : "text-slate-500 hover:text-primary"
-                )}
-              >
-                Sales Officers
-              </Link>
-            )}
+            {user?.role.role_type === "admin" ||
+              (user?.role.role_type === "super_admin" && (
+                <Link
+                  href={"/sales-officers"}
+                  className={cn(
+                    "text-sm font-semibold transition-colors whitespace-nowrap",
+                    pathname === "/sales-officers"
+                      ? "text-[#00B7E8]"
+                      : "text-slate-500 hover:text-[#00B7E8]",
+                  )}
+                >
+                  Sales Officers
+                </Link>
+              ))}
 
-            {user?.role.role_type === "super_admin" && (
+            {/* {user?.role.role_type === "super_admin" && (
               <Link
                 href={"/admins"}
                 className={cn(
                   "text-sm font-semibold transition-colors whitespace-nowrap",
                   pathname === "/admins"
-                    ? "text-primary border-b-2 border-primary pb-0.5"
-                    : "text-slate-500 hover:text-primary"
+                    ? "text-[#00B7E8]"
+                    : "text-slate-500 hover:text-[#00B7E8]",
                 )}
               >
                 Admins
               </Link>
-            )}
+            )} */}
 
             {user?.role.role_type === "sales_officer" && (
               <Link
@@ -109,8 +111,22 @@ const Navbar = () => {
                 className={cn(
                   "text-sm font-semibold transition-colors whitespace-nowrap",
                   pathname === "/invoices"
-                    ? "text-primary border-b-2 border-primary pb-0.5"
-                    : "text-slate-500 hover:text-primary"
+                    ? "text-[#00B7E8]"
+                    : "text-slate-500 hover:text-[#00B7E8]",
+                )}
+              >
+                Invoices
+              </Link>
+            )}
+
+            {user?.role.role_type === "admin" || user?.role.role_type === "super_admin" && (
+              <Link
+                href={"/admin-invoices"}
+                className={cn(
+                  "text-sm font-semibold transition-colors whitespace-nowrap",
+                  pathname === "/admin-invoices"
+                    ? "text-[#00B7E8]"
+                    : "text-slate-500 hover:text-[#00B7E8]",
                 )}
               >
                 Invoices
@@ -121,8 +137,8 @@ const Navbar = () => {
               className={cn(
                 "text-sm font-semibold transition-colors whitespace-nowrap",
                 pathname === "/analytics"
-                  ? "text-primary border-b-2 border-primary pb-0.5"
-                  : "text-slate-500 hover:text-primary"
+                  ? "text-[#00B7E8]"
+                  : "text-slate-500 hover:text-[#00B7E8]",
               )}
             >
               Analytics
@@ -146,14 +162,20 @@ const Navbar = () => {
           {/* Action Icons */}
           <div className="flex items-center gap-3">
             {/* Settings Icon */}
-            <button className="p-2 rounded-full hover:bg-slate-100 transition-colors text-slate-500 hover:text-slate-700">
+            {/* <button
+              type="button"
+              className="p-2 rounded-full hover:bg-slate-100 transition-colors text-slate-500 hover:text-slate-700"
+            >
               <IoMdSettings className="text-xl" />
-            </button>
+            </button> */}
 
             {/* Notifications Icon */}
-            <button className="p-2 rounded-full hover:bg-slate-100 transition-colors text-slate-500 hover:text-slate-700 relative">
+            <button
+              type="button"
+              className="p-2 rounded-full hover:bg-slate-100 transition-colors text-slate-500 hover:text-slate-700 relative"
+            >
               <IoNotifications className="text-xl" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+              <span className="absolute top-1 right-1 w-2 h-2 bg-[#00B7E8] rounded-full"></span>
             </button>
 
             {/* Avatar with Dropdown */}
@@ -161,18 +183,14 @@ const Navbar = () => {
               <button
                 type="button"
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30 overflow-hidden hover:bg-primary/30 transition-colors"
+                className=" w-8 h-8 rounded-full flex items-center justify-center overflow-hidden hover:bg-slate-100 transition-colors"
               >
-                <img
-                  alt="Admin Avatar"
-                  className="w-full h-full object-cover"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuDfpSOzwqcnnnVkERmW8FoAaKkLTNFddlD4wAF_N1WqHGj6I5xy6rrb9ppxmu7ro-KbZLU03F8wbFxbdVAksKrQED_s9zbcuSKn68Z7DvvQzS1lQJ0-vUQIdSxuLtQy0H7q1sI8swtqxniBCZaJ8kzE9jgGWADHTKqmPkdODpHGPQZbtTaQ0qeBhcOw-NZJ3fGxGMhUgFMAHx-G5UX7GafT6hrI_BuKdSm0RH1wXsYfzs1dhbjjgQ53_wRKbKNILcJOC5aLuG8MGfI"
-                />
+                <HiUserCircle className="w-6 h-6 text-gray-500" />
               </button>
 
               {/* Dropdown Menu */}
               {isDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-50">
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-50 overflow-hidden">
                   <div className="px-4 py-2 border-b border-slate-100">
                     <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
                       Account

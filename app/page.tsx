@@ -1,3 +1,4 @@
+import { HomePageTemplate } from "@/components/templates";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -8,7 +9,7 @@ export const metadata: Metadata = {
 const Home = () => {
   return (
     <main>
-      <h1>Welcome to the Home Page</h1>
+      <HomePageTemplate />
     </main>
   );
 };

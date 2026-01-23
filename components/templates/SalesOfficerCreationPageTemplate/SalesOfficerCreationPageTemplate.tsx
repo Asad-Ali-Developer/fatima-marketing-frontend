@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { AuthService, SalesOfficerService } from "@/services";
+import { AdminService, AuthService, SalesOfficerService } from "@/services";
 import { User } from "@/types";
 import { createRandomPassword, formatDateTime } from "@/utils";
 import { useEffect, useState } from "react";
@@ -30,6 +30,7 @@ export default function SalesOfficerCreationPageTemplate() {
   const [hasNextPage, setHasNextPage] = useState<boolean>(false);
 
   const authService = new AuthService();
+  const adminService = new AdminService();
   const salesOfficerService = new SalesOfficerService();
 
   const [formData, setFormData] = useState({
@@ -65,9 +66,9 @@ export default function SalesOfficerCreationPageTemplate() {
   const fetchAdmins = async (page: number) => {
     setIsLoading(true);
     try {
-      const response = await salesOfficerService.getAllSalesOfficerMadeByAdmin(
+      const response = await adminService.getAllSalesOfficerMadeByAdmin(
         page,
-        itemsPerPage
+        itemsPerPage,
       );
 
       const { data, pagination } = response.data;
@@ -176,8 +177,8 @@ export default function SalesOfficerCreationPageTemplate() {
                 showPassword:
                   editFormData.showPassword || salesOfficer.showPassword, // Keep existing if not changed
               }
-            : salesOfficer
-        )
+            : salesOfficer,
+        ),
       );
 
       closeEditModal();
@@ -204,8 +205,8 @@ export default function SalesOfficerCreationPageTemplate() {
         prev.map((salesOfficer) =>
           salesOfficer._id === blockModal.salesOfficer!._id
             ? { ...salesOfficer, status: "inactive" as const }
-            : salesOfficer
-        )
+            : salesOfficer,
+        ),
       );
     } catch (error) {
       console.error("Error blocking admin:", error);
@@ -223,8 +224,8 @@ export default function SalesOfficerCreationPageTemplate() {
         prev.map((admin) =>
           admin._id === adminId
             ? { ...admin, status: "active" as const }
-            : admin
-        )
+            : admin,
+        ),
       );
     } catch (error) {
       console.error("Error activating admin:", error);
@@ -240,7 +241,7 @@ export default function SalesOfficerCreationPageTemplate() {
         {/* Page Heading */}
         <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="space-y-1">
-            <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-widest mb-2 bg-yellow-400/50 px-3 py-1 rounded-full w-max">
+            <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-widest mb-2 bg-[#9ae9ff7e] px-3 py-1 rounded-full w-max">
               <FiShield className="text-base" />
               Admin Access
             </div>
@@ -254,7 +255,9 @@ export default function SalesOfficerCreationPageTemplate() {
           </div>
           <div className="flex items-center gap-3 bg-white p-4 rounded-xl shadow-sm border border-slate-200">
             <div className="px-4 py-2 text-center">
-              <div className="text-2xl font-bold">{totalAdmins}</div>
+              <div className="text-2xl font-bold text-[#00a4d1]">
+                {totalAdmins}
+              </div>
               <div className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">
                 Total Admins
               </div>
@@ -287,7 +290,7 @@ export default function SalesOfficerCreationPageTemplate() {
                   value={formData.name}
                   onChange={handleInputChange("name")}
                   placeholder="e.g. Sarah Jenkins"
-                  className="border-slate-300 focus:border-yellow-500"
+                  className="border-slate-300 focus:border-[#00B7E8]"
                 />
               </div>
               <div className="space-y-2">
@@ -299,14 +302,14 @@ export default function SalesOfficerCreationPageTemplate() {
                   value={formData.email}
                   onChange={handleInputChange("email")}
                   placeholder="sarah.j@fatimamarketing.com"
-                  className="border-slate-300 focus:border-yellow-500"
+                  className="border-slate-300 focus:border-[#00B7E8]"
                 />
               </div>
               <div>
                 <Button
                   onClick={handleSubmit}
                   disabled={isCreatingSalesOfficer}
-                  className="w-full flex items-center justify-center gap-2 bg-yellow-500 hover:bg-black hover:text-white transition-colors duration-150 cursor-pointer rounded"
+                  className="w-full flex items-center justify-center gap-2 bg-[#00B7E8] hover:bg-[#00a8d6] text-white transition-colors duration-150 cursor-pointer rounded"
                 >
                   {isCreatingSalesOfficer ? (
                     "Creating Sales Officer..."
@@ -361,7 +364,7 @@ export default function SalesOfficerCreationPageTemplate() {
                       key={admin._id}
                       className={cn(
                         "group hover:bg-slate-50/50 transition-colors",
-                        admin.isNew && ""
+                        admin.isNew && "",
                       )}
                     >
                       <td className="px-6 py-4">
@@ -370,7 +373,7 @@ export default function SalesOfficerCreationPageTemplate() {
                             {admin.full_name}
                           </span>
                           {admin.isNew && (
-                            <span className="bg-yellow-600 text-[9px] font-black text-white px-2 py-0.5 rounded-full">
+                            <span className="bg-[#00B7E8] text-[9px] font-black text-white px-2 py-0.5 rounded-full">
                               NEW
                             </span>
                           )}
@@ -388,7 +391,7 @@ export default function SalesOfficerCreationPageTemplate() {
                             "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold",
                             admin.role.role_type === "super_admin"
                               ? "bg-primary/10 text-primary"
-                              : "bg-slate-100 text-slate-700"
+                              : "bg-slate-100 text-slate-700",
                           )}
                         >
                           {admin.role.role_type === "super_admin"
@@ -403,7 +406,7 @@ export default function SalesOfficerCreationPageTemplate() {
                               "w-2 h-2 rounded-full",
                               admin.status === "active"
                                 ? "bg-green-500"
-                                : "bg-slate-400"
+                                : "bg-slate-400",
                             )}
                           ></span>
                           <span
@@ -411,7 +414,7 @@ export default function SalesOfficerCreationPageTemplate() {
                               "text-xs font-semibold",
                               admin.status === "active"
                                 ? "text-green-600"
-                                : "text-slate-400"
+                                : "text-slate-400",
                             )}
                           >
                             {admin.status === "active" ? "Active" : "Inactive"}
@@ -419,16 +422,18 @@ export default function SalesOfficerCreationPageTemplate() {
                         </div>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center justify-end gap-2">
                           <button
+                            type="button"
                             onClick={() => openEditModal(admin)}
-                            className="p-2 hover:bg-primary/10 rounded-lg text-slate-600 hover:text-primary transition-colors"
+                            className="p-2 hover:bg-[#92e5fb40] rounded-lg text-slate-600 hover:text-[#03aad8] transition-colors cursor-pointer"
                             title="Edit"
                           >
                             <FiEdit2 className="text-base" />
                           </button>
                           {admin.status === "active" ? (
                             <button
+                              type="button"
                               onClick={() => openBlockModal(admin)}
                               className="p-2 hover:bg-red-50 rounded-lg text-slate-600 hover:text-red-600 transition-colors"
                               title="Block"
@@ -437,6 +442,7 @@ export default function SalesOfficerCreationPageTemplate() {
                             </button>
                           ) : (
                             <button
+                              type="button"
                               onClick={() => handleActivate(admin._id)}
                               className="p-2 hover:bg-green-50 rounded-lg text-slate-600 hover:text-green-600 transition-colors"
                               title="Activate"
@@ -468,7 +474,7 @@ export default function SalesOfficerCreationPageTemplate() {
               >
                 Previous
               </button>
-              <button className="w-10 h-10 rounded-lg text-sm font-bold bg-primary text-white">
+              <button className="w-10 h-10 rounded-lg text-sm font-bold bg-[#00B7E8] text-white">
                 {currentPage}
               </button>
               <button
@@ -548,7 +554,7 @@ export default function SalesOfficerCreationPageTemplate() {
                 </Button>
                 <Button
                   onClick={handleEditSubmit}
-                  className="flex-1 bg-primary hover:bg-primary/90"
+                  className="flex-1 text-white bg-[#00B7E8] hover:bg-[#00a4d1]"
                 >
                   Update Admin
                 </Button>

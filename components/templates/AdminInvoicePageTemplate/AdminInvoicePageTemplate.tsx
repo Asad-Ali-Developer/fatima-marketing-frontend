@@ -1,11 +1,5 @@
 "use client";
-import {
-  CreatInvoiceModal,
-  DeleteInvoiceConfirmationModal,
-  EditInvoice,
-  RemarksModal,
-  ViewInvoiceModal,
-} from "@/components/molecules";
+import AdminViewInvoice from "@/components/molecules/InvoicePage/AdminViewInvoice";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
@@ -24,20 +18,44 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { InvoiceService } from "@/services";
-import { Invoice, InvoiceFormData, statusOptions } from "@/types";
+import { Invoice } from "@/types";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { BiSolidCommentDetail } from "react-icons/bi";
-import {
-  FiEdit2,
-  FiEye,
-  FiFileText,
-  FiPlus,
-  FiSearch,
-  FiTrash2,
-} from "react-icons/fi";
+import { FiEye, FiFileText, FiSearch, FiTrash2, FiX } from "react-icons/fi";
 import { LuRefreshCcw } from "react-icons/lu";
+
+const statusOptions = [
+  {
+    value: "pending",
+    label: "Pending",
+    color: "bg-yellow-500/10 text-yellow-700",
+  },
+  {
+    value: "received_so",
+    label: "Received (SO)",
+    color: "bg-green-500/10 text-green-700",
+  },
+  {
+    value: "cancelled",
+    label: "Cancelled",
+    color: "bg-red-500/10 text-red-700",
+  },
+];
+
+const approvalStatusOptions = [
+  {
+    value: "pending",
+    label: "Pending",
+    color: "bg-yellow-500/10 text-yellow-700",
+  },
+  {
+    value: "approved",
+    label: "Approved",
+    color: "bg-green-500/10 text-green-700",
+  },
+  { value: "rejected", label: "Rejected", color: "bg-red-500/10 text-red-700" },
+];
 
 // ✨ Shimmer Skeleton Component
 const InvoiceTableSkeleton = () => {
@@ -46,17 +64,17 @@ const InvoiceTableSkeleton = () => {
       <table className="w-full text-left border-collapse">
         <thead>
           <tr className="bg-slate-50 border-b border-slate-200">
-            {Array.from({ length: 7 }).map((_, i) => (
-              <th key={i} className="px-6 py-2">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <th key={i} className="px-6 py-4">
                 <div className="h-4 bg-slate-200 rounded animate-pulse"></div>
               </th>
             ))}
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
-          {Array.from({ length: 2 }).map((_, rowIndex) => (
+          {Array.from({ length: 5 }).map((_, rowIndex) => (
             <tr key={rowIndex} className="hover:bg-slate-50/50">
-              {Array.from({ length: 7 }).map((_, cellIndex) => (
+              {Array.from({ length: 8 }).map((_, cellIndex) => (
                 <td key={cellIndex} className="px-6 py-4">
                   <div className="h-5 bg-slate-200 rounded animate-pulse w-4/5"></div>
                 </td>
@@ -69,35 +87,20 @@ const InvoiceTableSkeleton = () => {
   );
 };
 
-const InvoicePageTemplate = () => {
+const AdminInvoicePageTemplate = () => {
   const invoiceService = new InvoiceService();
 
   // Modal states
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
-  const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
 
-  // Confirmation modal
+  // Confirmation modal for approval status
   const [showConfirmModal, setShowConfirmModal] = useState<{
     isOpen: boolean;
-    type: "delete" | "status";
     invoiceId?: string;
-    newStatus?: string;
+    newApprovalStatus?: "pending" | "approved" | "rejected";
   }>({
     isOpen: false,
-    type: "delete",
-  });
-
-  // Form states
-  const [formData, setFormData] = useState<InvoiceFormData>({
-    customerName: "",
-    phoneNumber: "",
-    location: "",
-    amount: "",
-    date: new Date(),
-    status: "pending",
   });
 
   // Table states
@@ -113,26 +116,22 @@ const InvoicePageTemplate = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalInvoices, setTotalInvoices] = useState(0);
 
-  // 🔃 Loading states for actions
-  const [isCreating, setIsCreating] = useState(false);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [isChangingStatus, setIsChangingStatus] = useState(false);
+  // Loading state for approval update
+  const [isUpdatingApproval, setIsUpdatingApproval] = useState(false);
 
-  const [isRemarksModalOpen, setIsRemarksModalOpen] = useState(false);
-  const [remarksInvoice, setRemarksInvoice] = useState<Invoice | null>(null);
-  const [remarksInput, setRemarksInput] = useState("");
-  const [updatingRemarks, setUpdatingRemarks] = useState<boolean>(false);
-
-  // 🔄 Fetch invoices from API
+  // 🔄 Fetch invoices
   const fetchInvoices = async (page = 1) => {
     setIsLoading(true);
     try {
-      const response = await invoiceService.getInvoices(page, itemsPerPage, {
-        searchTerm,
-        status: statusFilter === "all" ? undefined : statusFilter,
-        date: dateFilter ? format(dateFilter, "yyyy-MM-dd") : undefined,
-      });
+      const response = await invoiceService.getInvoicesReportedToMe(
+        page,
+        itemsPerPage,
+        {
+          searchTerm,
+          status: statusFilter === "all" ? undefined : statusFilter,
+          date: dateFilter ? format(dateFilter, "yyyy-MM-dd") : undefined,
+        },
+      );
       setInvoices(response.data);
       setTotalInvoices(response.pagination.total);
       setTotalPages(response.pagination.totalPages);
@@ -145,12 +144,10 @@ const InvoicePageTemplate = () => {
     }
   };
 
-  // Initialize data
   useEffect(() => {
     fetchInvoices(1);
   }, []);
 
-  // Refetch when filters change
   useEffect(() => {
     const handler = setTimeout(() => {
       fetchInvoices(1);
@@ -158,296 +155,75 @@ const InvoicePageTemplate = () => {
     return () => clearTimeout(handler);
   }, [searchTerm, statusFilter, dateFilter]);
 
-  // Handle form input changes
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  // Handle approval status change
+  const handleApprovalStatusChange = (
+    invoiceId: string,
+    newStatus: "pending" | "approved" | "rejected",
   ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setShowConfirmModal({
+      isOpen: true,
+      invoiceId,
+      newApprovalStatus: newStatus,
+    });
   };
 
-  const handleDateChange = (date: Date | undefined) => {
-    if (date) {
-      setFormData((prev) => ({ ...prev, date }));
-    }
-  };
+  // Confirm approval update
+  const confirmApprovalUpdate = async () => {
+    if (!showConfirmModal.invoiceId || !showConfirmModal.newApprovalStatus)
+      return;
 
-  const handleCreateInvoice = async () => {
-    if (
-      !formData.customerName.trim() ||
-      !formData.phoneNumber.trim() ||
-      !formData.amount
-    ) {
-      alert("Please fill in all required fields");
+    const invoiceToUpdate = invoices.find(
+      (inv) => inv._id === showConfirmModal.invoiceId,
+    );
+    if (!invoiceToUpdate) {
+      setShowConfirmModal({ isOpen: false });
       return;
     }
 
-    setIsCreating(true);
-    const newInvoice: Invoice = {
-      _id: `optimistic-${Date.now()}`,
-      customerName: formData.customerName.trim(),
-      phoneNumber: formData.phoneNumber.trim(),
-      location: formData.location.trim(),
-      amount: parseFloat(formData.amount),
-      date: format(formData.date, "yyyy-MM-dd"),
-      status: formData.status,
-      createdAt: new Date().toISOString(),
-    };
-
-    const wasOnPage1 = currentPage === 1;
-    if (wasOnPage1) {
-      setInvoices((prev) => [newInvoice, ...prev]);
-      setTotalInvoices((prev) => prev + 1);
-      if (totalInvoices >= itemsPerPage) {
-        setTotalPages(Math.ceil((totalInvoices + 1) / itemsPerPage));
-      }
-    }
-
-    try {
-      const payload = {
-        customerName: formData.customerName.trim(),
-        phoneNumber: formData.phoneNumber.trim(),
-        location: formData.location.trim(),
-        amount: parseFloat(formData.amount),
-        date: format(formData.date, "yyyy-MM-dd"),
-        status: formData.status,
-      };
-      const response = await invoiceService.createInvoice(payload);
-
-      if (wasOnPage1) {
-        setInvoices((prev) =>
-          prev.map((inv) =>
-            inv._id === newInvoice._id
-              ? { ...response.data, _id: response.data._id }
-              : inv,
-          ),
-        );
-      }
-
-      setIsCreateModalOpen(false);
-      setFormData({
-        customerName: "",
-        phoneNumber: "",
-        location: "",
-        amount: "",
-        date: new Date(),
-        status: "pending",
-      });
-    } catch (error) {
-      console.error("Failed to create invoice:", error);
-      if (wasOnPage1) {
-        setInvoices((prev) => prev.filter((inv) => inv._id !== newInvoice._id));
-        setTotalInvoices((prev) => Math.max(0, prev - 1));
-      }
-      alert("Failed to create invoice. Please try again.");
-    } finally {
-      setIsCreating(false);
-    }
-  };
-
-  const handleUpdateInvoice = async () => {
-    if (!editingInvoice) return;
-
-    setIsUpdating(true);
-    const updatedInvoice: Invoice = {
-      ...editingInvoice,
-      customerName: formData.customerName.trim(),
-      phoneNumber: formData.phoneNumber.trim(),
-      location: formData.location.trim(),
-      amount: parseFloat(formData.amount),
-      date: format(formData.date, "yyyy-MM-dd"),
-      status: formData.status,
-    };
-
-    setInvoices((prev) =>
-      prev.map((inv) =>
-        inv._id === editingInvoice._id ? updatedInvoice : inv,
-      ),
-    );
-
-    try {
-      const payload = {
-        customerName: formData.customerName.trim(),
-        phoneNumber: formData.phoneNumber.trim(),
-        location: formData.location.trim(),
-        amount: parseFloat(formData.amount),
-        date: format(formData.date, "yyyy-MM-dd"),
-        status: formData.status,
-      };
-      await invoiceService.updateInvoice(editingInvoice._id, payload);
-      setIsEditModalOpen(false);
-      setEditingInvoice(null);
-    } catch (error) {
-      console.error("Failed to update invoice:", error);
-      setInvoices((prev) =>
-        prev.map((inv) =>
-          inv._id === editingInvoice._id ? editingInvoice : inv,
-        ),
-      );
-      alert("Failed to update invoice. Please try again.");
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  const handleStatusChange = (invoiceId: string, newStatus: string) => {
-    setShowConfirmModal({
-      isOpen: true,
-      type: "status",
-      invoiceId,
-      newStatus,
-    });
-  };
-
-  const confirmAction = async () => {
-    if (showConfirmModal.type === "delete" && showConfirmModal.invoiceId) {
-      setIsDeleting(true);
-      const invoiceToDelete = invoices.find(
-        (inv) => inv._id === showConfirmModal.invoiceId,
-      );
-      if (!invoiceToDelete) {
-        setShowConfirmModal({ isOpen: false, type: "delete" });
-        setIsDeleting(false);
-        return;
-      }
-
-      const prevInvoices = [...invoices];
-      setInvoices((prev) =>
-        prev.filter((inv) => inv._id !== showConfirmModal.invoiceId),
-      );
-      setTotalInvoices((prev) => Math.max(0, prev - 1));
-
-      try {
-        await invoiceService.deleteInvoice(showConfirmModal.invoiceId);
-      } catch (error) {
-        console.error("Failed to delete invoice:", error);
-        setInvoices(prevInvoices);
-        setTotalInvoices((prev) => prev + 1);
-        alert("Failed to delete invoice.");
-      } finally {
-        setShowConfirmModal({ isOpen: false, type: "delete" });
-        setIsDeleting(false);
-      }
-    } else if (
-      showConfirmModal.type === "status" &&
-      showConfirmModal.invoiceId &&
-      showConfirmModal.newStatus
-    ) {
-      setIsChangingStatus(true);
-      const invoiceToUpdate = invoices.find(
-        (inv) => inv._id === showConfirmModal.invoiceId,
-      );
-      if (!invoiceToUpdate) {
-        setShowConfirmModal({ isOpen: false, type: "delete" });
-        setIsChangingStatus(false);
-        return;
-      }
-
-      const updatedInvoice = {
-        ...invoiceToUpdate,
-        status: showConfirmModal.newStatus as any,
-      };
-
-      setInvoices((prev) =>
-        prev.map((inv) =>
-          inv._id === showConfirmModal.invoiceId ? updatedInvoice : inv,
-        ),
-      );
-
-      try {
-        await invoiceService.updateInvoice(showConfirmModal.invoiceId, {
-          status: showConfirmModal.newStatus,
-        });
-      } catch (error) {
-        console.error("Failed to update status:", error);
-        setInvoices((prev) =>
-          prev.map((inv) =>
-            inv._id === showConfirmModal.invoiceId ? invoiceToUpdate : inv,
-          ),
-        );
-        alert("Failed to update status.");
-      } finally {
-        setShowConfirmModal({ isOpen: false, type: "delete" });
-        setIsChangingStatus(false);
-      }
-    }
-  };
-
-  const cancelAction = () => {
-    setShowConfirmModal({ isOpen: false, type: "delete" });
-  };
-
-  const handleDeleteInvoice = (invoiceId: string) => {
-    setShowConfirmModal({
-      isOpen: true,
-      type: "delete",
-      invoiceId,
-    });
-  };
-
-  const handleViewInvoice = (invoice: Invoice) => {
-    setSelectedInvoice(invoice);
-    setIsViewModalOpen(true);
-  };
-
-  const handleEditInvoice = (invoice: Invoice) => {
-    setEditingInvoice(invoice);
-    setFormData({
-      customerName: invoice.customerName,
-      phoneNumber: invoice.phoneNumber,
-      location: invoice.location || "",
-      amount: invoice.amount.toString(),
-      date: new Date(invoice.date),
-      status: invoice.status,
-    });
-    setIsEditModalOpen(true);
-  };
-
-  const handleOpenRemarksModal = (invoice: Invoice) => {
-    setRemarksInvoice(invoice);
-    setRemarksInput(invoice.remarks || "");
-    setIsRemarksModalOpen(true);
-  };
-
-  const handleSaveRemarks = async () => {
-    if (!remarksInvoice) return;
-
-    const inputValue = remarksInput.trim();
-    const remarksForState = inputValue || undefined; // ← for UI state: string | undefined
-    const remarksForApi = inputValue || null; // ← for API: string | null
-
     const updatedInvoice = {
-      ...remarksInvoice,
-      remarks: remarksForState, // matches Invoice type
+      ...invoiceToUpdate,
+      reported_to: {
+        ...invoiceToUpdate.reported_to,
+        admin_approval_status: showConfirmModal.newApprovalStatus,
+      },
     };
 
     // Optimistic update
     setInvoices((prev) =>
       prev.map((inv) =>
-        inv._id === remarksInvoice._id ? updatedInvoice : inv,
+        inv._id === showConfirmModal.invoiceId ? updatedInvoice : inv,
       ),
     );
 
+    setIsUpdatingApproval(true);
     try {
-      setUpdatingRemarks(true);
-      // Send null to API to clear the field in DB
-      await invoiceService.updateInvoiceRemarks(
-        remarksInvoice._id,
-        remarksForApi,
+      // Replace the confirmApprovalUpdate function's API call with:
+      await invoiceService.updateInvoiceApprovalStatus(
+        showConfirmModal.invoiceId!,
+        { admin_approval_status: showConfirmModal.newApprovalStatus! },
       );
-      setUpdatingRemarks(false);
-      setIsRemarksModalOpen(false);
     } catch (error) {
-      console.error("Failed to update remarks:", error);
-      setUpdatingRemarks(false);
-      setIsRemarksModalOpen(false);
+      console.error("Failed to update approval status:", error);
       // Revert
       setInvoices((prev) =>
         prev.map((inv) =>
-          inv._id === remarksInvoice._id ? remarksInvoice : inv,
+          inv._id === showConfirmModal.invoiceId ? invoiceToUpdate : inv,
         ),
       );
+      alert("Failed to update approval status.");
+    } finally {
+      setShowConfirmModal({ isOpen: false });
+      setIsUpdatingApproval(false);
     }
+  };
+
+  const cancelApprovalUpdate = () => {
+    setShowConfirmModal({ isOpen: false });
+  };
+
+  const handleViewInvoice = (invoice: Invoice) => {
+    setSelectedInvoice(invoice);
+    setIsViewModalOpen(true);
   };
 
   const paginatedInvoices = invoices;
@@ -461,33 +237,16 @@ const InvoicePageTemplate = () => {
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-[#00B7E8] font-bold text-xs uppercase tracking-widest mb-2 bg-slate-100 border border-slate-100 px-3 py-1 rounded-full w-max">
               <FiFileText className="text-base" />
-              Invoice Management
+              Admin Invoice Dashboard
             </div>
-            <h2 className="text-4xl font-black tracking-tight text-[#142C4B]">
+            <h2 className="text-4xl font-black tracking-tight text-slate-900">
               Manage Invoices
             </h2>
             <p className="text-slate-500 max-w-xl">
-              Create, track, and manage all customer invoices with real-time
-              status updates.
+              Review and approve invoices submitted by sales officers.
             </p>
           </div>
-          <Button
-            onClick={() => setIsCreateModalOpen(true)}
-            disabled={isCreating}
-            className="flex items-center gap-2 text-white bg-[#00B7E8] hover:bg-[#029ec9] transition-colors duration-150 cursor-pointer shadow-none rounded"
-          >
-            {isCreating ? (
-              <>
-                <Loader2 className="animate-spin text-lg" />
-                Creating...
-              </>
-            ) : (
-              <>
-                <FiPlus className="text-lg" />
-                Create Invoice
-              </>
-            )}
-          </Button>
+          {/* ❌ Removed Create Invoice button for admin */}
         </div>
 
         {/* Filters Section */}
@@ -527,7 +286,7 @@ const InvoicePageTemplate = () => {
               {/* Status Filter */}
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1 ml-1">
-                  Status
+                  Invoice Status
                 </label>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger className="w-full px-4 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#00B7E8]">
@@ -626,7 +385,7 @@ const InvoicePageTemplate = () => {
             </div>
           ) : paginatedInvoices.length === 0 ? (
             <div className="p-8 text-center text-slate-500">
-              No invoices found. Create your first invoice!
+              No invoices found.
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -640,7 +399,7 @@ const InvoicePageTemplate = () => {
                       Phone
                     </th>
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
-                      Report to
+                      Sales Officer (SO)
                     </th>
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
                       Location
@@ -652,10 +411,7 @@ const InvoicePageTemplate = () => {
                       Date
                     </th>
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
-                      Remarks
-                    </th>
-                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
-                      Status
+                      Invoice Status
                     </th>
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
                       Approval Status
@@ -683,7 +439,7 @@ const InvoicePageTemplate = () => {
                       </td>
                       <td className="px-6 py-4">
                         <span className="text-sm text-slate-600">
-                          {invoice.reported_to?.name || "N/A"}
+                          {invoice.created_by?.name || "N/A"}
                         </span>
                       </td>
                       <td className="px-6 py-4">
@@ -697,33 +453,50 @@ const InvoicePageTemplate = () => {
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
+                        <span className="text-sm text-slate-600">
                           {format(new Date(invoice.date), "dd MMM yyyy")}
-                        </div>
+                        </span>
                       </td>
+                      {/* ✅ Invoice Status: Read-only */}
                       <td className="px-6 py-4">
-                        <button
-                          type="button"
-                          onClick={() => handleOpenRemarksModal(invoice)}
-                          className="text-xs font-medium text-[#00B7E8] hover:text-[#029ec9] hover:underline transition-colors cursor-pointer"
-                          title="Add or edit remarks"
+                        <span
+                          className={cn(
+                            "inline-block px-6 py-3 rounded-full text-xs font-semibold",
+                            statusOptions.find(
+                              (opt) => opt.value === invoice.status,
+                            )?.color || "bg-slate-100 text-slate-700",
+                          )}
                         >
-                          <BiSolidCommentDetail className="text-lg" />
-                        </button>
+                          {
+                            statusOptions.find(
+                              (opt) => opt.value === invoice.status,
+                            )?.label
+                          }
+                        </span>
                       </td>
+                      {/* ✅ Approval Status: Editable by admin */}
                       <td className="px-1 py-4">
                         <Select
-                          value={invoice.status}
-                          onValueChange={(value) =>
-                            handleStatusChange(invoice._id, value)
+                          value={
+                            invoice.reported_to?.admin_approval_status ||
+                            "pending"
                           }
-                          disabled={isChangingStatus}
+                          onValueChange={(value) =>
+                            handleApprovalStatusChange(
+                              invoice._id,
+                              value as any,
+                            )
+                          }
+                          disabled={isUpdatingApproval}
                         >
                           <SelectTrigger
                             className={cn(
-                              "w-[130px] px-3  rounded-full text-xs font-semibold border-none",
-                              statusOptions.find(
-                                (opt) => opt.value === invoice.status,
+                              "w-[130px] px-3 py-1 rounded-full text-xs font-semibold border-none",
+                              approvalStatusOptions.find(
+                                (opt) =>
+                                  opt.value ===
+                                  (invoice.reported_to?.admin_approval_status ||
+                                    "pending"),
                               )?.color || "bg-slate-100 text-slate-700",
                             )}
                           >
@@ -731,7 +504,7 @@ const InvoicePageTemplate = () => {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectGroup>
-                              {statusOptions.map((option) => (
+                              {approvalStatusOptions.map((option) => (
                                 <SelectItem
                                   key={option.value}
                                   value={option.value}
@@ -743,31 +516,6 @@ const InvoicePageTemplate = () => {
                           </SelectContent>
                         </Select>
                       </td>
-                      <td className="px-6 py-4">
-                        {invoice.reported_to?.admin_approval_status ? (
-                          <span
-                            className={cn(
-                              "inline-block px-6 py-2.5 rounded-full text-xs font-semibold",
-                              invoice.reported_to.admin_approval_status ===
-                                "pending"
-                                ? "bg-yellow-500/10 text-yellow-700"
-                                : invoice.reported_to.admin_approval_status ===
-                                    "approved"
-                                  ? "bg-green-500/10 text-green-700"
-                                  : "bg-red-500/10 text-red-700",
-                            )}
-                          >
-                            {invoice.reported_to.admin_approval_status
-                              .charAt(0)
-                              .toUpperCase() +
-                              invoice.reported_to.admin_approval_status.slice(
-                                1,
-                              )}
-                          </span>
-                        ) : (
-                          <span className="text-slate-500 text-sm">—</span>
-                        )}
-                      </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <button
@@ -778,22 +526,7 @@ const InvoicePageTemplate = () => {
                           >
                             <FiEye className="text-base" />
                           </button>
-                          <button
-                            onClick={() => handleEditInvoice(invoice)}
-                            className="p-2 hover:bg-blue-50 rounded-lg text-slate-600 hover:text-blue-600 transition-colors"
-                            title="Edit"
-                            disabled={isUpdating}
-                          >
-                            <FiEdit2 className="text-base" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteInvoice(invoice._id)}
-                            className="p-2 hover:bg-red-50 rounded-lg text-slate-600 hover:text-red-600 transition-colors"
-                            title="Delete"
-                            disabled={isDeleting}
-                          >
-                            <FiTrash2 className="text-base" />
-                          </button>
+                          {/* ❌ No edit/delete for admin */}
                         </div>
                       </td>
                     </tr>
@@ -853,65 +586,70 @@ const InvoicePageTemplate = () => {
         </section>
       </main>
 
-      {/* Modals */}
-      {/* Create Invoice Modal */}
-      {isCreateModalOpen && (
-        <CreatInvoiceModal
-          setIsCreateModalOpen={setIsCreateModalOpen}
-          formData={formData}
-          handleInputChange={handleInputChange}
-          handleDateChange={handleDateChange}
-          handleCreateInvoice={handleCreateInvoice}
-          isCreating={isCreating}
-          setFormData={setFormData}
-        />
-      )}
-
-      {/* Edit Invoice Modal */}
-      {isEditModalOpen && editingInvoice && (
-        <EditInvoice
-          setIsEditModalOpen={setIsEditModalOpen}
-          formData={editingInvoice}
-          handleInputChange={handleInputChange}
-          handleDateChange={handleDateChange}
-          handleUpdateInvoice={handleUpdateInvoice}
-          isUpdating={isUpdating}
-          setFormData={setFormData}
-        />
-      )}
-
       {/* View Invoice Modal */}
       {isViewModalOpen && selectedInvoice && (
-        <ViewInvoiceModal
+        <AdminViewInvoice
           selectedInvoice={selectedInvoice}
           setIsViewModalOpen={setIsViewModalOpen}
           statusOptions={statusOptions}
+          approvalStatusOptions={approvalStatusOptions}
         />
       )}
 
-      {/* Confirmation Modal */}
+      {/* Confirmation Modal for Approval */}
       {showConfirmModal.isOpen && (
-        <DeleteInvoiceConfirmationModal
-          showConfirmModal={showConfirmModal}
-          cancelAction={cancelAction}
-          confirmAction={confirmAction}
-          isDeleting={isDeleting}
-          isChangingStatus={isChangingStatus}
-        />
-      )}
-
-      {/* Remarks Modal */}
-      {isRemarksModalOpen && remarksInvoice && (
-        <RemarksModal
-          remarksInput={remarksInput}
-          setRemarksInput={setRemarksInput}
-          setIsRemarksModalOpen={setIsRemarksModalOpen}
-          handleSaveRemarks={handleSaveRemarks}
-          updatingRemarks={updatingRemarks}
-        />
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
+            <div className="p-6 border-b border-slate-200 flex items-center justify-between">
+              <h3 className="text-xl font-semibold">Confirm Approval Change</h3>
+              <button
+                onClick={cancelApprovalUpdate}
+                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+              >
+                <FiX className="text-xl" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <p className="text-slate-700">
+                Are you sure you want to change the approval status to{" "}
+                <strong>
+                  {
+                    approvalStatusOptions.find(
+                      (opt) => opt.value === showConfirmModal.newApprovalStatus,
+                    )?.label
+                  }
+                </strong>
+                ?
+              </p>
+              <div className="flex gap-3 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={cancelApprovalUpdate}
+                  className="flex-1 font-medium shadow-none"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={confirmApprovalUpdate}
+                  disabled={isUpdatingApproval}
+                  className={`flex-1 font-medium shadow-none text-white rounded bg-[#00B7E8] hover:bg-[#029ec9]`}
+                >
+                  {isUpdatingApproval ? (
+                    <>
+                      <Loader2 className="animate-spin mr-2" />
+                      Updating...
+                    </>
+                  ) : (
+                    "Confirm"
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
 };
 
-export default InvoicePageTemplate;
+export default AdminInvoicePageTemplate;
