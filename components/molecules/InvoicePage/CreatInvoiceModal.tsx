@@ -134,7 +134,13 @@ const CreatInvoiceModal: FC<CreatInvoiceModalProps> = ({
               <PopoverContent className="w-auto p-0">
                 <Calendar
                   mode="single"
-                  selected={formData.date}
+                  selected={
+                    formData.date instanceof Date
+                      ? formData.date
+                      : formData.date
+                        ? new Date(formData.date)
+                        : undefined
+                  }
                   onSelect={handleDateChange}
                   initialFocus
                 />

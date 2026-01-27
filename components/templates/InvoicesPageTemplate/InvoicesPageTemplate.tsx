@@ -24,7 +24,8 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { InvoiceService } from "@/services";
-import { Invoice, InvoiceFormData, leadsStatusOptions } from "@/types";
+import { Invoice, InvoiceFormData } from "@/types";
+import { leadsStatusOptions } from "@/types/Leads";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -105,7 +106,7 @@ const InvoicePageTemplate = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [dateFilter, setDateFilter] = useState<Date | null>(null);
+  const [dateFilter, setDateFilter] = useState<Date | undefined>(undefined);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -168,7 +169,7 @@ const InvoicePageTemplate = () => {
 
   const handleDateChange = (date: Date | undefined) => {
     if (date) {
-      setFormData((prev) => ({ ...prev, date }));
+      setFormData((prev) => ({ ...prev, date: date || new Date() }));
     }
   };
 
@@ -208,7 +209,7 @@ const InvoicePageTemplate = () => {
         customerName: formData.customerName.trim(),
         phoneNumber: formData.phoneNumber.trim(),
         location: formData.location.trim(),
-        amount: parseFloat(formData.amount),
+        amount: formData.amount,
         date: format(formData.date, "yyyy-MM-dd"),
         status: formData.status,
       };
@@ -587,7 +588,7 @@ const InvoicePageTemplate = () => {
                   onClick={() => {
                     setSearchTerm("");
                     setStatusFilter("all");
-                    setDateFilter(null);
+                    setDateFilter(undefined);
                   }}
                   className="w-full border-slate-300 rounded-lg text-slate-600 hover:bg-slate-50"
                 >
@@ -858,7 +859,11 @@ const InvoicePageTemplate = () => {
       {isCreateModalOpen && (
         <CreatInvoiceModal
           setIsCreateModalOpen={setIsCreateModalOpen}
-          formData={formData}
+          formData={{
+            ...formData,
+            // Ensure date is always a Date object
+            date: formData.date instanceof Date ? formData.date : new Date(),
+          }}
           handleInputChange={handleInputChange}
           handleDateChange={handleDateChange}
           handleCreateInvoice={handleCreateInvoice}

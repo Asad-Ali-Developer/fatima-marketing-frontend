@@ -1,34 +1,26 @@
-// @/components/molecules/ViewLeadModal.tsx
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { StatusOptions } from "@/types";
+import { Lead } from "@/types/Leads";
 import { format } from "date-fns";
 import { FC } from "react";
 import { FiFileText } from "react-icons/fi";
 import { IoClose } from "react-icons/io5";
-import { Lead, StatusOptions, User } from "@/types";
 
 interface ViewLeadModalProps {
   selectedLead: Lead;
   setIsViewModalOpen: (isOpen: boolean) => void;
   statusOptions: StatusOptions[];
-  salesOfficers: User[];
 }
 
 const ViewLeadModal: FC<ViewLeadModalProps> = ({
   selectedLead,
   setIsViewModalOpen,
   statusOptions,
-  salesOfficers,
 }) => {
-  const getSalesOfficerName = (id: string) => {
-    const officer = salesOfficers.find((so) => so._id === id);
-    return officer ? officer.full_name : "Unknown";
-  };
-
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
-        <div className="p-6 border-b border-slate-200 flex items-center justify-between">
+        <div className="p-4 border-b  border-slate-200 flex items-center justify-between">
           <h3 className="text-xl font-bold flex items-center gap-2">
             <FiFileText className="text-primary" />
             Lead Details
@@ -36,7 +28,7 @@ const ViewLeadModal: FC<ViewLeadModalProps> = ({
           <button
             type="button"
             onClick={() => setIsViewModalOpen(false)}
-            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-slate-100 cursor-pointer rounded-lg transition-colors"
             aria-label="Close"
           >
             <IoClose className="text-xl" />
@@ -52,6 +44,12 @@ const ViewLeadModal: FC<ViewLeadModalProps> = ({
 
           <div>
             <label className="text-xs font-bold uppercase tracking-wider text-slate-500">
+              Phone Number
+            </label>
+            <p>{selectedLead.phoneNumber || "Not provided"}</p>
+          </div>
+          <div>
+            <label className="text-xs font-bold uppercase tracking-wider text-slate-500">
               Location
             </label>
             <p>{selectedLead.location || "Not provided"}</p>
@@ -62,7 +60,7 @@ const ViewLeadModal: FC<ViewLeadModalProps> = ({
               <label className="text-xs font-bold uppercase tracking-wider text-slate-500">
                 Assigned To
               </label>
-              <p>{getSalesOfficerName(selectedLead.assignedTo.userName)}</p>
+              <p>{selectedLead.assignedTo.full_name}</p>
             </div>
             <div>
               <label className="text-xs font-bold uppercase tracking-wider text-slate-500">

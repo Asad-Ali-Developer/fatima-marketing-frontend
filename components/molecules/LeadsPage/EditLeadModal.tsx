@@ -1,4 +1,3 @@
-// @/components/molecules/EditLeadModal.tsx
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
@@ -15,11 +14,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { LeadAssignedTo, LeadFormData, User } from "@/types";
+import { User } from "@/types";
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { ChangeEvent, FC, SetStateAction } from "react";
 import { format } from "date-fns";
 import { FiFileText, FiTrash2 } from "react-icons/fi";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store";
+import { IoClose } from "react-icons/io5";
+import { CreatedBy, LeadAssignedTo, LeadFormData } from "@/types/Leads";
 
 interface EditLeadModalProps {
   setIsEditModalOpen: (value: SetStateAction<boolean>) => void;
@@ -28,7 +31,7 @@ interface EditLeadModalProps {
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => void;
   handleDateChange: (date: Date | undefined) => void;
-  handleAssignedToChange: (officerId: string) => void; // ✅ Add this line
+  handleAssignedToChange: (officerId: string) => void;
   handleUpdateLead: () => Promise<void>;
   isUpdating: boolean;
   setFormData: (value: SetStateAction<LeadFormData>) => void;
@@ -47,6 +50,10 @@ const EditLeadModal: FC<EditLeadModalProps> = ({
 }) => {
   // ✅ Handle assignment by ID → map to full LeadAssignedTo object
   const handleAssignedToChange = (officerId: string) => {
+    const user = useSelector(
+      (state: RootState) => state.auth.user,
+    ) as User | null;
+
     const officer = salesOfficers.find((so) => so._id === officerId);
     if (officer) {
       const assignedTo: LeadAssignedTo = {
@@ -54,7 +61,12 @@ const EditLeadModal: FC<EditLeadModalProps> = ({
         email: officer.email,
         full_name: officer.full_name,
       };
-      setFormData((prev) => ({ ...prev, assignedTo }));
+      const createdBy: CreatedBy = {
+        id: user?._id || "",
+        email: user?.email || "",
+        full_name: user?.full_name || "",
+      };
+      setFormData((prev) => ({ ...prev, assignedTo, createdBy }));
     }
   };
 
@@ -70,7 +82,7 @@ const EditLeadModal: FC<EditLeadModalProps> = ({
             onClick={() => setIsEditModalOpen(false)}
             className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
           >
-            <FiTrash2 className="text-xl rotate-45" />
+            <IoClose className="text-xl" />
           </button>
         </div>
         <div className="p-6 space-y-4">
@@ -83,6 +95,19 @@ const EditLeadModal: FC<EditLeadModalProps> = ({
               value={formData.userName}
               onChange={handleInputChange}
               placeholder="Enter full name"
+              className="border-slate-300"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs font-bold uppercase tracking-wider text-slate-600">
+              Phone Number (Optional)
+            </label>
+            <Input
+              name="phoneNumber"
+              value={formData.phoneNumber}
+              onChange={handleInputChange}
+              placeholder="Enter phone number"
               className="border-slate-300"
             />
           </div>

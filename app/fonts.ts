@@ -4,7 +4,7 @@ export const zalandoSans = localFont({
   src: [
     {
       path: "../public/fonts/ZalandoSansSemiExpanded-VariableFont_wght.ttf",
-      weight: "100 900", // variable font range
+      weight: "100 900",
       style: "normal",
     },
     {
@@ -14,6 +14,7 @@ export const zalandoSans = localFont({
     },
   ],
   variable: "--font-zalando-sans",
+  display: "swap",
 });
 
 export const fonts = {

@@ -164,7 +164,7 @@ const Navbar = () => {
         {/* Right Section - Search & Actions */}
         <div className="flex items-center gap-4">
           {/* Search Bar */}
-          <div className="relative max-w-md w-full hidden sm:block">
+          {/* <div className="relative max-w-md w-full hidden sm:block">
             <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
               <FaSearch className="text-sm" />
             </div>
@@ -172,7 +172,7 @@ const Navbar = () => {
               placeholder="Quick search (⌘K)"
               className={`pl-10 pr-4 py-2 text-sm bg-slate-100 border-none focus:ring-1 focus:ring-[${ColorScheme.primary}] focus-visible:ring-1 focus-visible:ring-[${ColorScheme.primary}] rounded`}
             />
-          </div>
+          </div> */}
 
           {/* Action Icons */}
           <div className="flex items-center gap-3">
@@ -185,20 +185,20 @@ const Navbar = () => {
             </button> */}
 
             {/* Notifications Icon */}
-            <button
+            {/* <button
               type="button"
               className="p-2 rounded-full hover:bg-slate-100 transition-colors text-slate-500 hover:text-slate-700 relative"
             >
               <IoNotifications className="text-xl" />
               <span className="absolute top-1 right-1 w-2 h-2 bg-[#00B7E8] rounded-full"></span>
-            </button>
+            </button> */}
 
             {/* Avatar with Dropdown */}
             <div className="relative" ref={dropdownRef}>
               <button
                 type="button"
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className=" w-8 h-8 rounded-full flex items-center justify-center overflow-hidden hover:bg-slate-100 transition-colors"
+                className=" w-9 h-9 rounded-full flex items-center justify-center overflow-hidden hover:bg-slate-100 transition-colors"
               >
                 <HiUserCircle className="w-6 h-6 text-gray-500" />
               </button>

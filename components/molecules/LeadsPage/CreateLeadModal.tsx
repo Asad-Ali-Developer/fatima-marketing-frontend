@@ -16,11 +16,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { LeadAssignedTo, LeadFormData, User } from "@/types";
+import { User } from "@/types";
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { ChangeEvent, FC, SetStateAction } from "react";
 import { format } from "date-fns";
 import { FiFileText, FiTrash2 } from "react-icons/fi";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store";
+import { IoClose } from "react-icons/io5";
+import { CreatedBy, LeadAssignedTo, LeadFormData } from "@/types/Leads";
 
 interface CreateLeadModalProps {
   setIsCreateModalOpen: (value: boolean) => void;
@@ -46,6 +50,10 @@ const CreateLeadModal: FC<CreateLeadModalProps> = ({
   setFormData,
   salesOfficers,
 }) => {
+  const user = useSelector(
+    (state: RootState) => state.auth.user,
+  ) as User | null;
+
   // ✅ Handle assignment by ID → map to full object
   const handleAssignedToChange = (officerId: string) => {
     const officer = salesOfficers.find((so) => so._id === officerId);
@@ -55,7 +63,13 @@ const CreateLeadModal: FC<CreateLeadModalProps> = ({
         email: officer.email,
         full_name: officer.full_name,
       };
-      setFormData((prev) => ({ ...prev, assignedTo }));
+
+      const createdBy: CreatedBy = {
+        id: user?._id || "",
+        email: user?.email || "",
+        full_name: user?.full_name || "",
+      };
+      setFormData((prev) => ({ ...prev, assignedTo, createdBy }));
     }
   };
 
@@ -71,7 +85,7 @@ const CreateLeadModal: FC<CreateLeadModalProps> = ({
             onClick={() => setIsCreateModalOpen(false)}
             className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
           >
-            <FiTrash2 className="text-xl rotate-45" />
+            <IoClose className="text-xl" />
           </button>
         </div>
         <div className="p-6 space-y-4">
@@ -84,6 +98,19 @@ const CreateLeadModal: FC<CreateLeadModalProps> = ({
               value={formData.userName}
               onChange={handleInputChange}
               placeholder="Enter full name"
+              className="border-slate-300"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs font-bold uppercase tracking-wider text-slate-600">
+              Phone Number (Optional)
+            </label>
+            <Input
+              name="phoneNumber"
+              value={formData.phoneNumber}
+              onChange={handleInputChange}
+              placeholder="Enter phone number"
               className="border-slate-300"
             />
           </div>

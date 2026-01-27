@@ -4,7 +4,6 @@ import {
   CreateLeadModal,
   DeleteLeadConfirmationModal,
   EditLeadModal,
-  LeadRemarksModal,
   LeadRemarksViewModal,
   ViewLeadModal,
 } from "@/components/molecules";
@@ -26,7 +25,11 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { LeadsService } from "@/services";
-import { Lead, LeadFormData, leadsStatusOptions, User } from "@/types";
+import { RootState } from "@/store";
+import {
+  User,
+} from "@/types";
+import { CreatedBy, Lead, LeadFormData, leadsStatusOptions } from "@/types/Leads";
 import { format } from "date-fns";
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -40,6 +43,7 @@ import {
   FiTrash2,
 } from "react-icons/fi";
 import { LuRefreshCcw } from "react-icons/lu";
+import { useSelector } from "react-redux";
 
 // ✨ Shimmer Skeleton
 const LeadTableSkeleton = () => {
@@ -74,6 +78,10 @@ const LeadTableSkeleton = () => {
 const AdminLeadCreationPageTemplate = () => {
   const leadService = new LeadsService();
 
+  const user = useSelector(
+    (state: RootState) => state.auth.user,
+  ) as User | null;
+
   // Modal states
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
@@ -92,13 +100,18 @@ const AdminLeadCreationPageTemplate = () => {
     type: "delete",
   });
 
-  // Form states — ✅ Now correctly typed
   const [formData, setFormData] = useState<LeadFormData>({
     userName: "",
     location: "",
+    phoneNumber: "",
     time: new Date(),
     status: "pending",
     assignedTo: {
+      id: "",
+      email: "",
+      full_name: "",
+    },
+    createdBy: {
       id: "",
       email: "",
       full_name: "",
@@ -110,7 +123,7 @@ const AdminLeadCreationPageTemplate = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [dateFilter, setDateFilter] = useState<Date | null>(null);
+  const [dateFilter, setDateFilter] = useState<Date | undefined>(undefined);
   const [salesOfficers, setSalesOfficers] = useState<User[]>([]);
 
   // Pagination
@@ -188,6 +201,13 @@ const AdminLeadCreationPageTemplate = () => {
   // ✅ Handle assignedTo selection (from dropdown)
   const handleAssignedToChange = (officerId: string) => {
     const officer = salesOfficers.find((so) => so._id === officerId);
+
+    const createdBy: CreatedBy = {
+      id: user?._id || "",
+      email: user?.email || "",
+      full_name: user?.full_name || "",
+    };
+
     if (officer) {
       setFormData((prev) => ({
         ...prev,
@@ -196,6 +216,7 @@ const AdminLeadCreationPageTemplate = () => {
           email: officer.email,
           full_name: officer.full_name,
         },
+        createdBy,
       }));
     }
   };
@@ -217,7 +238,10 @@ const AdminLeadCreationPageTemplate = () => {
       assignedTo: formData.assignedTo, // full object
       remarks: undefined,
       createdAt: new Date().toISOString(),
+      createdBy: formData.createdBy,
     };
+
+    console.log("New Lead: ", newLead);
 
     const wasOnPage1 = currentPage === 1;
     if (wasOnPage1) {
@@ -229,13 +253,14 @@ const AdminLeadCreationPageTemplate = () => {
     }
 
     try {
-      // ✅ Payload matches `Omit<LeadFormData, "_id" | "createdAt">`
       const payload = {
         userName: formData.userName.trim(),
         location: formData.location.trim() || "",
+        phoneNumber: formData.phoneNumber || "",
         time: formData.time, // Date object
         status: formData.status,
         assignedTo: formData.assignedTo, // full object
+        createdBy: formData.createdBy,
       };
 
       const response = await leadService.createLead(payload);
@@ -252,9 +277,15 @@ const AdminLeadCreationPageTemplate = () => {
       setFormData({
         userName: "",
         location: "",
+        phoneNumber: "",
         time: new Date(),
         status: "pending",
         assignedTo: {
+          id: "",
+          email: "",
+          full_name: "",
+        },
+        createdBy: {
           id: "",
           email: "",
           full_name: "",
@@ -311,14 +342,14 @@ const AdminLeadCreationPageTemplate = () => {
     }
   };
 
-  const handleStatusChange = (leadId: string, newStatus: string) => {
-    setShowConfirmModal({
-      isOpen: true,
-      type: "status",
-      leadId,
-      newStatus,
-    });
-  };
+  // const handleStatusChange = (leadId: string, newStatus: string) => {
+  //   setShowConfirmModal({
+  //     isOpen: true,
+  //     type: "status",
+  //     leadId,
+  //     newStatus,
+  //   });
+  // };
 
   const confirmAction = async () => {
     if (showConfirmModal.type === "delete" && showConfirmModal.leadId) {
@@ -455,11 +486,6 @@ const AdminLeadCreationPageTemplate = () => {
     }
   };
 
-  const getSalesOfficerName = (email: string) => {
-    const officer = salesOfficers.find((so) => so.email === email);
-    return officer ? officer.full_name : "Unknown";
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 text-slate-900 font-sans">
       <main className="max-w-[90%] mx-auto px-6 py-10">
@@ -578,7 +604,7 @@ const AdminLeadCreationPageTemplate = () => {
                   onClick={() => {
                     setSearchTerm("");
                     setStatusFilter("all");
-                    setDateFilter(null);
+                    setDateFilter(undefined);
                   }}
                   className="w-full border-slate-300 rounded-lg text-slate-600 hover:bg-slate-50"
                 >
@@ -628,6 +654,9 @@ const AdminLeadCreationPageTemplate = () => {
                       User
                     </th>
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
+                      Phone Number
+                    </th>
+                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
                       Location
                     </th>
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
@@ -657,10 +686,13 @@ const AdminLeadCreationPageTemplate = () => {
                         {lead.userName}
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-600">
-                        {lead.location || "-"}
+                        {lead.phoneNumber || "N/A"}
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-600">
-                        {getSalesOfficerName(lead.assignedTo.email)}
+                        {lead.location || "-"}
+                      </td>
+                      <td className="px-6 py-4 text-sm capitalize text-slate-600">
+                        {lead.assignedTo.full_name}
                       </td>
                       <td className="px-6 py-4">
                         {format(new Date(lead.time), "dd MMM yyyy")}
@@ -676,36 +708,16 @@ const AdminLeadCreationPageTemplate = () => {
                         </button>
                       </td>
                       <td className="px-1 py-4">
-                        <Select
-                          value={lead.status}
-                          onValueChange={(value) =>
-                            handleStatusChange(lead._id, value)
-                          }
-                          disabled={isChangingStatus}
+                        <div
+                          className={cn(
+                            "w-[130px] px-3 capitalize py-2 text-center rounded-full text-xs font-semibold border-none",
+                            leadsStatusOptions.find(
+                              (opt) => opt.value === lead.status,
+                            )?.color || "bg-slate-100 text-slate-700",
+                          )}
                         >
-                          <SelectTrigger
-                            className={cn(
-                              "w-[130px] px-3 rounded-full text-xs font-semibold border-none",
-                              leadsStatusOptions.find(
-                                (opt) => opt.value === lead.status,
-                              )?.color || "bg-slate-100 text-slate-700",
-                            )}
-                          >
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectGroup>
-                              {leadsStatusOptions.map((option) => (
-                                <SelectItem
-                                  key={option.value}
-                                  value={option.value}
-                                >
-                                  {option.label}
-                                </SelectItem>
-                              ))}
-                            </SelectGroup>
-                          </SelectContent>
-                        </Select>
+                          {lead.status.replace(/_/g, " ")}
+                        </div>
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
@@ -799,7 +811,7 @@ const AdminLeadCreationPageTemplate = () => {
           formData={formData}
           handleInputChange={handleInputChange}
           handleDateChange={handleDateChange}
-          handleAssignedToChange={handleAssignedToChange} // ✅ Pass this down
+          handleAssignedToChange={handleAssignedToChange}
           handleCreateLead={handleCreateLead}
           isCreating={isCreating}
           setFormData={setFormData}
@@ -809,7 +821,7 @@ const AdminLeadCreationPageTemplate = () => {
       {isEditModalOpen && editingLead && (
         <EditLeadModal
           setIsEditModalOpen={setIsEditModalOpen}
-          formData={editingLead}
+          formData={formData}
           handleInputChange={handleInputChange}
           handleDateChange={handleDateChange}
           handleAssignedToChange={handleAssignedToChange}
@@ -824,7 +836,6 @@ const AdminLeadCreationPageTemplate = () => {
           selectedLead={selectedLead}
           setIsViewModalOpen={setIsViewModalOpen}
           statusOptions={leadsStatusOptions}
-          salesOfficers={salesOfficers}
         />
       )}
       {showConfirmModal.isOpen && (

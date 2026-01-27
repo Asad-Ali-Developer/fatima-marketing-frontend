@@ -22,7 +22,7 @@ import { Invoice } from "@/types";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { FiEye, FiFileText, FiSearch, FiTrash2, FiX } from "react-icons/fi";
+import { FiEye, FiFileText, FiSearch, FiX } from "react-icons/fi";
 import { LuRefreshCcw } from "react-icons/lu";
 
 const statusOptions = [
@@ -108,7 +108,7 @@ const AdminInvoicePageTemplate = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [dateFilter, setDateFilter] = useState<Date | null>(null);
+  const [dateFilter, setDateFilter] = useState<Date | undefined>(undefined);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -346,7 +346,7 @@ const AdminInvoicePageTemplate = () => {
                   onClick={() => {
                     setSearchTerm("");
                     setStatusFilter("all");
-                    setDateFilter(null);
+                    setDateFilter(undefined);
                   }}
                   className="w-full border-slate-300 rounded-lg text-slate-600 hover:bg-slate-50"
                 >

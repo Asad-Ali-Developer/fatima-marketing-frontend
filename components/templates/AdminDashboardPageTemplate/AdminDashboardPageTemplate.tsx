@@ -79,26 +79,6 @@ interface DashboardStats {
 
 const COLORS = ["#10B981", "#EF4444", "#F59E0B"]; // green, red, yellow
 
-const getDateRange = (preset: string): [Date, Date] => {
-  const today = new Date();
-  switch (preset) {
-    case "today":
-      return [today, today];
-    case "yesterday":
-      return [subDays(today, 1), subDays(today, 1)];
-    case "lastWeek":
-      return [startOfWeek(subDays(today, 7)), endOfWeek(subDays(today, 7))];
-    case "thisMonth":
-      return [startOfMonth(today), endOfMonth(today)];
-    case "last6Months":
-      return [subMonths(today, 6), today];
-    case "thisYear":
-      return [subYears(today, 1), today];
-    default:
-      return [subMonths(today, 1), today];
-  }
-};
-
 const AdminDashboardPageTemplate = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -439,7 +419,7 @@ const AdminDashboardPageTemplate = () => {
                     fill="#8884d8"
                     dataKey="value"
                     label={({ name, percent }) =>
-                      `${name}: ${(percent * 100).toFixed(0)}%`
+                      `${name}: ${((percent ?? 0) * 100).toFixed(0)}%`
                     }
                   >
                     {approvalData.map((entry, index) => (

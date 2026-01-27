@@ -1,12 +1,7 @@
 "use client";
 
-import {
-  CreateLeadModal,
-  DeleteLeadConfirmationModal,
-  EditLeadModal,
-  LeadRemarksModal,
-  ViewLeadModal,
-} from "@/components/molecules";
+import { TableSkeleton } from "@/components/atoms";
+import { LeadRemarksModal, ViewLeadModal } from "@/components/molecules";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
@@ -24,82 +19,44 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { LeadsService } from "@/services";
-import { Lead, LeadFormData, leadsStatusOptions, User } from "@/types";
+import { InvoiceService, LeadsService } from "@/services";
+import { InvoiceFormData } from "@/types";
+import { Lead, leadsStatusOptions } from "@/types/Leads";
 import { format } from "date-fns";
-import { CalendarIcon, Loader2 } from "lucide-react";
+import { CalendarIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { BiSolidCommentDetail } from "react-icons/bi";
-import {
-  FiEdit2,
-  FiEye,
-  FiFileText,
-  FiPlus,
-  FiSearch,
-  FiTrash2,
-} from "react-icons/fi";
+import { FiEye, FiFileText, FiSearch } from "react-icons/fi";
 import { LuRefreshCcw } from "react-icons/lu";
+import { toast } from "react-toastify";
 
-// ✨ Shimmer Skeleton
-const LeadTableSkeleton = () => {
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-left border-collapse">
-        <thead>
-          <tr className="bg-slate-50 border-b border-slate-200">
-            {Array.from({ length: 7 }).map((_, i) => (
-              <th key={i} className="px-6 py-2">
-                <div className="h-4 bg-slate-200 rounded animate-pulse"></div>
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-100">
-          {Array.from({ length: 2 }).map((_, rowIndex) => (
-            <tr key={rowIndex} className="hover:bg-slate-50/50">
-              {Array.from({ length: 7 }).map((_, cellIndex) => (
-                <td key={cellIndex} className="px-6 py-4">
-                  <div className="h-5 bg-slate-200 rounded animate-pulse w-4/5"></div>
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-};
+interface ConfirmationModalTypes {
+  isOpen: boolean;
+  type: "delete" | "status";
+  leadId?: string;
+  newStatus?: string;
+}
 
 const SalesOfficerLeadPageTemplate = () => {
   const leadService = new LeadsService();
+  const invoiceService = new InvoiceService();
 
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState<boolean>(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
-  const [editingLead, setEditingLead] = useState<Lead | null>(null);
 
   // Confirmation modal
-  const [showConfirmModal, setShowConfirmModal] = useState<{
+  const [showConfirmModal, setShowConfirmModal] =
+    useState<ConfirmationModalTypes>({
+      isOpen: false,
+      type: "delete",
+    });
+
+  const [invoiceConfirmModal, setInvoiceConfirmModal] = useState<{
     isOpen: boolean;
-    type: "delete" | "status";
-    leadId?: string;
-    newStatus?: string;
+    lead: Lead | null;
   }>({
     isOpen: false,
-    type: "delete",
-  });
-
-  // Form states — ✅ Now correctly typed
-  const [formData, setFormData] = useState<LeadFormData>({
-    userName: "",
-    location: "",
-    time: new Date(),
-    status: "pending",
-    assignedTo: {
-      id: "",
-      email: "",
-      full_name: "",
-    },
+    lead: null,
   });
 
   // Table states
@@ -107,7 +64,7 @@ const SalesOfficerLeadPageTemplate = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [dateFilter, setDateFilter] = useState<Date | null>(null);
+  const [dateFilter, setDateFilter] = useState<Date | undefined>(undefined);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -121,7 +78,10 @@ const SalesOfficerLeadPageTemplate = () => {
   const [isRemarksModalOpen, setIsRemarksModalOpen] = useState(false);
   const [remarksLead, setRemarksLead] = useState<Lead | null>(null);
   const [remarksInput, setRemarksInput] = useState("");
-  const [updatingRemarks, setUpdatingRemarks] = useState(false);
+  const [updatingRemarks, setUpdatingRemarks] = useState<boolean>(false);
+
+  // Loading State for Creating Lead
+  const [isCreatingInvoice, setIsCreatingInvoice] = useState<boolean>(false);
 
   // Fetch leads
   const fetchLeads = async (page = 1) => {
@@ -144,28 +104,12 @@ const SalesOfficerLeadPageTemplate = () => {
     }
   };
 
-
   useEffect(() => {
     const handler = setTimeout(() => {
       fetchLeads(1);
     }, 300);
     return () => clearTimeout(handler);
   }, [searchTerm, statusFilter, dateFilter]);
-
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleDateChange = (date: Date | undefined) => {
-    if (date) {
-      setFormData((prev) => ({ ...prev, time: date }));
-    }
-  };
-
-
 
   const handleStatusChange = (leadId: string, newStatus: string) => {
     setShowConfirmModal({
@@ -246,33 +190,13 @@ const SalesOfficerLeadPageTemplate = () => {
     }
   };
 
-  const cancelAction = () => {
-    setShowConfirmModal({ isOpen: false, type: "delete" });
-  };
-
-  const handleDeleteLead = (leadId: string) => {
-    setShowConfirmModal({
-      isOpen: true,
-      type: "delete",
-      leadId,
-    });
-  };
+  useEffect(() => {
+    confirmAction();
+  }, [showConfirmModal]);
 
   const handleViewLead = (lead: Lead) => {
     setSelectedLead(lead);
     setIsViewModalOpen(true);
-  };
-
-  const handleEditLead = (lead: Lead) => {
-    setEditingLead(lead);
-    setFormData({
-      userName: lead.userName,
-      location: lead.location || "",
-      time: new Date(lead.time), // convert string → Date
-      status: lead.status,
-      assignedTo: lead.assignedTo, // full object
-    });
-    setIsEditModalOpen(true);
   };
 
   const handleOpenRemarksModal = (lead: Lead) => {
@@ -311,9 +235,52 @@ const SalesOfficerLeadPageTemplate = () => {
     }
   };
 
+  const handleCreateInvoiceFromLead = (lead: Lead) => {
+    if (lead.status !== "completed") {
+      toast.warn(
+        "Only the Invoice will be created when the lead status will be completed",
+      );
+      return;
+    }
+
+    // Open custom modal instead of confirm()
+    setInvoiceConfirmModal({
+      isOpen: true,
+      lead,
+    });
+  };
+
+  const handleConfirmCreateInvoice = async () => {
+    const lead = invoiceConfirmModal.lead;
+    if (!lead) return;
+
+    setInvoiceConfirmModal({ isOpen: false, lead: null });
+    setIsCreatingInvoice(true);
+
+    try {
+      const formData: InvoiceFormData = {
+        customerName: lead.userName,
+        phoneNumber: lead.phoneNumber || "", // ⚠️ Missing in Lead — placeholder
+        location: lead.location || "",
+        amount: "45000",
+        date: new Date(),
+        status: "pending",
+        generatedByLead: lead,
+      };
+
+      await invoiceService.createInvoice(formData);
+      toast.success("Invoice created successfully!");
+    } catch (error) {
+      console.error("Failed to create invoice:", error);
+      alert("Failed to create invoice. Please try again.");
+    } finally {
+      setIsCreatingInvoice(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 text-slate-900 font-sans">
-      <main className="max-w-[90%] mx-auto px-6 py-10">
+      <main className="max-w-[95%] lg:max-w-[90%] mx-auto px-2 lg:px-6 py-10">
         {/* Page Heading */}
         <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="space-y-1">
@@ -412,7 +379,7 @@ const SalesOfficerLeadPageTemplate = () => {
                   onClick={() => {
                     setSearchTerm("");
                     setStatusFilter("all");
-                    setDateFilter(null);
+                    setDateFilter(undefined);
                   }}
                   className="w-full border-slate-300 rounded-lg text-slate-600 hover:bg-slate-50"
                 >
@@ -427,7 +394,7 @@ const SalesOfficerLeadPageTemplate = () => {
         <section className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
           <div className="p-6 border-b border-slate-200 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <FiFileText className="text-primary text-xl" />
+              <FiFileText className="text-[#00B7E8] text-xl" />
               <h3 className="text-lg font-bold">Lead Records</h3>
             </div>
             <div className="flex items-center gap-2">
@@ -447,7 +414,7 @@ const SalesOfficerLeadPageTemplate = () => {
 
           {isLoading ? (
             <div className="p-6">
-              <LeadTableSkeleton />
+              <TableSkeleton />
             </div>
           ) : leads.length === 0 ? (
             <div className="p-8 text-center text-slate-500">
@@ -460,6 +427,9 @@ const SalesOfficerLeadPageTemplate = () => {
                   <tr className="bg-slate-50 border-b border-slate-200">
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
                       User
+                    </th>
+                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
+                      Phone Number
                     </th>
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
                       Location
@@ -491,10 +461,13 @@ const SalesOfficerLeadPageTemplate = () => {
                         {lead.userName}
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-600">
-                        {lead.location || "-"}
+                        {lead.phoneNumber || "N/A"}
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-600">
-                        {lead.createdBy.email}
+                        {lead.location || "N/A"}
+                      </td>
+                      <td className="px-6 py-4 capitalize text-sm text-slate-600">
+                        {lead?.createdBy?.full_name}
                       </td>
                       <td className="px-6 py-4">
                         {format(new Date(lead.time), "dd MMM yyyy")}
@@ -551,22 +524,20 @@ const SalesOfficerLeadPageTemplate = () => {
                           >
                             <FiEye className="text-base" />
                           </button>
-                          {/* <button
-                            onClick={() => handleEditLead(lead)}
-                            className="p-2 hover:bg-blue-50 rounded-lg text-slate-600 hover:text-blue-600 transition-colors"
-                            title="Edit"
-                            disabled={isUpdating}
-                          >
-                            <FiEdit2 className="text-base" />
-                          </button>
+
+                          {/* 👇 INVOICE BUTTON */}
                           <button
-                            onClick={() => handleDeleteLead(lead._id)}
-                            className="p-2 hover:bg-red-50 rounded-lg text-slate-600 hover:text-red-600 transition-colors"
-                            title="Delete"
-                            disabled={isDeleting}
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCreateInvoiceFromLead(lead);
+                            }}
+                            disabled={isCreatingInvoice}
+                            className="p-2 hover:bg-green-50 rounded-lg text-slate-600 hover:text-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="Create Invoice"
                           >
-                            <FiTrash2 className="text-base" />
-                          </button> */}
+                            <FiFileText className="text-base" />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -626,36 +597,47 @@ const SalesOfficerLeadPageTemplate = () => {
         </section>
       </main>
 
-      {/* {isEditModalOpen && editingLead && (
-        <EditLeadModal
-          setIsEditModalOpen={setIsEditModalOpen}
-          formData={editingLead}
-          handleInputChange={handleInputChange}
-          handleDateChange={handleDateChange}
-          handleAssignedToChange={handleAssignedToChange}
-          handleUpdateLead={handleUpdateLead}
-          isUpdating={isUpdating}
-          setFormData={setFormData}
-          salesOfficers={salesOfficers}
-        />
-      )} */}
       {isViewModalOpen && selectedLead && (
         <ViewLeadModal
           selectedLead={selectedLead}
           setIsViewModalOpen={setIsViewModalOpen}
           statusOptions={leadsStatusOptions}
-          salesOfficers={salesOfficers}
         />
       )}
-      {/* {showConfirmModal.isOpen && (
-        <DeleteLeadConfirmationModal
-          showConfirmModal={showConfirmModal}
-          cancelAction={cancelAction}
-          confirmAction={confirmAction}
-          isDeleting={isDeleting}
-          isChangingStatus={isChangingStatus}
-        />
-      )} */}
+
+      {/* Invoice Confirmation Modal */}
+      {invoiceConfirmModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4 shadow-lg">
+            <h3 className="text-lg font-bold text-slate-800 mb-4">
+              Create Invoice?
+            </h3>
+            <p className="text-slate-600 mb-6">
+              Do you want to create an invoice for this lead?
+            </p>
+            <div className="flex justify-end gap-3">
+              <Button
+                variant="outline"
+                onClick={() =>
+                  setInvoiceConfirmModal({ isOpen: false, lead: null })
+                }
+                disabled={isCreatingInvoice}
+                className="border-slate-300 text-slate-700 hover:bg-slate-100"
+              >
+                No
+              </Button>
+              <Button
+                onClick={handleConfirmCreateInvoice}
+                disabled={isCreatingInvoice}
+                className="bg-[#00B7E8] hover:bg-[#00a0cc] text-white"
+              >
+                {isCreatingInvoice ? "Creating..." : "Yes"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {isRemarksModalOpen && remarksLead && (
         <LeadRemarksModal
           remarksInput={remarksInput}

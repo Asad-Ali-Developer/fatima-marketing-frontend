@@ -1,3 +1,5 @@
+import { Lead } from "./Leads";
+
 // Types
 export interface Invoice {
   _id: string;
@@ -17,6 +19,7 @@ export interface Invoice {
     id: string;
     name?: string;
   };
+  generatedByLead?: Lead
 }
 
 export interface InvoiceFormData {
@@ -24,8 +27,9 @@ export interface InvoiceFormData {
   phoneNumber: string;
   location: string;
   amount: string;
-  date: Date;
+  date: string | Date;
   status: "pending" | "received_so" | "cancelled";
+  generatedByLead?: Lead
 }
 
 export interface StatusOptions {

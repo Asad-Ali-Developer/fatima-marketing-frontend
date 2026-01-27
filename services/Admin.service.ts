@@ -1,5 +1,3 @@
-// src/services/AdminService.ts
-
 import { baseUrl } from "@/config";
 import { getAuthToken } from "@/utils";
 import axios from "axios";

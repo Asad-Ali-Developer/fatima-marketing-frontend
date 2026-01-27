@@ -1,5 +1,5 @@
 import { baseUrl } from "@/config";
-import { LeadFormData } from "@/types";
+import { LeadFormData } from "@/types/Leads";
 import { getAuthToken } from "@/utils";
 import axios from "axios";
 import { toast } from "react-toastify";

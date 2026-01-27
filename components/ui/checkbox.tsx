@@ -1,5 +1,3 @@
-// components/ui/checkbox.tsx
-
 "use client";
 
 import * as React from "react";
@@ -16,19 +14,19 @@ const Checkbox = React.forwardRef<
     ref={ref}
     className={cn(
       // Base styles
-      "h-4 w-4 rounded border-2 border-gray-300 dark:border-gray-700",
+      "h-4 w-4 rounded border-2 border-gray-300",
       "flex items-center justify-center",
-      "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-0",
+      "focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-0",
 
       // Unchecked state — explicitly define background
-      "bg-white dark:bg-gray-800",
+      "bg-white",
 
       // Checked state
-      "data-[state=checked]:bg-primary data-[state=checked]:border-primary",
+      "data-[state=checked]:bg-white data-[state=checked]:border-white/60",
 
       // Hover state (both checked and unchecked)
-      "hover:bg-gray-50 data-[state=checked]:bg-yellow-400 dark:hover:bg-gray-700",
-      "data-[state=checked]:hover:bg-yellow-400", // lighter yellow on hover when checked
+      "hover:bg-gray-50 data-[state=checked]:bg-[#00B7E8]",
+      "data-[state=checked]:hover:bg-[#00B7E8]", // lighter yellow on hover when checked
 
       // Active/click state
       "active:scale-95",
@@ -36,7 +34,7 @@ const Checkbox = React.forwardRef<
       // Ensure indicator is visible even if parent has weird styles
       "relative",
 
-      className
+      className,
     )}
     {...props}
   >
@@ -45,7 +43,7 @@ const Checkbox = React.forwardRef<
         // Force the checkmark to be black always
         "text-charcoal",
         // Hide indicator when unchecked
-        "data-[state=unchecked]:hidden"
+        "data-[state=unchecked]:hidden",
       )}
     >
       <CheckIcon className="h-3 w-3" />

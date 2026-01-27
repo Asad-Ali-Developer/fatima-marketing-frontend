@@ -5,28 +5,32 @@ export interface LeadAssignedTo {
 }
 
 export interface CreatedBy {
-  _id: string
+  id: string
   email: string
+  full_name: string
 }
 
 export interface Lead {
   _id: string;
   userName: string;
   location: string;
+  phoneNumber?: string
   time: string; // ISO date string
   status: "pending" | "in_progress" | "completed";
   assignedTo: LeadAssignedTo; // sales officer ID
   remarks?: string;
   createdAt: string;
-  createdBy: CreatedBy;
+  createdBy?: CreatedBy;
 }
 
 export interface LeadFormData {
   userName: string;
   location: string;
+  phoneNumber?: string
   time: Date;
   status: "pending" | "in_progress" | "completed";
   assignedTo: LeadAssignedTo;
+  createdBy?: CreatedBy;
 }
 
 export const leadsStatusOptions = [
