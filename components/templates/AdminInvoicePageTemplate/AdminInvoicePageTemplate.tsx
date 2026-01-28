@@ -265,7 +265,7 @@ const AdminInvoicePageTemplate = () => {
                   placeholder="Search by name..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 border rounded-lg text-sm border-slate-300 focus:border-[#00B7E8] w-full"
+                  className="pl-10 pr-4 py-3 rounded-lg text-sm focus:border-[#00B7E8] w-full"
                 />
               </div>
               {/* Phone Filter */}
@@ -280,7 +280,7 @@ const AdminInvoicePageTemplate = () => {
                   placeholder="Search by phone..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 text-sm border border-slate-300 focus:border-[#00B7E8] w-full rounded-lg"
+                  className="pl-10 pr-4 py-3 text-sm border-slate-300 focus:border-[#00B7E8] w-full rounded-lg"
                 />
               </div>
               {/* Status Filter */}
@@ -289,7 +289,7 @@ const AdminInvoicePageTemplate = () => {
                   Invoice Status
                 </label>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-full px-4 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#00B7E8]">
+                  <SelectTrigger className="w-full px-4 py-5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#00B7E8]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -330,11 +330,11 @@ const AdminInvoicePageTemplate = () => {
                       selected={dateFilter}
                       onSelect={setDateFilter}
                       initialFocus
-                      classNames={{
-                        day_selected:
-                          "bg-[#00B7E8] text-white hover:bg-[#00B7E8]",
-                        day_today: "bg-blue-100 text-blue-700",
-                      }}
+                      // classNames={{
+                      //   day_selected:
+                      //     "bg-[#00B7E8] text-white hover:bg-[#00B7E8]",
+                      //   day_today: "bg-blue-100 text-blue-700",
+                      // }}
                     />
                   </PopoverContent>
                 </Popover>

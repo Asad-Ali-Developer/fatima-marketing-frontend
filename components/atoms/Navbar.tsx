@@ -1,20 +1,16 @@
 "use client";
 
 import { FatimaMarketingLogo } from "@/assets";
-import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { AuthService } from "@/services";
 import { RootState } from "@/store";
 import { clearUser } from "@/store/slices";
 import { User } from "@/types";
-import { ColorScheme } from "@/utils";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { FaSearch } from "react-icons/fa";
 import { HiUserCircle } from "react-icons/hi2";
-import { IoNotifications } from "react-icons/io5";
 import { useDispatch, useSelector } from "react-redux";
 
 const Navbar = () => {
@@ -156,6 +152,34 @@ const Navbar = () => {
                 )}
               >
                 Invoices
+              </Link>
+            )}
+
+            {user?.role.role_type === "super_admin" && (
+              <Link
+                href={"/admin-inventory"}
+                className={cn(
+                  "text-sm font-semibold transition-colors whitespace-nowrap",
+                  pathname === "/admin-inventory"
+                    ? "text-[#00B7E8]"
+                    : "text-slate-500 hover:text-[#00B7E8]",
+                )}
+              >
+                Inventory
+              </Link>
+            )}
+
+            {user?.role.role_type === "super_admin" && (
+              <Link
+                href={"/expense-tracker"}
+                className={cn(
+                  "text-sm font-semibold transition-colors whitespace-nowrap",
+                  pathname === "/expense-tracker"
+                    ? "text-[#00B7E8]"
+                    : "text-slate-500 hover:text-[#00B7E8]",
+                )}
+              >
+                Expense Tracker
               </Link>
             )}
           </nav>

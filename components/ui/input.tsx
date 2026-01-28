@@ -10,10 +10,10 @@ const Input = React.forwardRef<
     <input
       type={type}
       className={cn(
-        "bg-transparent p-3 border-0 border-b-2 border-gray-200 " +
+        "p-3 border-0 bg-slate-100 rounded-md border-slate-50" +
           "focus:ring-0 focus:border-[#00B7E8] transition-all duration-300 " +
-          "px-0 py-3 w-full text-gray-900 placeholder-gray-400 " +
-          "outline-none",
+          "py-3 w-full text-gray-900 placeholder-gray-400 " +
+          "outline-[#00B7E8]",
         className
       )}
       ref={ref}

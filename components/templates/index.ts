@@ -9,6 +9,8 @@ import HomePageTemplate from "./HomePageTemplate/HomePageTemplate";
 import AdminDashboardPageTemplate from "./AdminDashboardPageTemplate/AdminDashboardPageTemplate";
 import AdminLeadCreationPageTemplate from "./AdminLeadCreationPageTemplate/AdminLeadCreationPageTemplate";
 import SalesOfficerLeadPageTemplate from "./SalesOfficerLeadPageTemplate/SalesOfficerLeadPageTemplate";
+import AdminInventoryManagementPageTemplate from "./AdminInventoryManagementTemplate/AdminInventoryManagementPageTemplate";
+import AdminExpenseTrackerPageTemplate from "./AdminExpenseTrackerPageTemplate/AdminExpenseTrackerPageTemplate";
 
 export {
   SignInPageTemplate,
@@ -22,4 +24,6 @@ export {
   AdminDashboardPageTemplate,
   AdminLeadCreationPageTemplate,
   SalesOfficerLeadPageTemplate,
+  AdminInventoryManagementPageTemplate,
+  AdminExpenseTrackerPageTemplate,
 };
