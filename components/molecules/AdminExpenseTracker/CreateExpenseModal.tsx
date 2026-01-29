@@ -30,12 +30,13 @@ const CreateExpenseModal: FC<CreateExpenseModalProps> = ({
       <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
         <div className="p-3 border-b border-slate-200 flex items-center justify-between">
           <h3 className="text-xl font-bold flex items-center gap-2">
-            <FiDollarSign className="text-primary" />
+            <FiDollarSign className="text-[#00a8d6]" />
             Add New Expense
           </h3>
           <button
+            type="button"
             onClick={() => setIsCreateModalOpen(false)}
-            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-slate-100 cursor-pointer rounded-lg transition-colors"
           >
             <IoClose className="text-xl" />
           </button>
@@ -43,7 +44,7 @@ const CreateExpenseModal: FC<CreateExpenseModalProps> = ({
         <div className="p-6 space-y-4">
           <div className="space-y-2">
             <label className="text-xs font-bold uppercase tracking-wider text-slate-600">
-              Expense Name *
+              Expense Name <span className="text-red-600">*</span>
             </label>
             <Input
               name="name"
@@ -56,7 +57,7 @@ const CreateExpenseModal: FC<CreateExpenseModalProps> = ({
 
           <div className="space-y-2">
             <label className="text-xs font-bold uppercase tracking-wider text-slate-600">
-              Amount (PKR) *
+              Amount (PKR) <span className="text-red-600">*</span>
             </label>
             <Input
               name="amount"

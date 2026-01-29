@@ -4,6 +4,13 @@ import { ExpenseFormData } from "@/types";
 import { getAuthToken } from "@/utils";
 import axios from "axios";
 import { toast } from "react-toastify";
+// Add this interface if not already present
+
+export interface ExpenseFilters {
+  searchTerm?: string;
+  dateFilter?: "today" | "yesterday" | "last7" | "last30";
+  customDateRange?: { from: Date; to: Date };
+}
 
 class ExpenseService {
   constructor() {}
@@ -79,10 +86,7 @@ class ExpenseService {
   async getExpenses(
     page: number = 1,
     limit: number = 10,
-    filters: {
-      searchTerm?: string;
-      dateFilter?: string; // "today", "yesterday", "last7", "last30"
-    } = {},
+    filters: ExpenseFilters = {},
   ) {
     try {
       const token = getAuthToken();
@@ -120,6 +124,7 @@ class ExpenseService {
       throw error;
     }
   }
+  
 
   async updateExpense(
     id: string,

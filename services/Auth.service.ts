@@ -103,6 +103,8 @@ class AuthService {
         password,
         rememberMe,
       });
+
+      console.log("Responed: ", response)
       return response;
     } catch (error) {
       console.log("Error: ", error);

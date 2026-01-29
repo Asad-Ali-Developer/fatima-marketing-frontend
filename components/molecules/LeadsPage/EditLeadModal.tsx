@@ -73,9 +73,9 @@ const EditLeadModal: FC<EditLeadModalProps> = ({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-slate-200 flex items-center justify-between">
+        <div className="p-3 border-b border-slate-200 flex items-center justify-between">
           <h3 className="text-xl font-bold flex items-center gap-2">
-            <FiFileText className="text-primary" />
+            <FiFileText className="text-[#00a8d6]" />
             Edit Lead
           </h3>
           <button
@@ -88,7 +88,7 @@ const EditLeadModal: FC<EditLeadModalProps> = ({
         <div className="p-6 space-y-4">
           <div className="space-y-2">
             <label className="text-xs font-bold uppercase tracking-wider text-slate-600">
-              User Name *
+              User Name <span className="text-red-600">*</span>
             </label>
             <Input
               name="userName"
@@ -127,14 +127,14 @@ const EditLeadModal: FC<EditLeadModalProps> = ({
 
           <div className="space-y-2">
             <label className="text-xs font-bold uppercase tracking-wider text-slate-600">
-              Lead Time *
+              Lead Time <span className="text-red-600">*</span>
             </label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
                   variant={"outline"}
                   className={cn(
-                    "w-full justify-start text-left font-normal",
+                    "w-full justify-start rounded-lg py-6 text-left font-normal",
                     !formData.time && "text-slate-500",
                   )}
                 >
@@ -170,7 +170,7 @@ const EditLeadModal: FC<EditLeadModalProps> = ({
                 }))
               }
             >
-              <SelectTrigger className="w-full border-slate-300 focus:ring-[#00B7E8] focus:border-[#00B7E8] px-5 py-4">
+              <SelectTrigger className="w-full border-slate-300 focus:ring-[#00B7E8] focus:border-[#00B7E8] px-5 py-6 rounded-lg">
                 <SelectValue placeholder="Select status" />
               </SelectTrigger>
               <SelectContent>
@@ -183,13 +183,13 @@ const EditLeadModal: FC<EditLeadModalProps> = ({
 
           <div className="space-y-2">
             <label className="text-xs font-bold uppercase tracking-wider text-slate-600">
-              Assign To *
+              Assign To <span className="text-red-600">*</span>
             </label>
             <Select
               value={formData.assignedTo.id} // ✅ Now a string (ID)
               onValueChange={handleAssignedToChange} // ✅ Maps ID → full object
             >
-              <SelectTrigger className="w-full border-slate-300 focus:ring-[#00B7E8] focus:border-[#00B7E8] px-5 py-4">
+              <SelectTrigger className="w-full border-slate-300 focus:ring-[#00B7E8] focus:border-[#00B7E8] px-5 py-6">
                 <SelectValue placeholder="Select sales officer" />
               </SelectTrigger>
               <SelectContent>

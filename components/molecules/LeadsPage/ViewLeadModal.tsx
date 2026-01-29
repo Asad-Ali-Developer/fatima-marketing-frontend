@@ -20,9 +20,9 @@ const ViewLeadModal: FC<ViewLeadModalProps> = ({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
-        <div className="p-4 border-b  border-slate-200 flex items-center justify-between">
+        <div className="p-3 border-b border-slate-200 flex items-center justify-between">
           <h3 className="text-xl font-bold flex items-center gap-2">
-            <FiFileText className="text-primary" />
+            <FiFileText className="text-[#00a8d6]" />
             Lead Details
           </h3>
           <button
@@ -34,7 +34,7 @@ const ViewLeadModal: FC<ViewLeadModalProps> = ({
             <IoClose className="text-xl" />
           </button>
         </div>
-        <div className="p-6 pb-10 space-y-4">
+        <div className="p-6 pb-5 space-y-4">
           <div>
             <label className="text-xs font-bold uppercase tracking-wider text-slate-500">
               User Name

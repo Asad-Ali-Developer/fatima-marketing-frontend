@@ -6,6 +6,7 @@ import { getAuthToken } from "@/utils";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import AdminDashboardPageTemplate from "../AdminDashboardPageTemplate/AdminDashboardPageTemplate";
+import SuperAdminHomePageTemplete from "../SuperAdminHomePageTemplate/SuperAdminHomePageTemplete";
 
 const HomePageTemplate = () => {
   const router = useRouter();
@@ -21,6 +22,8 @@ const HomePageTemplate = () => {
 
   if (user?.role.role_type === "admin") {
     return <AdminDashboardPageTemplate />;
+  } else if (user?.role.role_type === "super_admin") {
+    return <SuperAdminHomePageTemplete />;
   }
 
   return <div>HomePageTemplate</div>;

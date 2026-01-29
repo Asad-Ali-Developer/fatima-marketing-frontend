@@ -303,6 +303,24 @@ class LeadsService {
       throw error;
     }
   }
+
+  async getLeadsByOfficer(officerId: string) {
+    try {
+      const token = getAuthToken();
+      const response = await axios.get(
+        `${baseUrl}/leads/officer/${officerId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true,
+        },
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching leads by officer:", error);
+      toast.error("❌ Failed to load officer leads.");
+      throw error;
+    }
+  }
 }
 
 export default LeadsService;

@@ -34,7 +34,7 @@ export default function SignInPageTemplate() {
     const response = await authService.login(payload);
 
     if (!response?.data?.accessToken) {
-      toast.error("Login failed: No token received");
+      toast.error(`Invalid Credentials!`);
       return;
     }
 
@@ -144,7 +144,7 @@ export default function SignInPageTemplate() {
                   required
                   placeholder="••••••••"
                   value={password}
-                  className="p-3"
+                  className="p-3 bg-slate-100"
                   onChange={(e) => setPassword(e.target.value)}
                 />
               </div>
@@ -214,9 +214,9 @@ export default function SignInPageTemplate() {
       </div>
 
       {/* Theme Toggle */}
-      <div className="fixed bottom-6 right-6 flex gap-2">
+      {/* <div className="fixed bottom-6 right-6 flex gap-2">
         <ThemeToggle />
-      </div>
+      </div> */}
     </div>
   );
 }

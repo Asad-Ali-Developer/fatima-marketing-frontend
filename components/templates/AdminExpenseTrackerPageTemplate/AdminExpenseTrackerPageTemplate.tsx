@@ -96,7 +96,9 @@ const AdminExpenseTrackerPageTemplate = () => {
   const [items, setItems] = useState<ExpenseItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [dateFilter, setDateFilter] = useState<string>("all"); // "today", "yesterday", etc.
+  const [dateFilter, setDateFilter] = useState<
+    "all" | "today" | "yesterday" | "last7" | "last30"
+  >("all"); // "today", "yesterday", etc.
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const [totalItems, setTotalItems] = useState(0);
@@ -179,11 +181,17 @@ const AdminExpenseTrackerPageTemplate = () => {
         amount: parseFloat(formData.amount as any),
       };
       const response = await expenseService.createExpense(payload);
+
+      console.log("Responsedd: ", response);
+
+      // ✅ CORRECT PATH: response.data.expense (not .data)
+      const createdExpense = response.expense;
+
       if (wasOnPage1) {
         setItems((prev) =>
           prev.map((item) =>
             item._id === newItem._id
-              ? { ...response.data, _id: response.data._id }
+              ? { ...createdExpense, _id: createdExpense._id } // now safe
               : item,
           ),
         );
@@ -295,7 +303,7 @@ const AdminExpenseTrackerPageTemplate = () => {
         <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-[#00B7E8] font-bold text-xs uppercase tracking-widest mb-2 bg-slate-100 border border-slate-100 px-3 py-1 rounded-full w-max">
-              <FiDollarSign className="text-base" />
+              <FiDollarSign className="text-base text-[#00a8d6]" />
               Expense Tracker
             </div>
             <h2 className="text-4xl font-black tracking-tight text-[#142C4B]">
@@ -349,7 +357,19 @@ const AdminExpenseTrackerPageTemplate = () => {
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
                   Date Range
                 </label>
-                <Select value={dateFilter} onValueChange={setDateFilter}>
+                <Select
+                  value={dateFilter}
+                  onValueChange={(value) =>
+                    setDateFilter(
+                      value as
+                        | "all"
+                        | "today"
+                        | "yesterday"
+                        | "last7"
+                        | "last30",
+                    )
+                  }
+                >
                   <SelectTrigger className="w-full border-slate-300 focus:ring-[#00B7E8] focus:border-[#00B7E8] px-3 py-5">
                     <SelectValue placeholder="Select range" />
                   </SelectTrigger>
@@ -369,9 +389,9 @@ const AdminExpenseTrackerPageTemplate = () => {
                   variant="outline"
                   onClick={() => {
                     setSearchTerm("");
-                    setDateFilter("");
+                    setDateFilter("all");
                   }}
-                  className="w-full py-5 text-white bg-[#2dbae1] rounded-lg hover:bg-[#24afd6]"
+                  className="w-full py- border-0 text-white bg-[#2dbae1] rounded-lg hover:bg-[#24afd6]"
                 >
                   Clear Filters
                 </Button>

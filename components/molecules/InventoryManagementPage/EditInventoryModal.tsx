@@ -37,14 +37,15 @@ const EditInventoryModal: FC<EditInventoryModalProps> = ({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
-        <div className="p-6 border-b border-slate-200 flex items-center justify-between">
+        <div className="p-3 border-b border-slate-200 flex items-center justify-between">
           <h3 className="text-xl font-bold flex items-center gap-2">
-            <FiFileText className="text-primary" />
+            <FiFileText className="text-[#00a8d6]" />
             Edit Inventory
           </h3>
           <button
+            type="button"
             onClick={() => setIsEditModalOpen(false)}
-            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-slate-100 cursor-pointer rounded-lg transition-colors"
           >
             <IoClose className="text-xl" />
           </button>
@@ -53,20 +54,21 @@ const EditInventoryModal: FC<EditInventoryModalProps> = ({
           {/* Registration Number */}
           <div className="space-y-2">
             <label className="text-xs font-bold uppercase tracking-wider text-slate-600">
-              Registration Number *
+              Registration Number <span className="text-red-600">*</span>
             </label>
             <Input
               name="registrationNumber"
+              disabled
               value={formData.registrationNumber}
               onChange={handleInputChange}
-              className="border-slate-300"
+              className="border-slate-300 font-medium"
             />
           </div>
 
           {/* Area Type Dropdown */}
           <div className="space-y-2">
             <label className="text-xs font-bold uppercase tracking-wider text-slate-600">
-              Area Type *
+              Area Type <span className="text-red-600">*</span>
             </label>
             <Select
               value={formData.areaType}
@@ -74,7 +76,7 @@ const EditInventoryModal: FC<EditInventoryModalProps> = ({
                 handleAreaTypeChange(value as "Kanal" | "Marla")
               }
             >
-              <SelectTrigger className="w-full border-slate-300 focus:ring-[#00B7E8] focus:border-[#00B7E8] px-3 py-2">
+              <SelectTrigger className="w-full border-slate-300 focus:ring-[#00B7E8] focus:border-[#00B7E8] px-3 py-6">
                 <SelectValue placeholder="Select area type" />
               </SelectTrigger>
               <SelectContent>

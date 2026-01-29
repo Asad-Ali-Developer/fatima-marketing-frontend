@@ -39,14 +39,15 @@ const CreateInventoryModal: FC<CreateInventoryModalProps> = ({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
-        <div className="p-4 border-b border-slate-200 flex items-center justify-between">
+        <div className="p-3 border-b border-slate-200 flex items-center justify-between">
           <h3 className="text-xl font-bold flex items-center gap-2">
-            <FiFileText className="text-[#2dbae1]" />
+            <FiFileText className="text-[#2dbae1] font-medium" />
             Add New Inventory
           </h3>
           <button
+            type="button"
             onClick={() => setIsCreateModalOpen(false)}
-            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-slate-100 cursor-pointer rounded-lg transition-colors"
           >
             <IoClose className="text-xl" />
           </button>
@@ -70,7 +71,7 @@ const CreateInventoryModal: FC<CreateInventoryModalProps> = ({
                 type="button"
                 variant="outline"
                 onClick={handleGenerateRegNumber}
-                className="p-4 rounded-lg text-white border-0 bg-[#2dbae1] hover:bg-[#21a8cd] whitespace-nowrap"
+                className="px-4 py-5.5 rounded-md text-white border-0 bg-[#2dbae1] hover:bg-[#21a8cd] whitespace-nowrap"
               >
                 Generate
               </Button>

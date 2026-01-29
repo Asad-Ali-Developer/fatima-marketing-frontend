@@ -140,9 +140,9 @@ const AdminViewInvoice: FC<AdminViewInvoiceProps> = ({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
-        <div className="p-6 border-b border-slate-200 flex items-center justify-between">
+        <div className="p-3 border-b border-slate-200 flex items-center justify-between">
           <h3 className="text-xl font-bold flex items-center gap-2">
-            <FiFileText className="text-primary" />
+            <FiFileText className="text-[#00a8d6]" />
             Invoice Details
           </h3>
           <div className="flex items-center gap-2">
@@ -190,8 +190,8 @@ const AdminViewInvoice: FC<AdminViewInvoiceProps> = ({
               <label className="text-xs font-bold uppercase tracking-wider text-slate-500">
                 Amount
               </label>
-              <p className="font-bold text-lg">
-                Rs. {selectedInvoice.amount.toFixed(2)}
+              <p className="font-bold text-lg text-slate-600">
+                Rs. {selectedInvoice.amount.toFixed()}
               </p>
             </div>
             <div>

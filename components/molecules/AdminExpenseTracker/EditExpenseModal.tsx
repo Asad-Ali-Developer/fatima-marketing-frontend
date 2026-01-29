@@ -43,7 +43,7 @@ const EditExpenseModal: FC<EditExpenseModalProps> = ({
         <div className="p-6 space-y-4">
           <div className="space-y-2">
             <label className="text-xs font-bold uppercase tracking-wider text-slate-600">
-              Expense Name *
+              Expense Name <span className="text-red-600">*</span>
             </label>
             <Input
               name="name"
@@ -55,7 +55,7 @@ const EditExpenseModal: FC<EditExpenseModalProps> = ({
 
           <div className="space-y-2">
             <label className="text-xs font-bold uppercase tracking-wider text-slate-600">
-              Amount (PKR) *
+              Amount (PKR) <span className="text-red-600">*</span>
             </label>
             <Input
               name="amount"

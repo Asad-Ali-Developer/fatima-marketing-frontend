@@ -70,7 +70,7 @@ export default function SalesOfficerCreationPageTemplate() {
         itemsPerPage,
       );
 
-      console.log("Sales Officers Fetched: ", response)
+      console.log("Sales Officers Fetched: ", response);
 
       const { data, pagination } = response;
       const adminDisplays = data.map(toAdminDisplay);
@@ -218,9 +218,6 @@ export default function SalesOfficerCreationPageTemplate() {
 
   const handleActivate = async (adminId: string) => {
     try {
-      // TODO: Implement activate API call
-
-      // ✅ INSTANT UI UPDATE FOR ACTIVATE
       setSalesOfficers((prev) =>
         prev.map((admin) =>
           admin._id === adminId
@@ -234,11 +231,10 @@ export default function SalesOfficerCreationPageTemplate() {
   };
 
   const totalAdmins = salesOfficers.length;
-  //   const totalPages = Math.ceil(totalAdmins / itemsPerPage);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 text-slate-900 font-sans">
-      <main className="max-w-[90%] mx-auto px-6 py-10">
+      <main className="max-w-[95%] lg:max-w-[90%] mx-auto px-2 py-10">
         {/* Page Heading */}
         <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="space-y-1">
@@ -246,7 +242,7 @@ export default function SalesOfficerCreationPageTemplate() {
               <FiShield className="text-base" />
               Admin Access
             </div>
-            <h2 className="text-4xl font-black tracking-tight text-slate-900">
+            <h2 className="text-2xl lg:text-4xl font-black tracking-tight text-slate-900">
               Sales Officer Management
             </h2>
             <p className="text-slate-500 max-w-xl">
@@ -278,7 +274,7 @@ export default function SalesOfficerCreationPageTemplate() {
         {/* Create New Admin Section */}
         <section className="bg-white rounded-xl border border-slate-200 overflow-hidden mb-10 shadow-sm">
           <div className="p-6 border-b border-slate-200 flex items-center gap-2">
-            <FiUserPlus className="text-primary text-xl" />
+            <FiUserPlus className="text-[#00a8d6] text-xl" />
             <h3 className="text-lg font-bold">Create New Sales Officer</h3>
           </div>
           <div className="p-8">
@@ -310,7 +306,7 @@ export default function SalesOfficerCreationPageTemplate() {
                 <Button
                   onClick={handleSubmit}
                   disabled={isCreatingSalesOfficer}
-                  className="w-full flex items-center justify-center gap-2 bg-[#00B7E8] hover:bg-[#00a8d6] text-white transition-colors duration-150 cursor-pointer rounded"
+                  className="w-full py-6 rounded-lg flex items-center justify-center gap-2 bg-[#00B7E8] hover:bg-[#00a8d6] text-white transition-colors duration-150 cursor-pointer"
                 >
                   {isCreatingSalesOfficer ? (
                     "Creating Sales Officer..."
@@ -330,7 +326,7 @@ export default function SalesOfficerCreationPageTemplate() {
         <section className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
           <div className="p-6 border-b border-slate-200 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <FiUsers className="text-primary text-xl" />
+              <FiUsers className="text-[#00a8d6] text-xl" />
               <h3 className="text-lg font-bold">Manage Sales Officers</h3>
             </div>
           </div>
@@ -360,20 +356,20 @@ export default function SalesOfficerCreationPageTemplate() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {salesOfficers.map((admin) => (
+                  {salesOfficers.map((so) => (
                     <tr
-                      key={admin._id}
+                      key={so._id}
                       className={cn(
                         "group hover:bg-slate-50/50 transition-colors",
-                        admin.isNew && "",
+                        so.isNew && "",
                       )}
                     >
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
                           <span className="font-semibold text-slate-900">
-                            {admin.full_name}
+                            {so.full_name}
                           </span>
-                          {admin.isNew && (
+                          {so.isNew && (
                             <span className="bg-[#00B7E8] text-[9px] font-black text-white px-2 py-0.5 rounded-full">
                               NEW
                             </span>
@@ -383,21 +379,21 @@ export default function SalesOfficerCreationPageTemplate() {
 
                       <td className="px-6 py-4">
                         <span className="text-sm text-slate-600">
-                          {admin.email}
+                          {so.email}
                         </span>
                       </td>
                       <td className="px-6 py-4">
                         <span
                           className={cn(
                             "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold",
-                            admin.role.role_type === "super_admin"
+                            so.role.role_type === "super_admin"
                               ? "bg-primary/10 text-primary"
                               : "bg-slate-100 text-slate-700",
                           )}
                         >
-                          {admin.role.role_type === "super_admin"
+                          {so.role.role_type === "super_admin"
                             ? "Super Admin"
-                            : "Admin"}
+                            : "Sales Officer"}
                         </span>
                       </td>
                       <td className="px-6 py-4">
@@ -405,7 +401,7 @@ export default function SalesOfficerCreationPageTemplate() {
                           <span
                             className={cn(
                               "w-2 h-2 rounded-full",
-                              admin.status === "active"
+                              so.status === "active"
                                 ? "bg-green-500"
                                 : "bg-slate-400",
                             )}
@@ -413,12 +409,12 @@ export default function SalesOfficerCreationPageTemplate() {
                           <span
                             className={cn(
                               "text-xs font-semibold",
-                              admin.status === "active"
+                              so.status === "active"
                                 ? "text-green-600"
                                 : "text-slate-400",
                             )}
                           >
-                            {admin.status === "active" ? "Active" : "Inactive"}
+                            {so.status === "active" ? "Active" : "Inactive"}
                           </span>
                         </div>
                       </td>
@@ -426,16 +422,16 @@ export default function SalesOfficerCreationPageTemplate() {
                         <div className="flex items-center justify-end gap-2">
                           <button
                             type="button"
-                            onClick={() => openEditModal(admin)}
+                            onClick={() => openEditModal(so)}
                             className="p-2 hover:bg-[#92e5fb40] rounded-lg text-slate-600 hover:text-[#03aad8] transition-colors cursor-pointer"
                             title="Edit"
                           >
                             <FiEdit2 className="text-base" />
                           </button>
-                          {admin.status === "active" ? (
+                          {so.status === "active" ? (
                             <button
                               type="button"
-                              onClick={() => openBlockModal(admin)}
+                              onClick={() => openBlockModal(so)}
                               className="p-2 hover:bg-red-50 rounded-lg text-slate-600 hover:text-red-600 transition-colors"
                               title="Block"
                             >
@@ -444,7 +440,7 @@ export default function SalesOfficerCreationPageTemplate() {
                           ) : (
                             <button
                               type="button"
-                              onClick={() => handleActivate(admin._id)}
+                              onClick={() => handleActivate(so._id)}
                               className="p-2 hover:bg-green-50 rounded-lg text-slate-600 hover:text-green-600 transition-colors"
                               title="Activate"
                             >
@@ -469,16 +465,21 @@ export default function SalesOfficerCreationPageTemplate() {
             </span>
             <div className="flex gap-2">
               <button
+                type="button"
                 onClick={() => fetchSalesOfficers(currentPage - 1)}
                 disabled={currentPage === 1}
                 className="px-4 py-2 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-semibold cursor-pointer"
               >
                 Previous
               </button>
-              <button className="w-10 h-10 rounded-lg text-sm font-bold bg-[#00B7E8] text-white">
+              <button
+                type="button"
+                className="w-10 h-10 rounded-lg text-sm font-bold bg-[#00B7E8] text-white"
+              >
                 {currentPage}
               </button>
               <button
+                type="button"
                 disabled={!hasNextPage}
                 onClick={() => fetchSalesOfficers(currentPage + 1)}
                 className="px-4 py-2 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 transition-colors text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
@@ -494,14 +495,15 @@ export default function SalesOfficerCreationPageTemplate() {
       {editModal.isOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
-            <div className="p-6 border-b border-slate-200 flex items-center justify-between">
+            <div className="p-3 border-b border-slate-200 flex items-center justify-between">
               <h3 className="text-xl font-bold flex items-center gap-2">
-                <FiEdit2 className="text-primary" />
+                <FiEdit2 className="text-[#00B7E8]" />
                 Edit Administrator
               </h3>
               <button
+                type="button"
                 onClick={closeEditModal}
-                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-slate-100 cursor-pointer rounded-lg transition-colors"
               >
                 <FiX className="text-xl" />
               </button>
@@ -524,8 +526,9 @@ export default function SalesOfficerCreationPageTemplate() {
                 <Input
                   type="email"
                   value={editFormData.email}
+                  disabled
                   onChange={handleEditInputChange("email")}
-                  className="border-slate-300"
+                  className="border-slate-300 font-medium text-slate-700"
                 />
               </div>
               <div className="space-y-2">

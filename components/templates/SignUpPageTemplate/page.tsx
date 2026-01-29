@@ -158,6 +158,7 @@ export default function SignUpPageTemplate() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  className="px-3 bg-slate-100"
                 />
               </div>
             </div>
@@ -176,14 +177,14 @@ export default function SignUpPageTemplate() {
                 I agree to the{" "}
                 <a
                   href="#"
-                  className="text-zinc-900 dark:text-white font-semibold underline decoration-yellow-500 underline-offset-4 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors"
+                  className="text-zinc-900 font-semibold underline decoration-[#00B7E8] underline-offset-4 hover:text-zinc-700 transition-colors"
                 >
                   Terms of Service
                 </a>{" "}
                 and{" "}
                 <a
                   href="#"
-                  className="text-zinc-900 dark:text-white font-semibold underline decoration-yellow-500 underline-offset-4 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors"
+                  className="text-zinc-900 font-semibold underline decoration-[#00B7E8] underline-offset-4 hover:text-zinc-700 transition-colors"
                 >
                   Privacy Policy
                 </a>

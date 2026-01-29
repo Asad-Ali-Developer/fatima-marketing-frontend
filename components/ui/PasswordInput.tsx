@@ -18,10 +18,10 @@ const PasswordInput = React.forwardRef<
       <input
         type={showPassword ? "text" : "password"}
         className={cn(
-          "bg-transparent border-0 border-b-2 border-gray-200" +
-            "focus:ring-0 focus:border-yellow-500 transition-all duration-300 " +
+          "bg-slate-100" +
+            "focus:ring-0 rounded-lg focus:border-[#00B7E8] transition-all duration-300 " +
             "px-0 py-3 w-full text-gray-900 placeholder-gray-400 " +
-            "outline-none pr-10", // extra padding on right for the icon
+            "outline-[#00B7E8] pr-10", // extra padding on right for the icon
           className
         )}
         ref={ref}
