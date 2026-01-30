@@ -364,7 +364,7 @@ export default function SalesOfficerCreationPageTemplate() {
                         so.isNew && "",
                       )}
                     >
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-4 w-full">
                         <div className="flex items-center gap-2">
                           <span className="font-semibold text-slate-900">
                             {so.full_name}

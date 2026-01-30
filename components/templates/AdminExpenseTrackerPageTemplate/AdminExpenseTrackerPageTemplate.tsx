@@ -298,7 +298,7 @@ const AdminExpenseTrackerPageTemplate = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 text-slate-900 font-sans">
-      <main className="max-w-[90%] mx-auto px-6 py-10">
+      <main className="max-w-[95%] lg:max-w-[90%] mx-auto px-1 lg:px-6 py-10">
         {/* Page Heading */}
         <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="space-y-1">
