@@ -94,6 +94,15 @@ const Navbar = () => {
     },
   ].filter(Boolean) as { label: string; href: string }[];
 
+  // Determine avatar source
+  const getAvatarSrc = () => {
+    if (user?.profileImage) {
+      // Handle Base64 (your current storage method)
+      return `data:image/jpeg;base64,${user.profileImage}`;
+    }
+    return null;
+  };
+
   return (
     <header className="border-b border-slate-200 bg-white sticky top-0 z-50">
       <div className="mx-auto px-4 sm:px-6 h-14 flex items-center justify-between max-w-[1440px]">
@@ -117,7 +126,6 @@ const Navbar = () => {
               alt="Fatima Marketing Logo"
               width={80}
               height={40}
-              // className="h-auto w-auto"
               priority
             />
           </div>
@@ -146,10 +154,22 @@ const Navbar = () => {
           <button
             type="button"
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-slate-100 transition-colors"
+            className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-slate-100 transition-colors overflow-hidden"
             aria-label="User menu"
           >
-            <HiUserCircle className="w-6 h-6 text-slate-600" />
+            {getAvatarSrc() ? (
+              // Show actual profile image
+              <Image
+                src={getAvatarSrc()!}
+                alt="Profile"
+                width={24}
+                height={24}
+                className="object-cover w-full h-full border rounded-full overflow-hidden"
+              />
+            ) : (
+              // Fallback to icon
+              <HiUserCircle className="w-10 h-10 text-slate-600" />
+            )}
           </button>
 
           {isDropdownOpen && (

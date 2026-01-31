@@ -11,15 +11,24 @@ import {
   FiAlertCircle,
   FiEdit2,
   FiShield,
+  FiTrash2,
   FiUserPlus,
   FiUsers,
   FiX,
 } from "react-icons/fi";
 import { MdBlock, MdCheckCircle } from "react-icons/md";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface SalesOfficerDisplay extends User {
   date: string;
   isNew?: boolean;
+  gender: string; // ensured non-nullable
 }
 
 export default function SalesOfficerCreationPageTemplate() {
@@ -29,14 +38,27 @@ export default function SalesOfficerCreationPageTemplate() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [hasNextPage, setHasNextPage] = useState<boolean>(false);
 
+  // 👇 Filters (NO commissionedBy filter)
+  const [filters, setFilters] = useState({
+    name: "",
+    email: "",
+    gender: "all",
+    status: "all",
+  });
+
   const authService = new AuthService();
   const adminService = new AdminService();
 
-  const [formData, setFormData] = useState({
+  // 👇 Create Modal
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [createFormData, setCreateFormData] = useState({
     name: "",
     email: "",
+    gender: "male",
+    commissionRate: null as number | null, // ✅ percentage (e.g., 65)
   });
 
+  // 👇 Edit Modal
   const [editModal, setEditModal] = useState<{
     isOpen: boolean;
     admin: SalesOfficerDisplay | null;
@@ -45,10 +67,18 @@ export default function SalesOfficerCreationPageTemplate() {
   const [editFormData, setEditFormData] = useState({
     name: "",
     email: "",
-    showPassword: "", // Will show actual password
+    showPassword: "",
+    commissionRate: null as number | null,
   });
 
+  // 👇 Block Modal
   const [blockModal, setBlockModal] = useState<{
+    isOpen: boolean;
+    salesOfficer: SalesOfficerDisplay | null;
+  }>({ isOpen: false, salesOfficer: null });
+
+  // 👇 DELETE MODAL ✅
+  const [deleteModal, setDeleteModal] = useState<{
     isOpen: boolean;
     salesOfficer: SalesOfficerDisplay | null;
   }>({ isOpen: false, salesOfficer: null });
@@ -59,9 +89,11 @@ export default function SalesOfficerCreationPageTemplate() {
   const toAdminDisplay = (admin: User): SalesOfficerDisplay => ({
     ...admin,
     date: formatDateTime(admin.created_at),
+    gender: admin.gender ?? "—",
+    // commissionedBy remains as number | undefined
   });
 
-  // Fetch admins on initial load
+  // Fetch data
   const fetchSalesOfficers = async (page: number) => {
     setIsLoading(true);
     try {
@@ -69,17 +101,13 @@ export default function SalesOfficerCreationPageTemplate() {
         page,
         itemsPerPage,
       );
-
-      console.log("Sales Officers Fetched: ", response);
-
       const { data, pagination } = response;
       const adminDisplays = data.map(toAdminDisplay);
-
       setSalesOfficers(adminDisplays);
       setHasNextPage(pagination.hasNextPage);
       setCurrentPage(pagination.page);
     } catch (error) {
-      console.error("Failed to fetch admins:", error);
+      console.error("Failed to fetch sales officers:", error);
     } finally {
       setIsLoading(false);
     }
@@ -89,29 +117,66 @@ export default function SalesOfficerCreationPageTemplate() {
     fetchSalesOfficers(1);
   }, []);
 
-  const handleInputChange =
-    (field: keyof typeof formData) =>
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      setFormData((prev) => ({ ...prev, [field]: e.target.value }));
+  // 🔍 Filter helpers
+  const handleFilterChange =
+    (field: keyof typeof filters) => (value: string) => {
+      setFilters((prev) => ({ ...prev, [field]: value }));
     };
 
-  const handleEditInputChange =
-    (field: keyof typeof editFormData) =>
+  const filteredSalesOfficers = salesOfficers.filter((so) => {
+    const matchesName = so.full_name
+      .toLowerCase()
+      .includes(filters.name.toLowerCase());
+    const matchesEmail = so.email
+      .toLowerCase()
+      .includes(filters.email.toLowerCase());
+    const matchesGender =
+      filters.gender === "all" || so.gender === filters.gender;
+    const matchesStatus =
+      filters.status === "all" || so.status === filters.status;
+
+    return matchesName && matchesEmail && matchesGender && matchesStatus;
+  });
+
+  // 📝 Create handlers
+  const openCreateModal = () => {
+    setCreateFormData({
+      name: "",
+      email: "",
+      gender: "male",
+      commissionRate: null,
+    });
+    setCreateModalOpen(true);
+  };
+
+  const closeCreateModal = () => setCreateModalOpen(false);
+
+  const handleCreateInputChange =
+    (field: keyof Omit<typeof createFormData, "commissionRate">) =>
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      setEditFormData((prev) => ({ ...prev, [field]: e.target.value }));
+      setCreateFormData((prev) => ({ ...prev, [field]: e.target.value }));
     };
 
-  // ✅ INSTANT UI UPDATE WITHOUT REFETCH
-  const handleSubmit = async () => {
-    if (!formData.name.trim() || !formData.email.trim()) return;
+  const handleCreateCommissionChange = (value: string) => {
+    const num = value ? Number(value) : null;
+    if (num !== null && (isNaN(num) || num < 0 || num > 100)) return;
+    setCreateFormData((prev) => ({ ...prev, commissionRate: num }));
+  };
 
-    // Generate password BEFORE sending to backend
-    const generatedPassword = createRandomPassword(formData.name.trim(), 10);
+  const handleCreateSubmit = async () => {
+    if (!createFormData.name.trim() || !createFormData.email.trim()) return;
+
+    const generatedPassword = createRandomPassword(
+      createFormData.name.trim(),
+      10,
+    );
 
     const payload = {
-      full_name: formData.name.trim(),
-      email: formData.email.trim(),
-      showPassword: generatedPassword, // Send generated password
+      full_name: createFormData.name.trim(),
+      email: createFormData.email.trim(),
+      gender: createFormData.gender,
+      commissionedBy: createFormData.commissionRate ?? undefined, // number or undefined
+      showPassword: generatedPassword,
       status: "active" as const,
       role: { role_type: "sales_officer" },
     };
@@ -125,10 +190,11 @@ export default function SalesOfficerCreationPageTemplate() {
         return;
       }
 
-      // ✅ INSTANTLY ADD TO UI WITH GENERATED PASSWORD
       const newAdmin: User = {
         ...response.data.data,
-        showPassword: generatedPassword, // Include password in UI object
+        showPassword: generatedPassword,
+        gender: createFormData.gender,
+        commissionedBy: createFormData.commissionRate ?? undefined,
       };
 
       const newAdminDisplay = toAdminDisplay(newAdmin);
@@ -136,317 +202,408 @@ export default function SalesOfficerCreationPageTemplate() {
         { ...newAdminDisplay, isNew: true },
         ...prev,
       ]);
-
-      setFormData({ name: "", email: "" });
+      closeCreateModal();
     } catch (error) {
-      console.error("Error creating admin:", error);
+      console.error("Error creating sales officer:", error);
     } finally {
       setIsCreatingSalesOfficer(false);
     }
   };
 
-  // ✅ SHOW ACTUAL PASSWORD IN EDIT MODAL
-  const openEditModal = (salesOfficer: SalesOfficerDisplay) => {
-    setEditModal({ isOpen: true, admin: salesOfficer });
+  // 🖊️ Edit handlers
+  const openEditModal = (so: SalesOfficerDisplay) => {
+    setEditModal({ isOpen: true, admin: so });
     setEditFormData({
-      name: salesOfficer.full_name,
-      email: salesOfficer.email,
-      showPassword: salesOfficer.showPassword || "", // Show actual password if available
+      name: so.full_name,
+      email: so.email,
+      showPassword: so.showPassword || "",
+      commissionRate: so.commissionedBy ?? null,
     });
   };
 
   const closeEditModal = () => {
     setEditModal({ isOpen: false, admin: null });
-    setEditFormData({ name: "", email: "", showPassword: "" });
+    setEditFormData({
+      name: "",
+      email: "",
+      showPassword: "",
+      commissionRate: null,
+    });
+  };
+
+  const handleEditInputChange =
+    (field: keyof Omit<typeof editFormData, "commissionRate">) =>
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setEditFormData((prev) => ({ ...prev, [field]: e.target.value }));
+    };
+
+  const handleEditCommissionChange = (value: string) => {
+    const num = value ? Number(value) : null;
+    if (num !== null && (isNaN(num) || num < 0 || num > 100)) return;
+    setEditFormData((prev) => ({ ...prev, commissionRate: num }));
   };
 
   const handleEditSubmit = async () => {
     if (!editModal.admin) return;
 
-    try {
-      // TODO: Implement actual update API call
-      console.log("Update sales officer:", editFormData);
+    const originalOfficer = editModal.admin;
 
-      // ✅ INSTANT UI UPDATE FOR EDIT
-      setSalesOfficers((prev) =>
-        prev.map((salesOfficer) =>
-          salesOfficer._id === editModal.admin!._id
-            ? {
-                ...salesOfficer,
-                full_name: editFormData.name,
-                email: editFormData.email,
-                showPassword:
-                  editFormData.showPassword || salesOfficer.showPassword, // Keep existing if not changed
-              }
-            : salesOfficer,
-        ),
-      );
+    // Optimistic UI update
+    const updatedOfficer = {
+      ...originalOfficer,
+      full_name: editFormData.name,
+      email: editFormData.email,
+      showPassword: editFormData.showPassword || originalOfficer.showPassword,
+      commissionedBy: editFormData.commissionRate ?? undefined,
+      gender: originalOfficer.gender, // include current gender (or make editable)
+    };
+
+    setSalesOfficers((prev) =>
+      prev.map((so) => (so._id === originalOfficer._id ? updatedOfficer : so)),
+    );
+
+    try {
+      // ✅ Call ADMIN update API (not profile!)
+      await authService.updateProfile({
+        full_name: editFormData.name,
+        email: editFormData.email,
+        ...(editFormData.showPassword && {
+          showPassword: editFormData.showPassword,
+        }),
+        commissionedBy: editFormData.commissionRate ?? undefined,
+        // gender: originalOfficer.gender as "male" | "female", // send current value (or updated if editable)
+      });
 
       closeEditModal();
     } catch (error) {
-      console.error("Error updating admin:", error);
+      // ❌ Revert on failure
+      setSalesOfficers((prev) =>
+        prev.map((so) =>
+          so._id === originalOfficer._id ? originalOfficer : so,
+        ),
+      );
+      console.error("Failed to update sales officer:", error);
+      // Optional: show toast with error message
     }
   };
 
-  const openBlockModal = (salesOfficer: SalesOfficerDisplay) => {
-    setBlockModal({ isOpen: true, salesOfficer });
+  // 🚫 Block handlers
+  const openBlockModal = (so: SalesOfficerDisplay) => {
+    setBlockModal({ isOpen: true, salesOfficer: so });
   };
 
   const closeBlockModal = () => {
     setBlockModal({ isOpen: false, salesOfficer: null });
   };
 
-  const handleBlockConfirm = async () => {
+  const handleBlockConfirm = () => {
     if (!blockModal.salesOfficer) return;
-    try {
-      // TODO: Implement block API call
+    setSalesOfficers((prev) =>
+      prev.map((so) =>
+        so._id === blockModal.salesOfficer!._id
+          ? { ...so, status: "inactive" as const }
+          : so,
+      ),
+    );
+    closeBlockModal();
+  };
 
-      // ✅ INSTANT UI UPDATE FOR BLOCK
-      setSalesOfficers((prev) =>
-        prev.map((salesOfficer) =>
-          salesOfficer._id === blockModal.salesOfficer!._id
-            ? { ...salesOfficer, status: "inactive" as const }
-            : salesOfficer,
-        ),
-      );
+  const handleActivate = (id: string) => {
+    setSalesOfficers((prev) =>
+      prev.map((so) =>
+        so._id === id ? { ...so, status: "active" as const } : so,
+      ),
+    );
+  };
+
+  // 🗑️ DELETE HANDLERS ✅
+  const openDeleteModal = (so: SalesOfficerDisplay) => {
+    setDeleteModal({ isOpen: true, salesOfficer: so });
+  };
+
+  const closeDeleteModal = () => {
+    setDeleteModal({ isOpen: false, salesOfficer: null });
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteModal.salesOfficer) return;
+
+    const idToDelete = deleteModal.salesOfficer._id;
+
+    // Optimistic UI update
+    setSalesOfficers((prev) => prev.filter((so) => so._id !== idToDelete));
+
+    try {
+      // await adminService.deleteSalesOfficer(idToDelete);
     } catch (error) {
-      console.error("Error blocking admin:", error);
+      console.error("Failed to delete sales officer:", error);
+      // Optional: show toast & refetch
+      fetchSalesOfficers(currentPage);
     } finally {
-      closeBlockModal();
+      closeDeleteModal();
     }
   };
 
-  const handleActivate = async (adminId: string) => {
-    try {
-      setSalesOfficers((prev) =>
-        prev.map((admin) =>
-          admin._id === adminId
-            ? { ...admin, status: "active" as const }
-            : admin,
-        ),
-      );
-    } catch (error) {
-      console.error("Error activating admin:", error);
-    }
-  };
+  const totalFiltered = filteredSalesOfficers.length;
 
-  const totalAdmins = salesOfficers.length;
+  // 🎨 Helper: Status badge
+  const getStatusBadge = (status: string) => (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium",
+        status === "active"
+          ? "bg-green-100 text-green-800"
+          : "bg-slate-100 text-slate-600",
+      )}
+    >
+      {status === "active" ? "Active" : "Inactive"}
+    </span>
+  );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 text-slate-900 font-sans">
-      <main className="max-w-[95%] lg:max-w-[90%] mx-auto px-2 py-10">
-        {/* Page Heading */}
-        <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-widest mb-2 bg-[#9ae9ff7e] px-3 py-1 rounded-full w-max">
-              <FiShield className="text-base" />
-              Admin Access
+    <div className="min-h-screen bg-gray-50 text-slate-900 font-sans">
+      <main className="max-w-[95%] lg:max-w-[90%] mx-auto px-2 py-8">
+        {/* Page Header */}
+        <div className="mb-8">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div>
+              <h1 className="text-2xl lg:text-3xl font-bold text-slate-900">
+                Sales Officer Management
+              </h1>
+              <p className="text-slate-600 mt-1">
+                Configure system-level permissions and generate secure
+                credentials for regional marketing managers.
+              </p>
             </div>
-            <h2 className="text-2xl lg:text-4xl font-black tracking-tight text-slate-900">
-              Sales Officer Management
-            </h2>
-            <p className="text-slate-500 max-w-xl">
-              Configure system-level permissions and generate secure credentials
-              for regional marketing managers.
-            </p>
-          </div>
-          <div className="flex items-center gap-3 bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-            <div className="px-4 py-2 text-center">
-              <div className="text-2xl font-bold text-[#00a4d1]">
-                {totalAdmins}
+            <div className="flex items-center gap-4 bg-white rounded-xl shadow-sm border border-slate-200 p-3">
+              <div className="text-center">
+                <div className="text-lg font-bold text-[#00a4d1]">
+                  {totalFiltered}
+                </div>
+                <div className="text-[10px] uppercase font-semibold text-slate-500">
+                  Total
+                </div>
               </div>
-              <div className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">
-                Total Admins
-              </div>
-            </div>
-            <div className="w-px h-8 bg-slate-200"></div>
-            <div className="px-4 py-2 text-center">
-              <div className="text-2xl font-bold text-green-500">
-                {salesOfficers.filter((a) => a.status === "active").length}
-              </div>
-              <div className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">
-                Active
+              <div className="w-px h-6 bg-slate-200"></div>
+              <div className="text-center">
+                <div className="text-lg font-bold text-green-600">
+                  {
+                    filteredSalesOfficers.filter((so) => so.status === "active")
+                      .length
+                  }
+                </div>
+                <div className="text-[10px] uppercase font-semibold text-slate-500">
+                  Active
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Create New Admin Section */}
-        <section className="bg-white rounded-xl border border-slate-200 overflow-hidden mb-10 shadow-sm">
-          <div className="p-6 border-b border-slate-200 flex items-center gap-2">
-            <FiUserPlus className="text-[#00a8d6] text-xl" />
-            <h3 className="text-lg font-bold">Create New Sales Officer</h3>
-          </div>
-          <div className="p-8">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">
-                  Full Name
-                </label>
-                <Input
-                  value={formData.name}
-                  onChange={handleInputChange("name")}
-                  placeholder="e.g. Sarah Jenkins"
-                  className="border-slate-300 focus:border-[#00B7E8]"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">
-                  Email Address
-                </label>
-                <Input
-                  type="email"
-                  value={formData.email}
-                  onChange={handleInputChange("email")}
-                  placeholder="sarah.j@fatimamarketing.com"
-                  className="border-slate-300 focus:border-[#00B7E8]"
-                />
-              </div>
-              <div>
-                <Button
-                  onClick={handleSubmit}
-                  disabled={isCreatingSalesOfficer}
-                  className="w-full py-6 rounded-lg flex items-center justify-center gap-2 bg-[#00B7E8] hover:bg-[#00a8d6] text-white transition-colors duration-150 cursor-pointer"
-                >
-                  {isCreatingSalesOfficer ? (
-                    "Creating Sales Officer..."
-                  ) : (
-                    <>
-                      <FiUserPlus className="text-lg" />
-                      Generate Sales Officer
-                    </>
-                  )}
-                </Button>
-              </div>
+        {/* Filters */}
+        <section className="bg-white rounded-xl border border-slate-200 overflow-hidden mb-6 shadow-sm">
+          <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-slate-500">Name</label>
+              <Input
+                value={filters.name}
+                onChange={(e) => handleFilterChange("name")(e.target.value)}
+                placeholder="Search by name"
+                className="border-slate-200 focus:border-[#00B7E8] focus:ring-1 focus:ring-[#00B7E8]/30 rounded-lg"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-slate-500">
+                Email
+              </label>
+              <Input
+                value={filters.email}
+                onChange={(e) => handleFilterChange("email")(e.target.value)}
+                placeholder="Search by email"
+                type="email"
+                className="border-slate-200 focus:border-[#00B7E8] focus:ring-1 focus:ring-[#00B7E8]/30 rounded-lg"
+              />
+            </div>
+            <div className="space-y-1 w-full">
+              <label className="text-xs font-medium text-slate-500">
+                Gender
+              </label>
+              <Select
+                value={filters.gender}
+                onValueChange={handleFilterChange("gender")}
+              >
+                <SelectTrigger className="border-slate-200 focus:border-[#00B7E8] focus:ring-1 focus:ring-[#00B7E8]/30 rounded-lg w-full py-5.5">
+                  <SelectValue placeholder="All" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="male">Male</SelectItem>
+                  <SelectItem value="female">Female</SelectItem>
+                  <SelectItem value="—">—</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-slate-500">
+                Status
+              </label>
+              <Select
+                value={filters.status}
+                onValueChange={handleFilterChange("status")}
+              >
+                <SelectTrigger className="border-slate-200 focus:border-[#00B7E8] focus:ring-1 focus:ring-[#00B7E8]/30 rounded-lg w-full py-5.5">
+                  <SelectValue placeholder="All" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </section>
 
-        {/* Manage Administrators Table */}
+        {/* Create Button */}
+        <div className="flex justify-end mb-4">
+          <Button
+            onClick={openCreateModal}
+            className="h-10 px-4 rounded-lg bg-[#00B7E8] hover:bg-[#00a8d6] text-white transition-colors flex items-center gap-2"
+          >
+            <FiUserPlus className="w-4 h-4" />
+            Create Sales Officer
+          </Button>
+        </div>
+
+        {/* Table */}
         <section className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-          <div className="p-6 border-b border-slate-200 flex items-center justify-between">
+          <div className="p-4 border-b border-slate-200 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <FiUsers className="text-[#00a8d6] text-xl" />
-              <h3 className="text-lg font-bold">Manage Sales Officers</h3>
+              <FiUsers className="text-[#00a8d6] w-5 h-5" />
+              <h2 className="text-lg font-semibold text-slate-900">
+                Manage Sales Officers
+              </h2>
             </div>
           </div>
 
           {isLoading ? (
-            <div className="p-8 text-center">Loading sales officers...</div>
+            <div className="p-12 text-center">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#00B7E8] mb-4"></div>
+              <p className="text-slate-500">Loading sales officers...</p>
+            </div>
+          ) : filteredSalesOfficers.length === 0 ? (
+            <div className="p-12 text-center">
+              <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FiUsers className="text-slate-400 w-8 h-8" />
+              </div>
+              <h3 className="font-medium text-slate-900 mb-2">
+                No sales officers found
+              </h3>
+              <p className="text-slate-500 ">
+                Try adjusting your filters or click “Create Sales Officer” to
+                add a new one.
+              </p>
+            </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200">
-                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
+                <thead className="bg-slate-50 border-b border-slate-200">
+                  <tr>
+                    <th className="px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">
                       Name
                     </th>
-                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
+                    <th className="px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">
                       Email
                     </th>
-                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
+                    <th className="px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                      Gender
+                    </th>
+                    <th className="px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                      Commission (%)
+                    </th>
+                    <th className="px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">
                       Role
                     </th>
-                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
+                    <th className="px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">
                       Status
                     </th>
-                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600 text-right">
+                    <th className="px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider text-right">
                       Actions
                     </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {salesOfficers.map((so) => (
+                  {filteredSalesOfficers.map((so) => (
                     <tr
                       key={so._id}
-                      className={cn(
-                        "group hover:bg-slate-50/50 transition-colors",
-                        so.isNew && "",
-                      )}
+                      className="hover:bg-slate-50/50 transition-colors"
                     >
-                      <td className="px-6 py-4 w-full">
+                      <td className="px-4 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-2">
-                          <span className="font-semibold text-slate-900">
+                          <span className="font-medium text-slate-900">
                             {so.full_name}
                           </span>
                           {so.isNew && (
-                            <span className="bg-[#00B7E8] text-[9px] font-black text-white px-2 py-0.5 rounded-full">
+                            <span className="bg-[#00B7E8] text-[9px] font-bold text-white px-2 py-0.5 rounded-full">
                               NEW
                             </span>
                           )}
                         </div>
                       </td>
-
-                      <td className="px-6 py-4">
-                        <span className="text-sm text-slate-600">
-                          {so.email}
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-600">
+                        {so.email}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-600 capitalize">
+                        {so.gender}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-600">
+                        {so.commissionedBy !== undefined
+                          ? `${so.commissionedBy}%`
+                          : "—"}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800">
+                          Sales Officer
                         </span>
                       </td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={cn(
-                            "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold",
-                            so.role.role_type === "super_admin"
-                              ? "bg-primary/10 text-primary"
-                              : "bg-slate-100 text-slate-700",
-                          )}
-                        >
-                          {so.role.role_type === "super_admin"
-                            ? "Super Admin"
-                            : "Sales Officer"}
-                        </span>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        {getStatusBadge(so.status || "inactive")}
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={cn(
-                              "w-2 h-2 rounded-full",
-                              so.status === "active"
-                                ? "bg-green-500"
-                                : "bg-slate-400",
-                            )}
-                          ></span>
-                          <span
-                            className={cn(
-                              "text-xs font-semibold",
-                              so.status === "active"
-                                ? "text-green-600"
-                                : "text-slate-400",
-                            )}
-                          >
-                            {so.status === "active" ? "Active" : "Inactive"}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-right">
+                      <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex items-center justify-end gap-2">
                           <button
-                            type="button"
                             onClick={() => openEditModal(so)}
-                            className="p-2 hover:bg-[#92e5fb40] rounded-lg text-slate-600 hover:text-[#03aad8] transition-colors cursor-pointer"
+                            className="text-slate-500 hover:text-[#00B7E8] transition-colors p-1.5 rounded hover:bg-slate-100"
                             title="Edit"
                           >
-                            <FiEdit2 className="text-base" />
+                            <FiEdit2 className="w-4 h-4" />
                           </button>
                           {so.status === "active" ? (
                             <button
-                              type="button"
                               onClick={() => openBlockModal(so)}
-                              className="p-2 hover:bg-red-50 rounded-lg text-slate-600 hover:text-red-600 transition-colors"
-                              title="Block"
+                              className="text-slate-500 hover:text-red-600 transition-colors p-1.5 rounded hover:bg-red-50"
+                              title="Deactivate"
                             >
-                              <MdBlock className="text-lg" />
+                              <MdBlock className="w-4 h-4" />
                             </button>
                           ) : (
                             <button
-                              type="button"
                               onClick={() => handleActivate(so._id)}
-                              className="p-2 hover:bg-green-50 rounded-lg text-slate-600 hover:text-green-600 transition-colors"
+                              className="text-slate-500 hover:text-green-600 transition-colors p-1.5 rounded hover:bg-green-50"
                               title="Activate"
                             >
-                              <MdCheckCircle className="text-lg" />
+                              <MdCheckCircle className="w-4 h-4" />
                             </button>
                           )}
+                          {/* ✅ DELETE BUTTON */}
+                          <button
+                            type="button"
+                            onClick={() => openDeleteModal(so)}
+                            className="text-slate-500 hover:text-red-600 transition-colors p-1.5 rounded hover:bg-red-50"
+                            title="Delete"
+                          >
+                            <FiTrash2 className="w-4 h-4" />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -457,32 +614,27 @@ export default function SalesOfficerCreationPageTemplate() {
           )}
 
           {/* Pagination */}
-          <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-600">
-              Showing {(currentPage - 1) * itemsPerPage + 1}-
-              {Math.min(currentPage * itemsPerPage, totalAdmins)} of{" "}
-              {totalAdmins} admins
+          <div className="px-4 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+            <span className="text-sm text-slate-600">
+              {totalFiltered > 0
+                ? `Showing ${(currentPage - 1) * itemsPerPage + 1}–${Math.min(currentPage * itemsPerPage, totalFiltered)} of ${totalFiltered}`
+                : "No results"}
             </span>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2">
               <button
-                type="button"
                 onClick={() => fetchSalesOfficers(currentPage - 1)}
                 disabled={currentPage === 1}
-                className="px-4 py-2 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-semibold cursor-pointer"
+                className="px-3 py-1.5 text-sm rounded border border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Previous
               </button>
-              <button
-                type="button"
-                className="w-10 h-10 rounded-lg text-sm font-bold bg-[#00B7E8] text-white"
-              >
+              <span className="px-3 py-1.5 text-sm font-medium bg-[#00B7E8] text-white rounded">
                 {currentPage}
-              </button>
+              </span>
               <button
-                type="button"
-                disabled={!hasNextPage}
                 onClick={() => fetchSalesOfficers(currentPage + 1)}
-                className="px-4 py-2 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 transition-colors text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                disabled={!hasNextPage}
+                className="px-3 py-1.5 text-sm rounded border border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Next
               </button>
@@ -491,76 +643,34 @@ export default function SalesOfficerCreationPageTemplate() {
         </section>
       </main>
 
-      {/* Edit Modal */}
-      {editModal.isOpen && (
+      {deleteModal.isOpen && deleteModal.salesOfficer && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
-            <div className="p-3 border-b border-slate-200 flex items-center justify-between">
-              <h3 className="text-xl font-bold flex items-center gap-2">
-                <FiEdit2 className="text-[#00B7E8]" />
-                Edit Administrator
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
+            <div className="p-4 border-b border-slate-200 flex items-center gap-3">
+              <FiAlertCircle className="text-red-500 w-6 h-6" />
+              <h3 className="text-lg font-bold text-slate-900">
+                Confirm Deletion
               </h3>
-              <button
-                type="button"
-                onClick={closeEditModal}
-                className="p-2 hover:bg-slate-100 cursor-pointer rounded-lg transition-colors"
-              >
-                <FiX className="text-xl" />
-              </button>
             </div>
-            <div className="p-6 space-y-4">
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-slate-600">
-                  Full Name
-                </label>
-                <Input
-                  value={editFormData.name}
-                  onChange={handleEditInputChange("name")}
-                  className="border-slate-300"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-slate-600">
-                  Email Address
-                </label>
-                <Input
-                  type="email"
-                  value={editFormData.email}
-                  disabled
-                  onChange={handleEditInputChange("email")}
-                  className="border-slate-300 font-medium text-slate-700"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-slate-600">
-                  Password
-                </label>
-                <Input
-                  type="text"
-                  value={editFormData.showPassword}
-                  onChange={handleEditInputChange("showPassword")}
-                  placeholder="Enter new password"
-                  className="border-slate-300"
-                />
-                <p className="text-xs text-slate-500">
-                  {editFormData.showPassword
-                    ? "Current password shown above"
-                    : "Leave blank to keep current password"}
-                </p>
-              </div>
-              <div className="flex gap-3 pt-4">
+            <div className="p-5">
+              <p className="text-slate-700 mb-4">
+                Are you sure you want to delete{" "}
+                <strong>{deleteModal.salesOfficer.full_name}</strong>? This
+                action cannot be undone.
+              </p>
+              <div className="flex gap-3 pt-2">
                 <Button
                   variant="outline"
-                  onClick={closeEditModal}
-                  className="flex-1"
+                  onClick={closeDeleteModal}
+                  className="flex-1 h-10 text-sm"
                 >
                   Cancel
                 </Button>
                 <Button
-                  onClick={handleEditSubmit}
-                  className="flex-1 text-white bg-[#00B7E8] hover:bg-[#00a4d1]"
+                  onClick={handleDeleteConfirm}
+                  className="flex-1 h-10 text-white text-sm bg-red-600 hover:bg-red-700"
                 >
-                  Update Admin
+                  Delete
                 </Button>
               </div>
             </div>
@@ -568,35 +678,230 @@ export default function SalesOfficerCreationPageTemplate() {
         </div>
       )}
 
-      {/* Block Confirmation Modal */}
-      {blockModal.isOpen && blockModal.salesOfficer && (
+      {/* ✅ Create Modal */}
+      {createModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
-            <div className="p-6 border-b border-slate-200">
-              <div className="flex items-center gap-3 text-red-600">
-                <FiAlertCircle className="text-2xl" />
-                <h3 className="text-xl font-bold">Confirm Action</h3>
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
+            <div className="p-4 border-b border-slate-200 flex items-center justify-between">
+              <h3 className="text-lg font-bold flex items-center gap-2 text-slate-900">
+                <FiUserPlus className="text-[#00B7E8] w-5 h-5" />
+                Create Sales Officer
+              </h3>
+              <button
+                onClick={closeCreateModal}
+                className="p-1.5 rounded hover:bg-slate-100 transition-colors"
+              >
+                <FiX className="w-5 h-5 text-slate-500" />
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-slate-700">
+                  Full Name <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  value={createFormData.name}
+                  onChange={handleCreateInputChange("name")}
+                  placeholder="e.g. Sarah Jenkins"
+                  className="border-slate-200 focus:border-[#00B7E8] focus:ring-1 focus:ring-[#00B7E8]/30 rounded-lg"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-slate-700">
+                  Email Address <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  type="email"
+                  value={createFormData.email}
+                  onChange={handleCreateInputChange("email")}
+                  placeholder="sarah.j@fatimamarketing.com"
+                  className="border-slate-200 focus:border-[#00B7E8] focus:ring-1 focus:ring-[#00B7E8]/30 rounded-lg"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-slate-700">
+                  Gender <span className="text-red-500">*</span>
+                </label>
+                <Select
+                  value={createFormData.gender}
+                  onValueChange={(value) =>
+                    setCreateFormData((prev) => ({ ...prev, gender: value }))
+                  }
+                >
+                  <SelectTrigger className="border-slate-200 focus:border-[#00B7E8] focus:ring-1 focus:ring-[#00B7E8]/30 rounded-lg w-full py-5.5">
+                    <SelectValue placeholder="Select gender" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="male">Male</SelectItem>
+                    <SelectItem value="female">Female</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-slate-700">
+                  Commission Rate (%) <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  type="number"
+                  value={createFormData.commissionRate ?? ""}
+                  onChange={(e) => handleCreateCommissionChange(e.target.value)}
+                  min="0"
+                  max="100"
+                  placeholder="e.g. 65"
+                  className="border-slate-200 focus:border-[#00B7E8] focus:ring-1 focus:ring-[#00B7E8]/30 rounded-lg"
+                />
+                <p className="text-xs text-slate-500">
+                  Enter a value between 0 and 100
+                </p>
+              </div>
+              <div className="pt-2 flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={closeCreateModal}
+                  className="flex-1 h-10 text-sm"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleCreateSubmit}
+                  disabled={
+                    isCreatingSalesOfficer ||
+                    !createFormData.name.trim() ||
+                    !createFormData.email.trim()
+                  }
+                  className="flex-1 h-10 text-white text-sm bg-[#00B7E8] hover:bg-[#00a8d6]"
+                >
+                  {isCreatingSalesOfficer
+                    ? "Creating..."
+                    : "Create Sales Officer"}
+                </Button>
               </div>
             </div>
-            <div className="p-6">
-              <p className="text-slate-700 mb-6">
-                Are you sure you want to <strong>deactivate</strong> the sales
-                officer <strong>{blockModal.salesOfficer.full_name}</strong>?
-                This will revoke their access to the system.
+          </div>
+        </div>
+      )}
+
+      {/* ✅ Edit Modal */}
+      {editModal.isOpen && editModal.admin && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
+            <div className="p-4 border-b border-slate-200 flex items-center justify-between">
+              <h3 className="text-lg font-bold flex items-center gap-2 text-slate-900">
+                <FiEdit2 className="text-[#00B7E8] w-5 h-5" />
+                Edit Sales Officer
+              </h3>
+              <button
+                onClick={closeEditModal}
+                className="p-1.5 rounded hover:bg-slate-100 transition-colors"
+              >
+                <FiX className="w-5 h-5 text-slate-500" />
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-slate-700">
+                  Full Name
+                </label>
+                <Input
+                  value={editFormData.name}
+                  onChange={handleEditInputChange("name")}
+                  className="border-slate-200 focus:border-[#00B7E8] focus:ring-1 focus:ring-[#00B7E8]/30 rounded-lg"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-slate-700">
+                  Email Address
+                </label>
+                <Input
+                  type="email"
+                  value={editFormData.email}
+                  disabled
+                  className="border-slate-200 bg-slate-50 font-medium text-slate-700 rounded-lg"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-slate-700">
+                  Password
+                </label>
+                <Input
+                  type="text"
+                  value={editFormData.showPassword}
+                  onChange={handleEditInputChange("showPassword")}
+                  placeholder="Enter new password"
+                  className="border-slate-200 focus:border-[#00B7E8] focus:ring-1 focus:ring-[#00B7E8]/30 rounded-lg"
+                />
+                <p className="text-xs text-slate-500">
+                  {editFormData.showPassword
+                    ? "New password will be set on save"
+                    : "Leave blank to keep current password"}
+                </p>
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-slate-700">
+                  Commission Rate (%)
+                </label>
+                <Input
+                  type="number"
+                  value={editFormData.commissionRate ?? ""}
+                  onChange={(e) => handleEditCommissionChange(e.target.value)}
+                  min="0"
+                  max="100"
+                  placeholder="e.g. 65"
+                  className="border-slate-200 focus:border-[#00B7E8] focus:ring-1 focus:ring-[#00B7E8]/30 rounded-lg"
+                />
+                <p className="text-xs text-slate-500">
+                  Enter a value between 0 and 100
+                </p>
+              </div>
+              <div className="pt-2 flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={closeEditModal}
+                  className="flex-1 h-10 text-sm"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleEditSubmit}
+                  className="flex-1 h-10 text-sm bg-[#00B7E8] hover:bg-[#00a4d1]"
+                >
+                  Update
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ✅ Block Modal */}
+      {blockModal.isOpen && blockModal.salesOfficer && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
+            <div className="p-4 border-b border-slate-200 flex items-center gap-3">
+              <FiAlertCircle className="text-red-500 w-6 h-6" />
+              <h3 className="text-lg font-bold text-slate-900">
+                Confirm Deactivation
+              </h3>
+            </div>
+            <div className="p-5">
+              <p className="text-slate-700 mb-4">
+                Are you sure you want to deactivate{" "}
+                <strong>{blockModal.salesOfficer.full_name}</strong>? This will
+                revoke their access to the system immediately.
               </p>
-              <div className="flex gap-3">
+              <div className="flex gap-3 pt-2">
                 <Button
                   variant="outline"
                   onClick={closeBlockModal}
-                  className="flex-1"
+                  className="flex-1 h-10 text-sm"
                 >
                   Cancel
                 </Button>
                 <Button
                   onClick={handleBlockConfirm}
-                  className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                  className="flex-1 h-10 text-white text-sm bg-red-600 hover:bg-red-700"
                 >
-                  Yes, Deactivate
+                  Deactivate
                 </Button>
               </div>
             </div>

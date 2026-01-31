@@ -12,4 +12,7 @@ export interface User {
   status?: "active" | "inactive";
   password?: string;
   showPassword?: string; 
+  profileImage?: string
+  commissionedBy?: number
+  gender?: string
 }

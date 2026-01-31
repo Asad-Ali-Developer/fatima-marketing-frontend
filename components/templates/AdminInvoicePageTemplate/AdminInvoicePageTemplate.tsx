@@ -402,10 +402,10 @@ const AdminInvoicePageTemplate = () => {
                       Sales Officer (SO)
                     </th>
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
-                      Location
+                      Received Amount
                     </th>
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
-                      Amount
+                      Sent Amount
                     </th>
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
                       Date

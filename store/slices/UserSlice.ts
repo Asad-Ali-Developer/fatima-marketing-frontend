@@ -34,7 +34,6 @@ const authSlice = createSlice({
       state.user = user;
       state.accessToken = accessToken;
 
-      // Persist to localStorage
       if (typeof window !== "undefined") {
         localStorage.setItem("user", JSON.stringify(user));
         localStorage.setItem("accessToken", accessToken);
@@ -50,8 +49,21 @@ const authSlice = createSlice({
         localStorage.removeItem("accessToken");
       }
     },
+
+    // ✅ NEW: Update user profile (e.g., after uploading profile image)
+    updateUser(state, action: PayloadAction<Partial<User>>) {
+      if (state.user) {
+        // Merge updated fields into existing user
+        state.user = { ...state.user, ...action.payload };
+
+        // Persist updated user to localStorage
+        if (typeof window !== "undefined") {
+          localStorage.setItem("user", JSON.stringify(state.user));
+        }
+      }
+    },
   },
 });
 
-export const { setUser, clearUser } = authSlice.actions;
+export const { setUser, clearUser, updateUser } = authSlice.actions;
 export const userReducer = authSlice.reducer;

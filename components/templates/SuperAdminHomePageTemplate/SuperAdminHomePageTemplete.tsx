@@ -32,7 +32,6 @@ import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
   FiActivity,
-  FiAlertCircle,
   FiArrowDown,
   FiArrowUp,
   FiCheckCircle,
@@ -42,10 +41,9 @@ import {
   FiFileText,
   FiPackage,
   FiShield,
-  FiTrendingDown,
   FiTrendingUp,
   FiUsers,
-  FiX,
+  FiX
 } from "react-icons/fi";
 import { LuCalendarRange } from "react-icons/lu";
 import { MdCheckCircle, MdPending } from "react-icons/md";
@@ -344,15 +342,6 @@ const SuperAdminHomePageTemplate = () => {
   const generateRecentActivities = () => {
     const activities: RecentActivity[] = [
       {
-        id: "1",
-        type: "lead",
-        title: "New lead created",
-        subtitle: "John Doe - Assigned to Sarah",
-        time: "5 min ago",
-        icon: <FiUsers className="text-lg" />,
-        color: "bg-blue-100 text-blue-600",
-      },
-      {
         id: "2",
         type: "invoice",
         title: "Invoice approved",
@@ -565,7 +554,7 @@ const SuperAdminHomePageTemplate = () => {
   // ============================
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100 text-slate-900 font-sans">
-      <main className="max-w-[95%] lg:max-w-[90%] mx-auto px-4 sm:px-6 py-8">
+      <main className="max-w-[95%] lg:max-w-[90%] mx-auto px-1 sm:px-6 py-8">
         {/* ===== HEADER ===== */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
@@ -573,7 +562,7 @@ const SuperAdminHomePageTemplate = () => {
               <FiShield className="text-white text-xl" />
             </div>
             <div>
-              <h1 className="text-3xl font-black tracking-tight text-[#142C4B]">
+              <h1 className="text-lg lg:text-3xl font-black tracking-tight text-[#142C4B]">
                 Super Admin Dashboard
               </h1>
               <p className="text-sm text-slate-500">
@@ -581,7 +570,7 @@ const SuperAdminHomePageTemplate = () => {
               </p>
             </div>
           </div>
-          <p className="text-slate-600 ml-14">
+          <p className="text-sm lg:text-base text-slate-600 ml-12">
             Comprehensive overview of your business operations and team
             performance
           </p>
@@ -593,7 +582,7 @@ const SuperAdminHomePageTemplate = () => {
             <FiActivity className="text-[#00B7E8]" />
             Key Metrics
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-6">
             {isLoading ? (
               <>
                 <StatCardSkeleton />
@@ -673,7 +662,7 @@ const SuperAdminHomePageTemplate = () => {
         </section>
 
         {/* ===== TWO COLUMN LAYOUT ===== */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid gap-3 lg:gap-6 mb-8">
           {/* LEFT COLUMN - Expenses */}
           <div className="lg:col-span-2 space-y-6">
             {/* Expense Summary */}
@@ -698,7 +687,7 @@ const SuperAdminHomePageTemplate = () => {
                 </Button>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
                 {isExpensesLoading ? (
                   <>
                     <ExpenseCardSkeleton />
@@ -741,7 +730,7 @@ const SuperAdminHomePageTemplate = () => {
                 Invoice Overview
               </h2>
               <Card className="bg-white border border-slate-200 shadow-sm">
-                <CardContent className="p-6">
+                <CardContent className="p-1 lg:p-6">
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                     <InvoiceMetric
                       label="Pending"
@@ -779,7 +768,7 @@ const SuperAdminHomePageTemplate = () => {
           </div>
 
           {/* RIGHT COLUMN - Recent Activity */}
-          <div>
+          {/* <div>
             <section>
               <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
                 <FiClock className="text-[#00B7E8]" />
@@ -801,7 +790,7 @@ const SuperAdminHomePageTemplate = () => {
                 </CardContent>
               </Card>
             </section>
-          </div>
+          </div> */}
         </div>
 
         {/* ===== SALES OFFICERS PERFORMANCE ===== */}
@@ -1234,20 +1223,20 @@ interface QuickStatProps {
   bgColor: string;
 }
 
-const QuickStat = ({ label, value, icon, color, bgColor }: QuickStatProps) => (
-  <Card className="bg-white border border-slate-200 shadow-sm">
-    <CardContent className="p-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-xs text-slate-500 font-medium mb-1">{label}</p>
-          <p className={cn("text-lg font-bold", color)}>{value}</p>
-        </div>
-        <div className={cn("p-2 rounded-lg", bgColor)}>
-          <div className={color}>{icon}</div>
-        </div>
-      </div>
-    </CardContent>
-  </Card>
-);
+// const QuickStat = ({ label, value, icon, color, bgColor }: QuickStatProps) => (
+//   <Card className="bg-white border border-slate-200 shadow-sm">
+//     <CardContent className="p-4">
+//       <div className="flex items-center justify-between">
+//         <div>
+//           <p className="text-xs text-slate-500 font-medium mb-1">{label}</p>
+//           <p className={cn("text-lg font-bold", color)}>{value}</p>
+//         </div>
+//         <div className={cn("p-2 rounded-lg", bgColor)}>
+//           <div className={color}>{icon}</div>
+//         </div>
+//       </div>
+//     </CardContent>
+//   </Card>
+// );
 
 export default SuperAdminHomePageTemplate;

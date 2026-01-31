@@ -1,3 +1,4 @@
+import { ProfilePageTemplate } from "@/components/templates";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -6,7 +7,11 @@ export const metadata: Metadata = {
 };
 
 const page = () => {
-  return <div>Profile</div>;
+  return (
+    <div>
+      <ProfilePageTemplate />
+    </div>
+  );
 };
 
 export default page;

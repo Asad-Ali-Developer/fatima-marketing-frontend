@@ -1,11 +1,16 @@
 import { baseUrl } from "@/config";
-import { LoginData, RegisterData, User } from "@/types";
+import { LoginData, RegisterData, UpdateUserData, User } from "@/types";
 import { getAuthToken } from "@/utils";
 import axios from "axios";
 
 interface UserProfile {
   message: string;
   data: User;
+}
+
+// Add this to your types file
+export interface UpdateUser {
+  profileImage?: string; // pure Base64 string (without data:image/... prefix)
 }
 
 class AuthService {
@@ -53,7 +58,7 @@ class AuthService {
             Authorization: `Bearer ${token}`,
           },
           withCredentials: true,
-        }
+        },
       );
       return response;
     } catch (error) {
@@ -62,7 +67,15 @@ class AuthService {
   }
 
   async registerSalesOfficer(data: RegisterData) {
-    const { full_name, email, showPassword, role, status } = data;
+    const {
+      full_name,
+      email,
+      showPassword,
+      role,
+      status,
+      commissionedBy,
+      gender,
+    } = data;
 
     const payload = {
       full_name,
@@ -70,6 +83,8 @@ class AuthService {
       ...(showPassword && { showPassword }), // only include if truthy
       role,
       status,
+      commissionedBy,
+      gender,
     };
 
     try {
@@ -87,7 +102,7 @@ class AuthService {
             Authorization: `Bearer ${token}`,
           },
           withCredentials: true,
-        }
+        },
       );
       return response;
     } catch (error) {
@@ -104,7 +119,7 @@ class AuthService {
         rememberMe,
       });
 
-      console.log("Responed: ", response)
+      console.log("Responed: ", response);
       return response;
     } catch (error) {
       console.log("Error: ", error);
@@ -139,6 +154,76 @@ class AuthService {
       return response;
     } catch (error) {
       console.log("Error: ", error);
+    }
+  }
+
+  async updateProfileImage(updateData: {
+    profileImage?: string;
+    email?: string;
+  }): Promise<UserProfile> {
+    const token = getAuthToken();
+    if (!token) {
+      throw new Error("No access token found. Please log in.");
+    }
+
+    try {
+      const response = await axios.patch<UserProfile>(
+        `${baseUrl}/auth/profile-image`,
+        updateData, // 👈 Send full DTO object
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          withCredentials: true,
+        },
+      );
+      return response.data;
+    } catch (error: any) {
+      console.error("Profile update error:", error);
+      if (error.response?.status === 409) {
+        throw new Error("Email is already in use.");
+      }
+      if (error.response?.status === 400) {
+        throw new Error(
+          error.response.data.message || "Invalid image format or size.",
+        );
+      }
+      throw new Error("Failed to update profile. Please try again.");
+    }
+  }
+
+  async updateProfile(updateData: UpdateUserData): Promise<UserProfile> {
+    const token = getAuthToken();
+    if (!token) {
+      throw new Error("No access token found. Please log in.");
+    }
+
+    try {
+      const response = await axios.patch<UserProfile>(
+        `${baseUrl}/auth/profile`, // 👈 Self-update endpoint
+        updateData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          withCredentials: true,
+        },
+      );
+      return response.data;
+    } catch (error: any) {
+      console.error("Profile update error:", error);
+      if (error.response?.status === 409) {
+        throw new Error("Email is already in use.");
+      }
+      if (error.response?.status === 400) {
+        throw new Error(error.response.data.message || "Invalid input data.");
+      }
+      if (error.response?.status === 403) {
+        throw new Error("You are not authorized to update this field.");
+      }
+      throw new Error("Failed to update profile. Please try again.");
     }
   }
 }
