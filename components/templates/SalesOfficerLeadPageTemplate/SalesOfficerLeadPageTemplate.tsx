@@ -314,7 +314,7 @@ const SalesOfficerLeadPageTemplate = () => {
                   placeholder="Search by name..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 border rounded-lg text-sm border-slate-300 focus:border-[#00B7E8] w-full"
+                  className="pl-10 pr-4 py-3 rounded-lg text-sm border-slate-300 focus:border-[#00B7E8] w-full"
                 />
               </div>
 
@@ -324,7 +324,7 @@ const SalesOfficerLeadPageTemplate = () => {
                   Status
                 </label>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-full px-4 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#00B7E8]">
+                  <SelectTrigger className="w-full px-4 py-5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#00B7E8]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -348,7 +348,7 @@ const SalesOfficerLeadPageTemplate = () => {
                     <Button
                       variant={"outline"}
                       className={cn(
-                        "w-full justify-start text-left font-normal",
+                        "w-full justify-start rounded-lg py-5 text-left font-normal",
                         !dateFilter && "text-slate-500",
                       )}
                     >
@@ -381,7 +381,7 @@ const SalesOfficerLeadPageTemplate = () => {
                     setStatusFilter("all");
                     setDateFilter(undefined);
                   }}
-                  className="w-full border-slate-300 rounded-lg text-slate-600 hover:bg-slate-50"
+                  className="w-full border-slate-200 py-5 rounded-lg text-slate-600 hover:bg-slate-50"
                 >
                   Clear Filters
                 </Button>

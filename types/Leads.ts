@@ -5,18 +5,18 @@ export interface LeadAssignedTo {
 }
 
 export interface CreatedBy {
-  id: string
-  email: string
-  full_name: string
+  id: string;
+  email: string;
+  full_name: string;
 }
 
 export interface Lead {
   _id: string;
   userName: string;
   location: string;
-  phoneNumber?: string
+  phoneNumber?: string;
   time: string; // ISO date string
-  status: "pending" | "in_progress" | "completed";
+  status: "pending" | "received_so" | "completed";
   assignedTo: LeadAssignedTo; // sales officer ID
   remarks?: string;
   createdAt: string;
@@ -26,9 +26,9 @@ export interface Lead {
 export interface LeadFormData {
   userName: string;
   location: string;
-  phoneNumber?: string
+  phoneNumber?: string;
   time: Date;
-  status: "pending" | "in_progress" | "completed";
+  status: "pending" | "received_so" | "completed";
   assignedTo: LeadAssignedTo;
   createdBy?: CreatedBy;
 }
@@ -41,7 +41,7 @@ export const leadsStatusOptions = [
   },
   {
     value: "in_progress",
-    label: "In Progress",
+    label: "In progress",
     color: "bg-[#029EC9]/10 text-[#029EC9]",
   },
   {

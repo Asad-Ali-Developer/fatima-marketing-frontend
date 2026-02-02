@@ -43,7 +43,7 @@ import {
   FiShield,
   FiTrendingUp,
   FiUsers,
-  FiX
+  FiX,
 } from "react-icons/fi";
 import { LuCalendarRange } from "react-icons/lu";
 import { MdCheckCircle, MdPending } from "react-icons/md";
@@ -566,7 +566,10 @@ const SuperAdminHomePageTemplate = () => {
                 Super Admin Dashboard
               </h1>
               <p className="text-sm text-slate-500">
-                Welcome back, {user?.full_name || "Admin"}
+                Welcome back,{" "}
+                <span className="font-medium">
+                  {user?.full_name || "Admin"}
+                </span>
               </p>
             </div>
           </div>

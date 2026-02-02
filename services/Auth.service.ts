@@ -2,6 +2,7 @@ import { baseUrl } from "@/config";
 import { LoginData, RegisterData, UpdateUserData, User } from "@/types";
 import { getAuthToken } from "@/utils";
 import axios from "axios";
+import { toast } from "react-toastify";
 
 interface UserProfile {
   message: string;
@@ -224,6 +225,18 @@ class AuthService {
         throw new Error("You are not authorized to update this field.");
       }
       throw new Error("Failed to update profile. Please try again.");
+    }
+  }
+
+  async deleteSalesOfficer(soId: string) {
+    const token = getAuthToken();
+    const response = await axios.delete(`${baseUrl}/auth/users/${soId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      withCredentials: true,
+    });
+
+    if (response.status) {
+      toast.success("Sales Officer deleted successfully!");
     }
   }
 }

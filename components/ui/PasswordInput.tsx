@@ -1,5 +1,3 @@
-// components/ui/password-input.tsx
-
 "use client";
 
 import * as React from "react";

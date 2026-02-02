@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { InvoiceService } from "@/services";
-import { Invoice, InvoiceFormData } from "@/types";
+import { Invoice, InvoiceFormData, InvoiceStatus, statusOptions } from "@/types";
 import { leadsStatusOptions } from "@/types/Leads";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon, Loader2 } from "lucide-react";
@@ -98,7 +98,7 @@ const InvoicePageTemplate = () => {
     location: "",
     amount: "",
     date: new Date(),
-    status: "pending",
+    status: "pending" as InvoiceStatus,
   });
 
   // Table states
@@ -125,7 +125,6 @@ const InvoicePageTemplate = () => {
   const [remarksInput, setRemarksInput] = useState("");
   const [updatingRemarks, setUpdatingRemarks] = useState<boolean>(false);
 
-  // 🔄 Fetch invoices from API
   const fetchInvoices = async (page = 1) => {
     setIsLoading(true);
     try {
@@ -213,6 +212,9 @@ const InvoicePageTemplate = () => {
         date: format(formData.date, "yyyy-MM-dd"),
         status: formData.status,
       };
+
+      console.log("Formdata: ", payload);
+
       const response = await invoiceService.createInvoice(payload);
 
       if (wasOnPage1) {
@@ -456,7 +458,7 @@ const InvoicePageTemplate = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 text-slate-900 font-sans">
-      <main className="max-w-[90%] mx-auto px-6 py-10">
+      <main className="max-w-[95%] lg:max-w-[90%] mx-auto px-1 lg:px-6 py-10">
         {/* Page Heading */}
         <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="space-y-1">
@@ -507,7 +509,7 @@ const InvoicePageTemplate = () => {
                   placeholder="Search by name..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 border rounded-lg text-sm border-slate-300 focus:border-[#00B7E8] w-full"
+                  className="pl-10 pr-4 py-3 rounded-lg text-sm focus:border-[#00B7E8] w-full"
                 />
               </div>
               {/* Phone Filter */}
@@ -522,7 +524,7 @@ const InvoicePageTemplate = () => {
                   placeholder="Search by phone..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 text-sm border border-slate-300 focus:border-[#00B7E8] w-full rounded-lg"
+                  className="pl-10 pr-4 py-3 text-sm focus:border-[#00B7E8] w-full rounded-lg"
                 />
               </div>
               {/* Status Filter */}
@@ -531,7 +533,7 @@ const InvoicePageTemplate = () => {
                   Status
                 </label>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-full px-4 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#00B7E8]">
+                  <SelectTrigger className="w-full px-4 py-5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#00B7E8]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -539,7 +541,7 @@ const InvoicePageTemplate = () => {
                       <SelectItem value="all">All Statuses</SelectItem>
                       <SelectItem value="pending">Pending</SelectItem>
                       <SelectItem value="received_so">Received (SO)</SelectItem>
-                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
                     </SelectGroup>
                   </SelectContent>
                 </Select>
@@ -554,7 +556,7 @@ const InvoicePageTemplate = () => {
                     <Button
                       variant={"outline"}
                       className={cn(
-                        "w-full justify-start text-left font-normal",
+                        "w-full py-5 justify-start text-left font-normal",
                         !dateFilter && "text-slate-500",
                       )}
                     >
@@ -590,7 +592,7 @@ const InvoicePageTemplate = () => {
                     setStatusFilter("all");
                     setDateFilter(undefined);
                   }}
-                  className="w-full border-slate-300 rounded-lg text-slate-600 hover:bg-slate-50"
+                  className="w-full border-slate-200 font-medium rounded-lg text-slate-600 hover:bg-slate-50 py-5"
                 >
                   Clear Filters
                 </Button>
@@ -603,7 +605,7 @@ const InvoicePageTemplate = () => {
         <section className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
           <div className="p-6 border-b border-slate-200 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <FiFileText className="text-primary text-xl" />
+              <FiFileText className="text-[#00B7E8] text-xl" />
               <h3 className="text-lg font-bold">Invoice Records</h3>
             </div>
             <div className="flex items-center gap-2">
@@ -732,7 +734,7 @@ const InvoicePageTemplate = () => {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectGroup>
-                              {leadsStatusOptions.map((option) => (
+                              {statusOptions.map((option) => (
                                 <SelectItem
                                   key={option.value}
                                   value={option.value}
@@ -876,7 +878,7 @@ const InvoicePageTemplate = () => {
       {isEditModalOpen && editingInvoice && (
         <EditInvoice
           setIsEditModalOpen={setIsEditModalOpen}
-          formData={editingInvoice}
+          formData={formData}
           handleInputChange={handleInputChange}
           handleDateChange={handleDateChange}
           handleUpdateInvoice={handleUpdateInvoice}

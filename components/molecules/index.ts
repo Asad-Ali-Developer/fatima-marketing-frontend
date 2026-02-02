@@ -17,6 +17,13 @@ import CreateExpenseModal from "./AdminExpenseTracker/CreateExpenseModal";
 import EditExpenseModal from "./AdminExpenseTracker/EditExpenseModal";
 import ViewExpenseModal from "./AdminExpenseTracker/ViewExpenseModal";
 import DeleteExpenseConfirmationModal from "./AdminExpenseTracker/DeleteExpenseConfirmationModal";
+import CreateSalesOfficerModal from "./AdminSalesOfficers/CreateSalesOfficerModal";
+import DeleteSalesOfficerConfirmationModal from "./AdminSalesOfficers/DeleteSalesOfficerConfirmationModal";
+import EditSalesOfficerModal from "./AdminSalesOfficers/EditSalesOfficerModal";
+import AdminSalesOfficersTable from "./AdminSalesOfficers/AdminSalesOfficersTable";
+import SalesOfficerBlockModal from "./AdminSalesOfficers/SalesOfficerBlockModal";
+import SelectCommissionPeriodModal from "./AdminSalesOfficers/SelectCommissionPeriodModal";
+import CommissionInvoicesPreviewModal from "./AdminSalesOfficers/CommissionInvoicesPreviewModal";
 
 export {
   RemarksModal,
@@ -38,4 +45,11 @@ export {
   EditExpenseModal,
   ViewExpenseModal,
   DeleteExpenseConfirmationModal,
+  CreateSalesOfficerModal,
+  DeleteSalesOfficerConfirmationModal,
+  EditSalesOfficerModal,
+  AdminSalesOfficersTable,
+  SalesOfficerBlockModal,
+  SelectCommissionPeriodModal,
+  CommissionInvoicesPreviewModal,
 };

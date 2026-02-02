@@ -28,15 +28,16 @@ const DeleteInvoiceConfirmationModal: FC<DeleteConfirmationModalProps> = ({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
-        <div className="p-4 border-b border-slate-200 flex items-center justify-between">
+        <div className="p-3 border-b border-slate-200 flex items-center justify-between">
           <h3 className="text-xl font-semibold">
             {showConfirmModal.type === "delete"
               ? "Confirm Delete"
               : "Confirm Status Change"}
           </h3>
           <button
+            type="button"
             onClick={cancelAction}
-            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-slate-100 cursor-pointer rounded-lg transition-colors"
           >
             <FiX className="text-xl" />
           </button>

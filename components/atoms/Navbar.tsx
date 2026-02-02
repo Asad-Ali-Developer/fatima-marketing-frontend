@@ -60,7 +60,8 @@ const Navbar = () => {
 
   // Navigation items based on role
   const navItems = [
-    {
+    (user?.role.role_type === "super_admin" ||
+      user?.role.role_type === "sales_officer") && {
       label: "Home",
       href: "/",
     },
@@ -164,7 +165,7 @@ const Navbar = () => {
                 alt="Profile"
                 width={24}
                 height={24}
-                className="object-cover w-full h-full border rounded-full overflow-hidden"
+                className="object-cover w-full h-full border border-gray-400 rounded-full overflow-hidden"
               />
             ) : (
               // Fallback to icon
@@ -179,13 +180,15 @@ const Navbar = () => {
                   Account
                 </p>
               </div>
-              <Link
-                href="/profile"
-                className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
-                onClick={() => setIsDropdownOpen(false)}
-              >
-                Profile
-              </Link>
+              {user && (
+                <Link
+                  href="/profile"
+                  className="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                  onClick={() => setIsDropdownOpen(false)}
+                >
+                  Profile
+                </Link>
+              )}
               {user ? (
                 <button
                   type="button"
@@ -268,13 +271,15 @@ const Navbar = () => {
 
           {/* Footer Actions */}
           <div className="border-t border-slate-100 p-4 space-y-1 bg-slate-50/50">
-            <Link
-              href="/profile"
-              className="flex items-center px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-white hover:text-slate-900 rounded-lg transition-colors"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Profile
-            </Link>
+            {user && (
+              <Link
+                href="/profile"
+                className="flex items-center px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-white hover:text-slate-900 rounded-lg transition-colors"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Profile
+              </Link>
+            )}
             {user ? (
               <button
                 type="button"

@@ -201,7 +201,6 @@ const AdminLeadCreationPageTemplate = () => {
     }
   };
 
-  // ✅ Handle assignedTo selection (from dropdown)
   const handleAssignedToChange = (officerId: string) => {
     const officer = salesOfficers.find((so) => so._id === officerId);
 
@@ -237,7 +236,7 @@ const AdminLeadCreationPageTemplate = () => {
       userName: formData.userName.trim(),
       location: formData.location.trim() || "",
       time: format(formData.time, "yyyy-MM-dd"), // string
-      status: formData.status,
+      status: "pending",
       assignedTo: formData.assignedTo, // full object
       remarks: undefined,
       createdAt: new Date().toISOString(),
@@ -260,8 +259,8 @@ const AdminLeadCreationPageTemplate = () => {
         userName: formData.userName.trim(),
         location: formData.location.trim() || "",
         phoneNumber: formData.phoneNumber || "",
-        time: formData.time, // Date object
-        status: formData.status,
+        time: formData.time,
+        status: "pending" as "pending" | "received_so" | "completed",
         assignedTo: formData.assignedTo, // full object
         createdBy: formData.createdBy,
       };
@@ -552,11 +551,11 @@ const AdminLeadCreationPageTemplate = () => {
                   Status
                 </label>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-full px-4 py-5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#00B7E8]">
+                  <SelectTrigger className="w-full px-4 py-5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#00B7E8]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectGroup> 
+                    <SelectGroup>
                       <SelectItem value="all">All Statuses</SelectItem>
                       <SelectItem value="pending">Pending</SelectItem>
                       <SelectItem value="in_progress">In Progress</SelectItem>
@@ -609,7 +608,7 @@ const AdminLeadCreationPageTemplate = () => {
                     setStatusFilter("all");
                     setDateFilter(undefined);
                   }}
-                  className="w-full border-0 py-5 bg-[#00a8d6] rounded-lg text-white hover:bg-[#069cc6]"
+                  className="w-full border py-5 rounded-lg hover:bg-slate-50"
                 >
                   Clear Filters
                 </Button>

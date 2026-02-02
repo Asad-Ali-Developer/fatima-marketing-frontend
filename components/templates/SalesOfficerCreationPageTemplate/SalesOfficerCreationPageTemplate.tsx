@@ -1,22 +1,16 @@
 "use client";
 
+import {
+  AdminSalesOfficersTable,
+  CommissionInvoicesPreviewModal,
+  CreateSalesOfficerModal,
+  DeleteSalesOfficerConfirmationModal,
+  EditSalesOfficerModal,
+  SalesOfficerBlockModal,
+  SelectCommissionPeriodModal,
+} from "@/components/molecules";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
-import { AdminService, AuthService } from "@/services";
-import { User } from "@/types";
-import { createRandomPassword, formatDateTime } from "@/utils";
-import { useEffect, useState } from "react";
-import {
-  FiAlertCircle,
-  FiEdit2,
-  FiShield,
-  FiTrash2,
-  FiUserPlus,
-  FiUsers,
-  FiX,
-} from "react-icons/fi";
-import { MdBlock, MdCheckCircle } from "react-icons/md";
 import {
   Select,
   SelectContent,
@@ -24,6 +18,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
+import { AdminService, AuthService, InvoiceService } from "@/services";
+import { Invoice, User } from "@/types";
+import { createRandomPassword, formatDateTime } from "@/utils";
+import { useEffect, useState } from "react";
+import {
+  FiAlertCircle,
+  FiEdit2,
+  FiTrash2,
+  FiUserPlus,
+  FiUsers,
+} from "react-icons/fi";
+import { MdBlock, MdCheckCircle } from "react-icons/md";
 
 interface SalesOfficerDisplay extends User {
   date: string;
@@ -48,6 +55,7 @@ export default function SalesOfficerCreationPageTemplate() {
 
   const authService = new AuthService();
   const adminService = new AdminService();
+  const invoiceService = new InvoiceService()
 
   // 👇 Create Modal
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -271,7 +279,10 @@ export default function SalesOfficerCreationPageTemplate() {
           showPassword: editFormData.showPassword,
         }),
         commissionedBy: editFormData.commissionRate ?? undefined,
-        // gender: originalOfficer.gender as "male" | "female", // send current value (or updated if editable)
+        ...(originalOfficer.gender === "male" ||
+        originalOfficer.gender === "female"
+          ? { gender: originalOfficer.gender }
+          : {}),
       });
 
       closeEditModal();
@@ -316,7 +327,6 @@ export default function SalesOfficerCreationPageTemplate() {
     );
   };
 
-  // 🗑️ DELETE HANDLERS ✅
   const openDeleteModal = (so: SalesOfficerDisplay) => {
     setDeleteModal({ isOpen: true, salesOfficer: so });
   };
@@ -334,7 +344,7 @@ export default function SalesOfficerCreationPageTemplate() {
     setSalesOfficers((prev) => prev.filter((so) => so._id !== idToDelete));
 
     try {
-      // await adminService.deleteSalesOfficer(idToDelete);
+      await authService.deleteSalesOfficer(idToDelete);
     } catch (error) {
       console.error("Failed to delete sales officer:", error);
       // Optional: show toast & refetch
@@ -346,7 +356,48 @@ export default function SalesOfficerCreationPageTemplate() {
 
   const totalFiltered = filteredSalesOfficers.length;
 
-  // 🎨 Helper: Status badge
+  // Add these state hooks in your component
+  const [isPeriodModalOpen, setIsPeriodModalOpen] = useState(false);
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+  const [commissionInvoices, setCommissionInvoices] = useState<Invoice[]>([]);
+  const [commissionRateOfSO, setCommissionRate] = useState<number>()
+  const [selectedSalesOfficer, setSelectedSalesOfficer] =
+    useState<SalesOfficerDisplay | null>(null);
+  const [isLoadingCommission, setIsLoadingCommission] = useState(false);
+
+  // Replace your existing handleCreateCommissionInvoice with this:
+  const handleCreateCommissionInvoice = (so: SalesOfficerDisplay) => {
+    setSelectedSalesOfficer(so);
+    setCommissionRate(so.commissionedBy)
+    setIsPeriodModalOpen(true);
+  };
+
+  // Handle period selection → fetch invoices
+  const handlePeriodSelect = async (filters: {
+    timeRange?: "lastWeek" | "lastMonth" | "last6Months" | "lastYear";
+    from?: string;
+    to?: string;
+  }) => {
+    if (!selectedSalesOfficer) return;
+
+    setIsLoadingCommission(true);
+    try {
+      const response =
+        await invoiceService.getSalesOfficerInvoicesForSuperAdmin({
+          salesOfficerId: selectedSalesOfficer._id,
+          ...filters,
+        });
+
+      setCommissionInvoices(response.data || []);
+      setIsPreviewModalOpen(true);
+    } catch (error) {
+      console.error("Failed to load invoices:", error);
+      alert("Failed to load invoices. Please try again.");
+    } finally {
+      setIsLoadingCommission(false);
+    }
+  };
+
   const getStatusBadge = (status: string) => (
     <span
       className={cn(
@@ -439,7 +490,6 @@ export default function SalesOfficerCreationPageTemplate() {
                   <SelectItem value="all">All</SelectItem>
                   <SelectItem value="male">Male</SelectItem>
                   <SelectItem value="female">Female</SelectItem>
-                  <SelectItem value="—">—</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -476,437 +526,81 @@ export default function SalesOfficerCreationPageTemplate() {
         </div>
 
         {/* Table */}
-        <section className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-          <div className="p-4 border-b border-slate-200 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <FiUsers className="text-[#00a8d6] w-5 h-5" />
-              <h2 className="text-lg font-semibold text-slate-900">
-                Manage Sales Officers
-              </h2>
-            </div>
-          </div>
-
-          {isLoading ? (
-            <div className="p-12 text-center">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#00B7E8] mb-4"></div>
-              <p className="text-slate-500">Loading sales officers...</p>
-            </div>
-          ) : filteredSalesOfficers.length === 0 ? (
-            <div className="p-12 text-center">
-              <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <FiUsers className="text-slate-400 w-8 h-8" />
-              </div>
-              <h3 className="font-medium text-slate-900 mb-2">
-                No sales officers found
-              </h3>
-              <p className="text-slate-500 ">
-                Try adjusting your filters or click “Create Sales Officer” to
-                add a new one.
-              </p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead className="bg-slate-50 border-b border-slate-200">
-                  <tr>
-                    <th className="px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                      Name
-                    </th>
-                    <th className="px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                      Email
-                    </th>
-                    <th className="px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                      Gender
-                    </th>
-                    <th className="px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                      Commission (%)
-                    </th>
-                    <th className="px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                      Role
-                    </th>
-                    <th className="px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider text-right">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {filteredSalesOfficers.map((so) => (
-                    <tr
-                      key={so._id}
-                      className="hover:bg-slate-50/50 transition-colors"
-                    >
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-slate-900">
-                            {so.full_name}
-                          </span>
-                          {so.isNew && (
-                            <span className="bg-[#00B7E8] text-[9px] font-bold text-white px-2 py-0.5 rounded-full">
-                              NEW
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-600">
-                        {so.email}
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-600 capitalize">
-                        {so.gender}
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-600">
-                        {so.commissionedBy !== undefined
-                          ? `${so.commissionedBy}%`
-                          : "—"}
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800">
-                          Sales Officer
-                        </span>
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        {getStatusBadge(so.status || "inactive")}
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => openEditModal(so)}
-                            className="text-slate-500 hover:text-[#00B7E8] transition-colors p-1.5 rounded hover:bg-slate-100"
-                            title="Edit"
-                          >
-                            <FiEdit2 className="w-4 h-4" />
-                          </button>
-                          {so.status === "active" ? (
-                            <button
-                              onClick={() => openBlockModal(so)}
-                              className="text-slate-500 hover:text-red-600 transition-colors p-1.5 rounded hover:bg-red-50"
-                              title="Deactivate"
-                            >
-                              <MdBlock className="w-4 h-4" />
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => handleActivate(so._id)}
-                              className="text-slate-500 hover:text-green-600 transition-colors p-1.5 rounded hover:bg-green-50"
-                              title="Activate"
-                            >
-                              <MdCheckCircle className="w-4 h-4" />
-                            </button>
-                          )}
-                          {/* ✅ DELETE BUTTON */}
-                          <button
-                            type="button"
-                            onClick={() => openDeleteModal(so)}
-                            className="text-slate-500 hover:text-red-600 transition-colors p-1.5 rounded hover:bg-red-50"
-                            title="Delete"
-                          >
-                            <FiTrash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {/* Pagination */}
-          <div className="px-4 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
-            <span className="text-sm text-slate-600">
-              {totalFiltered > 0
-                ? `Showing ${(currentPage - 1) * itemsPerPage + 1}–${Math.min(currentPage * itemsPerPage, totalFiltered)} of ${totalFiltered}`
-                : "No results"}
-            </span>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => fetchSalesOfficers(currentPage - 1)}
-                disabled={currentPage === 1}
-                className="px-3 py-1.5 text-sm rounded border border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Previous
-              </button>
-              <span className="px-3 py-1.5 text-sm font-medium bg-[#00B7E8] text-white rounded">
-                {currentPage}
-              </span>
-              <button
-                onClick={() => fetchSalesOfficers(currentPage + 1)}
-                disabled={!hasNextPage}
-                className="px-3 py-1.5 text-sm rounded border border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        </section>
+        <AdminSalesOfficersTable
+          isLoading={isLoading}
+          currentPage={currentPage}
+          hasNextPage={hasNextPage}
+          itemsPerPage={itemsPerPage}
+          openEditModal={openEditModal}
+          totalFiltered={totalFiltered}
+          getStatusBadge={getStatusBadge}
+          openBlockModal={openBlockModal}
+          handleActivate={handleActivate}
+          openDeleteModal={openDeleteModal}
+          fetchSalesOfficers={fetchSalesOfficers}
+          filteredSalesOfficers={filteredSalesOfficers}
+          onCreateCommissionInvoice={handleCreateCommissionInvoice}
+        />
       </main>
 
       {deleteModal.isOpen && deleteModal.salesOfficer && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
-            <div className="p-4 border-b border-slate-200 flex items-center gap-3">
-              <FiAlertCircle className="text-red-500 w-6 h-6" />
-              <h3 className="text-lg font-bold text-slate-900">
-                Confirm Deletion
-              </h3>
-            </div>
-            <div className="p-5">
-              <p className="text-slate-700 mb-4">
-                Are you sure you want to delete{" "}
-                <strong>{deleteModal.salesOfficer.full_name}</strong>? This
-                action cannot be undone.
-              </p>
-              <div className="flex gap-3 pt-2">
-                <Button
-                  variant="outline"
-                  onClick={closeDeleteModal}
-                  className="flex-1 h-10 text-sm"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleDeleteConfirm}
-                  className="flex-1 h-10 text-white text-sm bg-red-600 hover:bg-red-700"
-                >
-                  Delete
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <DeleteSalesOfficerConfirmationModal
+          deleteModal={deleteModal}
+          closeDeleteModal={closeDeleteModal}
+          handleDeleteConfirm={handleDeleteConfirm}
+        />
       )}
 
       {/* ✅ Create Modal */}
       {createModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
-            <div className="p-4 border-b border-slate-200 flex items-center justify-between">
-              <h3 className="text-lg font-bold flex items-center gap-2 text-slate-900">
-                <FiUserPlus className="text-[#00B7E8] w-5 h-5" />
-                Create Sales Officer
-              </h3>
-              <button
-                onClick={closeCreateModal}
-                className="p-1.5 rounded hover:bg-slate-100 transition-colors"
-              >
-                <FiX className="w-5 h-5 text-slate-500" />
-              </button>
-            </div>
-            <div className="p-5 space-y-4">
-              <div className="space-y-2">
-                <label className="text-xs font-medium text-slate-700">
-                  Full Name <span className="text-red-500">*</span>
-                </label>
-                <Input
-                  value={createFormData.name}
-                  onChange={handleCreateInputChange("name")}
-                  placeholder="e.g. Sarah Jenkins"
-                  className="border-slate-200 focus:border-[#00B7E8] focus:ring-1 focus:ring-[#00B7E8]/30 rounded-lg"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-medium text-slate-700">
-                  Email Address <span className="text-red-500">*</span>
-                </label>
-                <Input
-                  type="email"
-                  value={createFormData.email}
-                  onChange={handleCreateInputChange("email")}
-                  placeholder="sarah.j@fatimamarketing.com"
-                  className="border-slate-200 focus:border-[#00B7E8] focus:ring-1 focus:ring-[#00B7E8]/30 rounded-lg"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-medium text-slate-700">
-                  Gender <span className="text-red-500">*</span>
-                </label>
-                <Select
-                  value={createFormData.gender}
-                  onValueChange={(value) =>
-                    setCreateFormData((prev) => ({ ...prev, gender: value }))
-                  }
-                >
-                  <SelectTrigger className="border-slate-200 focus:border-[#00B7E8] focus:ring-1 focus:ring-[#00B7E8]/30 rounded-lg w-full py-5.5">
-                    <SelectValue placeholder="Select gender" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="male">Male</SelectItem>
-                    <SelectItem value="female">Female</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-medium text-slate-700">
-                  Commission Rate (%) <span className="text-red-500">*</span>
-                </label>
-                <Input
-                  type="number"
-                  value={createFormData.commissionRate ?? ""}
-                  onChange={(e) => handleCreateCommissionChange(e.target.value)}
-                  min="0"
-                  max="100"
-                  placeholder="e.g. 65"
-                  className="border-slate-200 focus:border-[#00B7E8] focus:ring-1 focus:ring-[#00B7E8]/30 rounded-lg"
-                />
-                <p className="text-xs text-slate-500">
-                  Enter a value between 0 and 100
-                </p>
-              </div>
-              <div className="pt-2 flex gap-3">
-                <Button
-                  variant="outline"
-                  onClick={closeCreateModal}
-                  className="flex-1 h-10 text-sm"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleCreateSubmit}
-                  disabled={
-                    isCreatingSalesOfficer ||
-                    !createFormData.name.trim() ||
-                    !createFormData.email.trim()
-                  }
-                  className="flex-1 h-10 text-white text-sm bg-[#00B7E8] hover:bg-[#00a8d6]"
-                >
-                  {isCreatingSalesOfficer
-                    ? "Creating..."
-                    : "Create Sales Officer"}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <CreateSalesOfficerModal
+          closeCreateModal={closeCreateModal}
+          createFormData={createFormData}
+          handleCreateInputChange={handleCreateInputChange}
+          handleCreateCommissionChange={handleCreateCommissionChange}
+          setCreateFormData={setCreateFormData}
+          handleCreateSubmit={handleCreateSubmit}
+          isCreatingSalesOfficer={isCreatingSalesOfficer}
+        />
       )}
 
       {/* ✅ Edit Modal */}
       {editModal.isOpen && editModal.admin && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
-            <div className="p-4 border-b border-slate-200 flex items-center justify-between">
-              <h3 className="text-lg font-bold flex items-center gap-2 text-slate-900">
-                <FiEdit2 className="text-[#00B7E8] w-5 h-5" />
-                Edit Sales Officer
-              </h3>
-              <button
-                onClick={closeEditModal}
-                className="p-1.5 rounded hover:bg-slate-100 transition-colors"
-              >
-                <FiX className="w-5 h-5 text-slate-500" />
-              </button>
-            </div>
-            <div className="p-5 space-y-4">
-              <div className="space-y-2">
-                <label className="text-xs font-medium text-slate-700">
-                  Full Name
-                </label>
-                <Input
-                  value={editFormData.name}
-                  onChange={handleEditInputChange("name")}
-                  className="border-slate-200 focus:border-[#00B7E8] focus:ring-1 focus:ring-[#00B7E8]/30 rounded-lg"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-medium text-slate-700">
-                  Email Address
-                </label>
-                <Input
-                  type="email"
-                  value={editFormData.email}
-                  disabled
-                  className="border-slate-200 bg-slate-50 font-medium text-slate-700 rounded-lg"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-medium text-slate-700">
-                  Password
-                </label>
-                <Input
-                  type="text"
-                  value={editFormData.showPassword}
-                  onChange={handleEditInputChange("showPassword")}
-                  placeholder="Enter new password"
-                  className="border-slate-200 focus:border-[#00B7E8] focus:ring-1 focus:ring-[#00B7E8]/30 rounded-lg"
-                />
-                <p className="text-xs text-slate-500">
-                  {editFormData.showPassword
-                    ? "New password will be set on save"
-                    : "Leave blank to keep current password"}
-                </p>
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-medium text-slate-700">
-                  Commission Rate (%)
-                </label>
-                <Input
-                  type="number"
-                  value={editFormData.commissionRate ?? ""}
-                  onChange={(e) => handleEditCommissionChange(e.target.value)}
-                  min="0"
-                  max="100"
-                  placeholder="e.g. 65"
-                  className="border-slate-200 focus:border-[#00B7E8] focus:ring-1 focus:ring-[#00B7E8]/30 rounded-lg"
-                />
-                <p className="text-xs text-slate-500">
-                  Enter a value between 0 and 100
-                </p>
-              </div>
-              <div className="pt-2 flex gap-3">
-                <Button
-                  variant="outline"
-                  onClick={closeEditModal}
-                  className="flex-1 h-10 text-sm"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleEditSubmit}
-                  className="flex-1 h-10 text-sm bg-[#00B7E8] hover:bg-[#00a4d1]"
-                >
-                  Update
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <EditSalesOfficerModal
+          closeEditModal={closeEditModal}
+          handleEditCommissionChange={handleEditCommissionChange}
+          handleEditInputChange={handleEditInputChange}
+          handleEditSubmit={handleEditSubmit}
+          editFormData={editFormData}
+        />
       )}
 
       {/* ✅ Block Modal */}
       {blockModal.isOpen && blockModal.salesOfficer && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
-            <div className="p-4 border-b border-slate-200 flex items-center gap-3">
-              <FiAlertCircle className="text-red-500 w-6 h-6" />
-              <h3 className="text-lg font-bold text-slate-900">
-                Confirm Deactivation
-              </h3>
-            </div>
-            <div className="p-5">
-              <p className="text-slate-700 mb-4">
-                Are you sure you want to deactivate{" "}
-                <strong>{blockModal.salesOfficer.full_name}</strong>? This will
-                revoke their access to the system immediately.
-              </p>
-              <div className="flex gap-3 pt-2">
-                <Button
-                  variant="outline"
-                  onClick={closeBlockModal}
-                  className="flex-1 h-10 text-sm"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleBlockConfirm}
-                  className="flex-1 h-10 text-white text-sm bg-red-600 hover:bg-red-700"
-                >
-                  Deactivate
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <SalesOfficerBlockModal
+          closeBlockModal={closeBlockModal}
+          handleBlockConfirm={handleBlockConfirm}
+          blockModal={blockModal}
+        />
+      )}
+
+      {/* At the bottom of your JSX, before closing </> */}
+      {isPeriodModalOpen && (
+        <SelectCommissionPeriodModal
+          isOpen={isPeriodModalOpen}
+          onClose={() => setIsPeriodModalOpen(false)}
+          onConfirm={handlePeriodSelect}
+        />
+      )}
+
+      {isPreviewModalOpen && selectedSalesOfficer && (
+        <CommissionInvoicesPreviewModal
+          isOpen={isPreviewModalOpen}
+          onClose={() => setIsPreviewModalOpen(false)}
+          invoices={commissionInvoices}
+          commissionRateOfSO={commissionRateOfSO as number / 100}
+          salesOfficerName={selectedSalesOfficer.full_name}
+        />
       )}
     </div>
   );

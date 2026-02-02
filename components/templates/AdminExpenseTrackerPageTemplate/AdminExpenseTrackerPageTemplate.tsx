@@ -391,7 +391,7 @@ const AdminExpenseTrackerPageTemplate = () => {
                     setSearchTerm("");
                     setDateFilter("all");
                   }}
-                  className="w-full py- border-0 text-white bg-[#2dbae1] rounded-lg hover:bg-[#24afd6]"
+                  className="w-full py-5.5 border-0 text-white bg-[#2dbae1] rounded-lg hover:bg-[#24afd6]"
                 >
                   Clear Filters
                 </Button>

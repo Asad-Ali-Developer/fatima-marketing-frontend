@@ -1,5 +1,7 @@
 import { Lead } from "./Leads";
 
+export type InvoiceStatus =  "pending" | "received_so"
+
 // Types
 export interface Invoice {
   _id: string;
@@ -9,7 +11,7 @@ export interface Invoice {
   remarks?: string;
   amount: number;
   date: string; // ISO string
-  status: "pending" | "received_so" | "cancelled";
+  status: InvoiceStatus;
   createdAt: string;
   reported_to?: {
     admin_approval_status: "pending" | "approved" | "rejected";
@@ -28,7 +30,7 @@ export interface InvoiceFormData {
   location: string;
   amount: string;
   date: string | Date;
-  status: "pending" | "received_so" | "cancelled";
+  status: InvoiceStatus;
   generatedByLead?: Lead
 }
 
@@ -48,10 +50,5 @@ export const statusOptions = [
     value: "received_so",
     label: "Received (SO)",
     color: "bg-green-500/10 text-green-700",
-  },
-  {
-    value: "cancelled",
-    label: "Cancelled",
-    color: "bg-red-500/10 text-red-700",
   },
 ];

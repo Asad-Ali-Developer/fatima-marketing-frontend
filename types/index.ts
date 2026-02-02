@@ -4,3 +4,4 @@ export * from "./Invoice";
 export * from "./Inventory"
 export * from "./AdminExpense"
 export * from "./Dashboard"
+export * from "./SalesOfficer"

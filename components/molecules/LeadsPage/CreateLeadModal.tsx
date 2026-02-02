@@ -25,6 +25,7 @@ import { useSelector } from "react-redux";
 import { RootState } from "@/store";
 import { IoClose } from "react-icons/io5";
 import { CreatedBy, LeadAssignedTo, LeadFormData } from "@/types/Leads";
+import { PhoneInput } from "@/components/ui/PhoneInput";
 
 interface CreateLeadModalProps {
   setIsCreateModalOpen: (value: boolean) => void;
@@ -76,12 +77,13 @@ const CreateLeadModal: FC<CreateLeadModalProps> = ({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-slate-200 flex items-center justify-between">
+        <div className="p-3 border-b border-slate-200 flex items-center justify-between">
           <h3 className="text-xl font-bold flex items-center gap-2">
-            <FiFileText className="text-primary" />
+            <FiFileText className="text-[#00B7E8]" />
             Create New Lead
           </h3>
           <button
+            type="button"
             onClick={() => setIsCreateModalOpen(false)}
             className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
           >
@@ -106,11 +108,12 @@ const CreateLeadModal: FC<CreateLeadModalProps> = ({
             <label className="text-xs font-bold uppercase tracking-wider text-slate-600">
               Phone Number (Optional)
             </label>
-            <Input
-              name="phoneNumber"
-              value={formData.phoneNumber}
-              onChange={handleInputChange}
-              placeholder="Enter phone number"
+            <PhoneInput
+              value={formData.phoneNumber || ""} // safe fallback
+              onChange={(value) =>
+                setFormData((prev) => ({ ...prev, phoneNumber: value }))
+              }
+              placeholder="03XXXXXXX"
               className="border-slate-300"
             />
           </div>
@@ -158,30 +161,6 @@ const CreateLeadModal: FC<CreateLeadModalProps> = ({
                 />
               </PopoverContent>
             </Popover>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-600">
-              Status
-            </label>
-            <Select
-              value={formData.status}
-              onValueChange={(value) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  status: value as "pending" | "in_progress" | "completed",
-                }))
-              }
-            >
-              <SelectTrigger className="w-full border-slate-300 focus:ring-[#00B7E8] focus:border-[#00B7E8] px-5 py-4">
-                <SelectValue placeholder="Select status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="in_progress">In Progress</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
 
           <div className="space-y-2">

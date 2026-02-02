@@ -95,7 +95,7 @@ class InvoiceService {
       throw error; // Re-throw for upstream handling if needed
     }
   }
-  
+
   async getInvoices(
     page: number = 1,
     limit: number = 10,
@@ -122,6 +122,52 @@ class InvoiceService {
         withCredentials: true,
         params,
       });
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching invoices:", error);
+      throw error;
+    }
+  }
+
+  async getSalesOfficerInvoicesForSuperAdmin(
+    filters: {
+      searchTerm?: string;
+      status?: string;
+      // Time-based filters
+      timeRange?: "lastWeek" | "lastMonth" | "last6Months" | "lastYear";
+      from?: string; // ISO string or YYYY-MM-DD
+      to?: string; // ISO string or YYYY-MM-DD
+      // Target user
+      salesOfficerId?: string;
+    } = {},
+  ) {
+    try {
+      const token = getAuthToken();
+
+      // Build params safely — only include defined values
+      const params: Record<string, string> = {};
+
+      if (filters.searchTerm) params.searchTerm = filters.searchTerm;
+      if (filters.status) params.status = filters.status;
+      if (filters.salesOfficerId)
+        params.salesOfficerId = filters.salesOfficerId;
+
+      // Time filters
+      if (filters.timeRange) params.timeRange = filters.timeRange;
+      if (filters.from) params.from = filters.from;
+      if (filters.to) params.to = filters.to;
+
+      const response = await axios.get(
+        `${baseUrl}/invoices/sales-officers-invoices`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          withCredentials: true,
+          params,
+        },
+      );
+
       return response.data;
     } catch (error) {
       console.error("Error fetching invoices:", error);

@@ -18,7 +18,7 @@ import { Invoice, InvoiceFormData } from "@/types";
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { ChangeEvent, FC, SetStateAction } from "react";
 import { format } from "date-fns";
-import { FiFileText, FiTrash2 } from "react-icons/fi";
+import { FiFileText, FiTrash2, FiX } from "react-icons/fi";
 
 interface CreatInvoiceModalProps {
   setIsCreateModalOpen: (value: boolean) => void;
@@ -44,16 +44,17 @@ const CreatInvoiceModal: FC<CreatInvoiceModalProps> = ({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-slate-200 flex items-center justify-between">
+        <div className="p-3 border-b border-slate-200 flex items-center justify-between">
           <h3 className="text-xl font-bold flex items-center gap-2">
-            <FiFileText className="text-primary" />
+            <FiFileText className="text-[#00B7E8]" />
             Create New Invoice
           </h3>
           <button
+            type="button"
             onClick={() => setIsCreateModalOpen(false)}
-            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-slate-100 cursor-pointer rounded-lg transition-colors"
           >
-            <FiTrash2 className="text-xl rotate-45" />
+            <FiX className="w-5 h-5 text-slate-500" />
           </button>
         </div>
         <div className="p-6 space-y-4">
@@ -169,14 +170,8 @@ const CreatInvoiceModal: FC<CreatInvoiceModalProps> = ({
                 </SelectItem>
                 <SelectItem value="received_so">
                   <span className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                    <span className="w-2 h-2 rounded-full bg-[#00B7E8]"></span>
                     Received (SO)
-                  </span>
-                </SelectItem>
-                <SelectItem value="cancelled">
-                  <span className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-red-500"></span>
-                    Cancelled
                   </span>
                 </SelectItem>
               </SelectContent>
