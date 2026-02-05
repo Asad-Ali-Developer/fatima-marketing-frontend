@@ -20,17 +20,16 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { AdminService, AuthService, InvoiceService } from "@/services";
-import { Invoice, User } from "@/types";
+import {
+  GenderStatus,
+  Invoice,
+  SalesOfficerCreationFormData,
+  UpdateUserData,
+  User,
+} from "@/types";
 import { createRandomPassword, formatDateTime } from "@/utils";
 import { useEffect, useState } from "react";
-import {
-  FiAlertCircle,
-  FiEdit2,
-  FiTrash2,
-  FiUserPlus,
-  FiUsers,
-} from "react-icons/fi";
-import { MdBlock, MdCheckCircle } from "react-icons/md";
+import { FiUserPlus } from "react-icons/fi";
 
 interface SalesOfficerDisplay extends User {
   date: string;
@@ -55,7 +54,7 @@ export default function SalesOfficerCreationPageTemplate() {
 
   const authService = new AuthService();
   const adminService = new AdminService();
-  const invoiceService = new InvoiceService()
+  const invoiceService = new InvoiceService();
 
   // 👇 Create Modal
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -63,7 +62,8 @@ export default function SalesOfficerCreationPageTemplate() {
     name: "",
     email: "",
     gender: "male",
-    commissionRate: null as number | null, // ✅ percentage (e.g., 65)
+    rokra: "",
+    commissionRate: null as number | null,
   });
 
   // 👇 Edit Modal
@@ -76,7 +76,10 @@ export default function SalesOfficerCreationPageTemplate() {
     name: "",
     email: "",
     showPassword: "",
+    rokra: "",
     commissionRate: null as number | null,
+    id: "",
+    gender: "",
   });
 
   // 👇 Block Modal
@@ -152,6 +155,7 @@ export default function SalesOfficerCreationPageTemplate() {
       name: "",
       email: "",
       gender: "male",
+      rokra: "",
       commissionRate: null,
     });
     setCreateModalOpen(true);
@@ -159,9 +163,10 @@ export default function SalesOfficerCreationPageTemplate() {
 
   const closeCreateModal = () => setCreateModalOpen(false);
 
+  type CreateFormKey = keyof SalesOfficerCreationFormData;
+
   const handleCreateInputChange =
-    (field: keyof Omit<typeof createFormData, "commissionRate">) =>
-    (e: React.ChangeEvent<HTMLInputElement>) => {
+    (field: CreateFormKey) => (e: React.ChangeEvent<HTMLInputElement>) => {
       setCreateFormData((prev) => ({ ...prev, [field]: e.target.value }));
     };
 
@@ -187,6 +192,7 @@ export default function SalesOfficerCreationPageTemplate() {
       showPassword: generatedPassword,
       status: "active" as const,
       role: { role_type: "sales_officer" },
+      rokra: createFormData.rokra.trim() || "",
     };
 
     try {
@@ -203,6 +209,7 @@ export default function SalesOfficerCreationPageTemplate() {
         showPassword: generatedPassword,
         gender: createFormData.gender,
         commissionedBy: createFormData.commissionRate ?? undefined,
+        rokra: createFormData.rokra || "",
       };
 
       const newAdminDisplay = toAdminDisplay(newAdmin);
@@ -225,7 +232,10 @@ export default function SalesOfficerCreationPageTemplate() {
       name: so.full_name,
       email: so.email,
       showPassword: so.showPassword || "",
+      rokra: so.rokra || "",
       commissionRate: so.commissionedBy ?? null,
+      id: "",
+      gender: "",
     });
   };
 
@@ -235,7 +245,10 @@ export default function SalesOfficerCreationPageTemplate() {
       name: "",
       email: "",
       showPassword: "",
+      rokra: "",
       commissionRate: null,
+      id: "",
+      gender: "",
     });
   };
 
@@ -256,45 +269,71 @@ export default function SalesOfficerCreationPageTemplate() {
 
     const originalOfficer = editModal.admin;
 
-    // Optimistic UI update
-    const updatedOfficer = {
-      ...originalOfficer,
-      full_name: editFormData.name,
-      email: editFormData.email,
-      showPassword: editFormData.showPassword || originalOfficer.showPassword,
-      commissionedBy: editFormData.commissionRate ?? undefined,
-      gender: originalOfficer.gender, // include current gender (or make editable)
+    // Validate required fields early (optional but user-friendly)
+    if (!editFormData.name.trim()) {
+      // Example: toast.error("Full name is required");
+      return;
+    }
+    if (!editFormData.email.trim()) {
+      // Example: toast.error("Email is required");
+      return;
+    }
+
+    // Build update payload — only include fields that are explicitly provided or changed
+    const updatePayload: Partial<UpdateUserData> = {
+      id: originalOfficer._id, // 👈 Include ID in payload if backend expects it
+      full_name: editFormData.name.trim(),
+      email: editFormData.email.trim(),
+      ...(editFormData.showPassword !== undefined &&
+        editFormData.showPassword !== "" && {
+          showPassword: editFormData.showPassword,
+        }),
+      ...(editFormData.commissionRate != null && {
+        commissionedBy: editFormData.commissionRate,
+      }),
+      ...(editFormData.rokra !== undefined &&
+        editFormData.rokra !== "" && {
+          rokra: editFormData.rokra.trim(),
+        }),
+      ...(editFormData.gender !== undefined &&
+        ["male", "female"].includes(editFormData.gender) && {
+          gender: editFormData.gender as "male" | "female",
+        }),
     };
 
+    // ✅ Optimistic UI update
+    const updatedOfficer = {
+      ...originalOfficer,
+      ...updatePayload,
+      // Ensure _id and other server-managed fields remain unchanged
+    };
+
+    // Apply optimistic update
     setSalesOfficers((prev) =>
       prev.map((so) => (so._id === originalOfficer._id ? updatedOfficer : so)),
     );
 
     try {
-      // ✅ Call ADMIN update API (not profile!)
-      await authService.updateProfile({
-        full_name: editFormData.name,
-        email: editFormData.email,
-        ...(editFormData.showPassword && {
-          showPassword: editFormData.showPassword,
-        }),
-        commissionedBy: editFormData.commissionRate ?? undefined,
-        ...(originalOfficer.gender === "male" ||
-        originalOfficer.gender === "female"
-          ? { gender: originalOfficer.gender }
-          : {}),
-      });
+      // ✅ Call admin-specific update endpoint
+      await authService.updateSalesOfficerAsAdmin(
+        originalOfficer._id,
+        updatePayload,
+      );
 
+      // Success feedback
       closeEditModal();
-    } catch (error) {
+      // toast.success('Sales officer updated successfully');
+    } catch (error: any) {
       // ❌ Revert on failure
       setSalesOfficers((prev) =>
         prev.map((so) =>
           so._id === originalOfficer._id ? originalOfficer : so,
         ),
       );
+
+      // Log and notify
       console.error("Failed to update sales officer:", error);
-      // Optional: show toast with error message
+      // toast.error(error.message || 'Failed to update sales officer. Please try again.');
     }
   };
 
@@ -360,7 +399,7 @@ export default function SalesOfficerCreationPageTemplate() {
   const [isPeriodModalOpen, setIsPeriodModalOpen] = useState(false);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [commissionInvoices, setCommissionInvoices] = useState<Invoice[]>([]);
-  const [commissionRateOfSO, setCommissionRate] = useState<number>()
+  const [commissionRateOfSO, setCommissionRate] = useState<number>();
   const [selectedSalesOfficer, setSelectedSalesOfficer] =
     useState<SalesOfficerDisplay | null>(null);
   const [isLoadingCommission, setIsLoadingCommission] = useState(false);
@@ -368,7 +407,7 @@ export default function SalesOfficerCreationPageTemplate() {
   // Replace your existing handleCreateCommissionInvoice with this:
   const handleCreateCommissionInvoice = (so: SalesOfficerDisplay) => {
     setSelectedSalesOfficer(so);
-    setCommissionRate(so.commissionedBy)
+    setCommissionRate(so.commissionedBy);
     setIsPeriodModalOpen(true);
   };
 
@@ -392,7 +431,6 @@ export default function SalesOfficerCreationPageTemplate() {
       setIsPreviewModalOpen(true);
     } catch (error) {
       console.error("Failed to load invoices:", error);
-      alert("Failed to load invoices. Please try again.");
     } finally {
       setIsLoadingCommission(false);
     }
@@ -554,33 +592,33 @@ export default function SalesOfficerCreationPageTemplate() {
       {/* ✅ Create Modal */}
       {createModalOpen && (
         <CreateSalesOfficerModal
-          closeCreateModal={closeCreateModal}
           createFormData={createFormData}
-          handleCreateInputChange={handleCreateInputChange}
-          handleCreateCommissionChange={handleCreateCommissionChange}
+          closeCreateModal={closeCreateModal}
           setCreateFormData={setCreateFormData}
           handleCreateSubmit={handleCreateSubmit}
           isCreatingSalesOfficer={isCreatingSalesOfficer}
+          handleCreateInputChange={handleCreateInputChange}
+          handleCreateCommissionChange={handleCreateCommissionChange}
         />
       )}
 
       {/* ✅ Edit Modal */}
       {editModal.isOpen && editModal.admin && (
         <EditSalesOfficerModal
-          closeEditModal={closeEditModal}
-          handleEditCommissionChange={handleEditCommissionChange}
-          handleEditInputChange={handleEditInputChange}
-          handleEditSubmit={handleEditSubmit}
           editFormData={editFormData}
+          closeEditModal={closeEditModal}
+          handleEditSubmit={handleEditSubmit}
+          handleEditInputChange={handleEditInputChange}
+          handleEditCommissionChange={handleEditCommissionChange}
         />
       )}
 
       {/* ✅ Block Modal */}
       {blockModal.isOpen && blockModal.salesOfficer && (
         <SalesOfficerBlockModal
+          blockModal={blockModal}
           closeBlockModal={closeBlockModal}
           handleBlockConfirm={handleBlockConfirm}
-          blockModal={blockModal}
         />
       )}
 
@@ -588,18 +626,18 @@ export default function SalesOfficerCreationPageTemplate() {
       {isPeriodModalOpen && (
         <SelectCommissionPeriodModal
           isOpen={isPeriodModalOpen}
-          onClose={() => setIsPeriodModalOpen(false)}
           onConfirm={handlePeriodSelect}
+          onClose={() => setIsPeriodModalOpen(false)}
         />
       )}
 
       {isPreviewModalOpen && selectedSalesOfficer && (
         <CommissionInvoicesPreviewModal
           isOpen={isPreviewModalOpen}
-          onClose={() => setIsPreviewModalOpen(false)}
           invoices={commissionInvoices}
-          commissionRateOfSO={commissionRateOfSO as number / 100}
-          salesOfficerName={selectedSalesOfficer.full_name}
+          onClose={() => setIsPreviewModalOpen(false)}
+          salesOfficer={selectedSalesOfficer}
+          commissionRateOfSO={(commissionRateOfSO as number) / 100}
         />
       )}
     </div>

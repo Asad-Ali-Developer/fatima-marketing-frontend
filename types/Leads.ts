@@ -10,14 +10,16 @@ export interface CreatedBy {
   full_name: string;
 }
 
+export type LeadStatus = "pending" | "in_progress" | "completed";
+
 export interface Lead {
   _id: string;
   userName: string;
   location: string;
   phoneNumber?: string;
   time: string; // ISO date string
-  status: "pending" | "received_so" | "completed";
-  assignedTo: LeadAssignedTo; // sales officer ID
+  status?: LeadStatus;
+  assignedTo?: LeadAssignedTo; // sales officer ID
   remarks?: string;
   createdAt: string;
   createdBy?: CreatedBy;
@@ -28,8 +30,8 @@ export interface LeadFormData {
   location: string;
   phoneNumber?: string;
   time: Date;
-  status: "pending" | "received_so" | "completed";
-  assignedTo: LeadAssignedTo;
+  status: "pending" | "in_progress" | "completed";
+  assignedTo?: LeadAssignedTo;
   createdBy?: CreatedBy;
 }
 

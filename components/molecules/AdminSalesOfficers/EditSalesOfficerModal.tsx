@@ -9,9 +9,9 @@ interface EditSalesOfficerModalProps {
   handleEditSubmit: () => void;
   editFormData: EditSalesOfficerFormData;
   handleEditInputChange: (
-    field: "name" | "email" | "showPassword",
+    field: "name" | "email" | "showPassword" | "rokra",
   ) => (e: ChangeEvent<HTMLInputElement>) => void;
-  handleEditCommissionChange: (value: string) => void
+  handleEditCommissionChange: (value: string) => void;
 }
 
 const EditSalesOfficerModal: FC<EditSalesOfficerModalProps> = ({
@@ -75,6 +75,15 @@ const EditSalesOfficerModal: FC<EditSalesOfficerModalProps> = ({
                 ? "New password will be set on save"
                 : "Leave blank to keep current password"}
             </p>
+          </div>
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-slate-700">Salary</label>
+            <Input
+              value={editFormData.rokra}
+              placeholder="e.g. 65000 or 65k"
+              onChange={handleEditInputChange("rokra")}
+              className="border-slate-200 bg-slate-50 font-medium text-slate-700 rounded-lg"
+            />
           </div>
           <div className="space-y-2">
             <label className="text-xs font-medium text-slate-700">

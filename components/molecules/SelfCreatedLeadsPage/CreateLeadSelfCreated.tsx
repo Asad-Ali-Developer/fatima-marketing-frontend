@@ -1,85 +1,55 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
+import { PhoneInput } from "@/components/ui/PhoneInput";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { RootState } from "@/store";
 import { User } from "@/types";
-import { CreatedBy, LeadAssignedTo, LeadFormData } from "@/types/Leads";
+import { LeadFormData } from "@/types/Leads";
 import { format } from "date-fns";
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { ChangeEvent, FC, SetStateAction } from "react";
 import { FiFileText } from "react-icons/fi";
 import { IoClose } from "react-icons/io5";
-import { useSelector } from "react-redux";
 
-interface EditLeadModalProps {
-  setIsEditModalOpen: (value: SetStateAction<boolean>) => void;
+interface CreateLeadModalProps {
+  setIsCreateModalOpen: (value: boolean) => void;
   formData: LeadFormData;
   handleInputChange: (
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => void;
   handleDateChange: (date: Date | undefined) => void;
-  handleAssignedToChange: (officerId: string) => void;
-  handleUpdateLead: () => Promise<void>;
-  isUpdating: boolean;
+  handleCreateLead: () => Promise<void>;
+  isCreating: boolean;
   setFormData: (value: SetStateAction<LeadFormData>) => void;
-  salesOfficers: User[];
 }
 
-const EditLeadModal: FC<EditLeadModalProps> = ({
-  setIsEditModalOpen,
+const CreateLeadModalSelfCreated: FC<CreateLeadModalProps> = ({
+  setIsCreateModalOpen,
   formData,
   handleInputChange,
   handleDateChange,
-  handleUpdateLead,
-  isUpdating,
+  handleCreateLead,
+  isCreating,
   setFormData,
-  salesOfficers,
 }) => {
-  // ✅ Handle assignment by ID → map to full LeadAssignedTo object
-  const handleAssignedToChange = (officerId: string) => {
-    const user = useSelector(
-      (state: RootState) => state.auth.user,
-    ) as User | null;
-
-    const officer = salesOfficers.find((so) => so._id === officerId);
-    if (officer) {
-      const assignedTo: LeadAssignedTo = {
-        id: officer._id,
-        email: officer.email,
-        full_name: officer.full_name,
-      };
-      const createdBy: CreatedBy = {
-        id: user?._id || "",
-        email: user?.email || "",
-        full_name: user?.full_name || "",
-      };
-      setFormData((prev) => ({ ...prev, assignedTo, createdBy }));
-    }
-  };
-
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
         <div className="p-3 border-b border-slate-200 flex items-center justify-between">
           <h3 className="text-xl font-bold flex items-center gap-2">
-            <FiFileText className="text-[#00a8d6]" />
-            Edit Lead
+            <FiFileText className="text-[#00B7E8]" />
+            Create New Lead
           </h3>
           <button
-            onClick={() => setIsEditModalOpen(false)}
+            type="button"
+            onClick={() => setIsCreateModalOpen(false)}
             className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
           >
             <IoClose className="text-xl" />
@@ -88,7 +58,7 @@ const EditLeadModal: FC<EditLeadModalProps> = ({
         <div className="p-6 space-y-4">
           <div className="space-y-2">
             <label className="text-xs font-bold uppercase tracking-wider text-slate-600">
-              User Name <span className="text-red-600">*</span>
+              User Name *
             </label>
             <Input
               name="userName"
@@ -103,11 +73,12 @@ const EditLeadModal: FC<EditLeadModalProps> = ({
             <label className="text-xs font-bold uppercase tracking-wider text-slate-600">
               Phone Number (Optional)
             </label>
-            <Input
-              name="phoneNumber"
-              value={formData.phoneNumber}
-              onChange={handleInputChange}
-              placeholder="Enter phone number"
+            <PhoneInput
+              value={formData.phoneNumber || ""} // safe fallback
+              onChange={(value) =>
+                setFormData((prev) => ({ ...prev, phoneNumber: value }))
+              }
+              placeholder="03XXXXXXX"
               className="border-slate-300"
             />
           </div>
@@ -127,14 +98,14 @@ const EditLeadModal: FC<EditLeadModalProps> = ({
 
           <div className="space-y-2">
             <label className="text-xs font-bold uppercase tracking-wider text-slate-600">
-              Lead Time <span className="text-red-600">*</span>
+              Lead Time *
             </label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
                   variant={"outline"}
                   className={cn(
-                    "w-full justify-start rounded-lg py-6 text-left font-normal",
+                    "w-full justify-start text-left font-normal",
                     !formData.time && "text-slate-500",
                   )}
                 >
@@ -157,71 +128,26 @@ const EditLeadModal: FC<EditLeadModalProps> = ({
             </Popover>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-600">
-              Status
-            </label>
-            <Select
-              value={formData.status}
-              onValueChange={(value) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  status: value as "pending" | "in_progress" | "completed",
-                }))
-              }
-            >
-              <SelectTrigger className="w-full border-slate-300 focus:ring-[#00B7E8] focus:border-[#00B7E8] px-5 py-6 rounded-lg">
-                <SelectValue placeholder="Select status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="in_progress">In Progress</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-600">
-              Assign To <span className="text-red-600">*</span>
-            </label>
-            <Select
-              value={formData?.assignedTo?.id} // ✅ Now a string (ID)
-              onValueChange={handleAssignedToChange} // ✅ Maps ID → full object
-            >
-              <SelectTrigger className="w-full border-slate-300 focus:ring-[#00B7E8] focus:border-[#00B7E8] px-5 py-6">
-                <SelectValue placeholder="Select sales officer" />
-              </SelectTrigger>
-              <SelectContent>
-                {salesOfficers.map((officer) => (
-                  <SelectItem key={officer._id} value={officer._id}>
-                    {officer.full_name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
           <div className="flex gap-3 pt-4">
             <Button
               variant="outline"
-              onClick={() => setIsEditModalOpen(false)}
+              onClick={() => setIsCreateModalOpen(false)}
               className="flex-1 font-medium shadow-none rounded"
             >
               Cancel
             </Button>
             <Button
-              onClick={handleUpdateLead}
-              disabled={isUpdating}
+              onClick={handleCreateLead}
+              disabled={isCreating}
               className="flex-1 font-medium shadow-none text-white rounded bg-[#00B7E8] hover:bg-[#029ec9] transition-colors duration-150 cursor-pointer"
             >
-              {isUpdating ? (
+              {isCreating ? (
                 <>
                   <Loader2 className="animate-spin mr-2" />
-                  Updating...
+                  Creating...
                 </>
               ) : (
-                "Update Lead"
+                "Create Lead"
               )}
             </Button>
           </div>
@@ -231,4 +157,4 @@ const EditLeadModal: FC<EditLeadModalProps> = ({
   );
 };
 
-export default EditLeadModal;
+export default CreateLeadModalSelfCreated;

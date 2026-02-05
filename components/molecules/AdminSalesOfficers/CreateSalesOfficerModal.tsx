@@ -15,7 +15,7 @@ interface CreateSalesOfficerModalProps {
   closeCreateModal: () => void;
   createFormData: SalesOfficerCreationFormData;
   handleCreateInputChange: (
-    field: "name" | "email" | "gender",
+    field: "name" | "email" | "gender" | "rokra",
   ) => (e: ChangeEvent<HTMLInputElement>) => void;
   setCreateFormData: (
     value: SetStateAction<SalesOfficerCreationFormData>,
@@ -92,6 +92,17 @@ const CreateSalesOfficerModal: FC<CreateSalesOfficerModalProps> = ({
                 <SelectItem value="female">Female</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          {/* Salary */}
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-slate-700">Salary</label>
+            <Input
+              value={createFormData.rokra}
+              onChange={handleCreateInputChange("rokra")}
+              placeholder="e.g. 50000 or 59k"
+              className="border-slate-200 focus:border-[#00B7E8] focus:ring-1 focus:ring-[#00B7E8]/30 rounded-lg"
+            />
+            <p className="text-xs text-slate-500">Optional monthly salary</p>
           </div>
           <div className="space-y-2">
             <label className="text-xs font-medium text-slate-700">

@@ -7,6 +7,7 @@ import LeadsService from "./Leads.service";
 import InventoryService from "./Inventory.service";
 import ExpenseService from "./Expense.service";
 import DashboardService from "./Dashboard.service";
+import SOLeadsService from "./SOLeads.service";
 
 export {
   AuthService,
@@ -18,4 +19,5 @@ export {
   InventoryService,
   ExpenseService,
   DashboardService,
+  SOLeadsService,
 };

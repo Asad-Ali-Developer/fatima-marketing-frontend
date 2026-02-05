@@ -86,6 +86,9 @@ const AdminSalesOfficersTable: FC<AdminSalesOfficersTableProps> = ({
                   Gender
                 </th>
                 <th className="px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                  Salary
+                </th>
+                <th className="px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">
                   Commission (%)
                 </th>
                 <th className="px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">
@@ -123,6 +126,9 @@ const AdminSalesOfficersTable: FC<AdminSalesOfficersTableProps> = ({
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-600 capitalize">
                     {so.gender}
                   </td>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-600 capitalize">
+                    {so.rokra || ""}
+                  </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-600">
                     {so.commissionedBy !== undefined
                       ? `${so.commissionedBy}%`
@@ -157,7 +163,7 @@ const AdminSalesOfficersTable: FC<AdminSalesOfficersTableProps> = ({
                       >
                         <FiEdit2 className="w-4 h-4" />
                       </button>
-                      {so.status === "active" ? (
+                      {/* {so.status === "active" ? (
                         <button
                           type="button"
                           onClick={() => openBlockModal(so)}
@@ -175,7 +181,7 @@ const AdminSalesOfficersTable: FC<AdminSalesOfficersTableProps> = ({
                         >
                           <MdCheckCircle className="w-4 h-4" />
                         </button>
-                      )}
+                      )} */}
                       <button
                         type="button"
                         onClick={() => openDeleteModal(so)}

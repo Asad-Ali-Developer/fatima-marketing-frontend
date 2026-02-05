@@ -74,6 +74,10 @@ const Navbar = () => {
       href: "/admin-leads",
     },
     user?.role.role_type === "sales_officer" && {
+      label: "Self Create Leads",
+      href: "/self-created-leads-by-so",
+    },
+    user?.role.role_type === "sales_officer" && {
       label: "Leads",
       href: "/so-leads",
     },

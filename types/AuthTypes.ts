@@ -6,6 +6,7 @@ export interface RegisterData {
   status?: string;
   showPassword?: string;
   gender?: string;
+  rokra?: string;
   commissionedBy?: number; // ✅ Add this — represents commission % (e.g., 65)
 }
 
@@ -15,13 +16,18 @@ export interface LoginData {
   rememberMe: boolean;
 }
 
+export type GenderStatus = 'male' | 'female'
+
 // types.ts
+// ✅ Correct
 export interface UpdateUserData {
   full_name?: string;
   email?: string;
-  gender?: 'male' | 'female';
+  gender?: GenderStatus;
   profileImage?: string;
-  showPassword?: string;       // plain text — backend will hash it
-  commissionedBy?: number;     // only super_admin
-  status?: 'active' | 'inactive'; // only super_admin
+  showPassword?: string;
+  commissionedBy?: number;
+  status?: 'active' | 'inactive';
+  rokra?: string; // ← allow any string (including empty or "50000")
+  id?: string
 }

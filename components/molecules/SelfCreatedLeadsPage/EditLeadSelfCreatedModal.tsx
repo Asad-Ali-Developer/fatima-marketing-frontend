@@ -14,15 +14,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { RootState } from "@/store";
-import { User } from "@/types";
-import { CreatedBy, LeadAssignedTo, LeadFormData } from "@/types/Leads";
+import { LeadFormData } from "@/types/Leads";
 import { format } from "date-fns";
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { ChangeEvent, FC, SetStateAction } from "react";
 import { FiFileText } from "react-icons/fi";
 import { IoClose } from "react-icons/io5";
-import { useSelector } from "react-redux";
 
 interface EditLeadModalProps {
   setIsEditModalOpen: (value: SetStateAction<boolean>) => void;
@@ -31,14 +28,12 @@ interface EditLeadModalProps {
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => void;
   handleDateChange: (date: Date | undefined) => void;
-  handleAssignedToChange: (officerId: string) => void;
   handleUpdateLead: () => Promise<void>;
   isUpdating: boolean;
   setFormData: (value: SetStateAction<LeadFormData>) => void;
-  salesOfficers: User[];
 }
 
-const EditLeadModal: FC<EditLeadModalProps> = ({
+const EditLeadSelfCreatedModal: FC<EditLeadModalProps> = ({
   setIsEditModalOpen,
   formData,
   handleInputChange,
@@ -46,30 +41,7 @@ const EditLeadModal: FC<EditLeadModalProps> = ({
   handleUpdateLead,
   isUpdating,
   setFormData,
-  salesOfficers,
 }) => {
-  // ✅ Handle assignment by ID → map to full LeadAssignedTo object
-  const handleAssignedToChange = (officerId: string) => {
-    const user = useSelector(
-      (state: RootState) => state.auth.user,
-    ) as User | null;
-
-    const officer = salesOfficers.find((so) => so._id === officerId);
-    if (officer) {
-      const assignedTo: LeadAssignedTo = {
-        id: officer._id,
-        email: officer.email,
-        full_name: officer.full_name,
-      };
-      const createdBy: CreatedBy = {
-        id: user?._id || "",
-        email: user?.email || "",
-        full_name: user?.full_name || "",
-      };
-      setFormData((prev) => ({ ...prev, assignedTo, createdBy }));
-    }
-  };
-
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
@@ -181,27 +153,6 @@ const EditLeadModal: FC<EditLeadModalProps> = ({
             </Select>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-600">
-              Assign To <span className="text-red-600">*</span>
-            </label>
-            <Select
-              value={formData?.assignedTo?.id} // ✅ Now a string (ID)
-              onValueChange={handleAssignedToChange} // ✅ Maps ID → full object
-            >
-              <SelectTrigger className="w-full border-slate-300 focus:ring-[#00B7E8] focus:border-[#00B7E8] px-5 py-6">
-                <SelectValue placeholder="Select sales officer" />
-              </SelectTrigger>
-              <SelectContent>
-                {salesOfficers.map((officer) => (
-                  <SelectItem key={officer._id} value={officer._id}>
-                    {officer.full_name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
           <div className="flex gap-3 pt-4">
             <Button
               variant="outline"
@@ -231,4 +182,4 @@ const EditLeadModal: FC<EditLeadModalProps> = ({
   );
 };
 
-export default EditLeadModal;
+export default EditLeadSelfCreatedModal;

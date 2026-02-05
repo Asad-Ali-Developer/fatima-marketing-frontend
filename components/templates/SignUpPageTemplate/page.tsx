@@ -40,6 +40,7 @@ export default function SignUpPageTemplate() {
       email,
       role: role,
       password,
+      rokra: "60k"
     };
     console.log("✅ Form submitted:", payload);
 

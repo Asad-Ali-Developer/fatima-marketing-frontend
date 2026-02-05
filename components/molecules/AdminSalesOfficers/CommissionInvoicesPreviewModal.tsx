@@ -1,5 +1,5 @@
 import { Input } from "@/components/ui/input";
-import { Invoice } from "@/types";
+import { Invoice, User } from "@/types";
 import { useRef, useState } from "react";
 import { FiSearch, FiX } from "react-icons/fi";
 
@@ -7,7 +7,7 @@ interface CommissionInvoicesPreviewModalProps {
   isOpen: boolean;
   onClose: () => void;
   invoices: Invoice[];
-  salesOfficerName: string;
+  salesOfficer: User;
   commissionRateOfSO: number;
 }
 
@@ -15,7 +15,7 @@ const CommissionInvoicesPreviewModal = ({
   isOpen,
   onClose,
   invoices,
-  salesOfficerName,
+  salesOfficer,
   commissionRateOfSO,
 }: CommissionInvoicesPreviewModalProps) => {
   // 🔧 Normalize rate to decimal (0.65)
@@ -74,7 +74,7 @@ const CommissionInvoicesPreviewModal = ({
     const content = `
       <html>
         <head>
-          <title>Commission Statement - ${salesOfficerName}</title>
+          <title>Commission Statement - ${salesOfficer.full_name}</title>
           ${styles}
         </head>
         <body>
@@ -88,8 +88,9 @@ const CommissionInvoicesPreviewModal = ({
           <!-- Summary -->
           <div class="summary-box">
             <h2 style="text-align:center; margin-bottom:8px;">Commission Statement</h2>
-            <p><strong>Sales Officer:</strong> ${salesOfficerName}</p>
+            <p><strong>Sales Officer:</strong> ${salesOfficer.full_name}</p>
             <p><strong>Commission Rate:</strong> ${(normalizedRate * 100).toFixed()}%</p>
+            <p><strong>Salary:</strong> ${salesOfficer.rokra}%</p>
             <p><strong>Total Invoices:</strong> ${filteredInvoices.length}</p>
             <p><strong>Total Amount:</strong> Rs. ${totalAmount.toFixed()}</p>
             <p class="highlight"><strong>Total Commission:</strong> Rs. ${totalCommission.toFixed()}</p>
@@ -125,16 +126,22 @@ const CommissionInvoicesPreviewModal = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl h-[90vh] overflow-y-auto flex flex-col">
         <div className="p-4 border-b border-slate-200 flex items-center justify-between">
           <div>
             <h3 className="text-lg font-bold">
-              Commission for {salesOfficerName}
+              Commission for {salesOfficer.full_name}
             </h3>
             <p className="text-sm text-slate-600 mt-1">
               Commission Rate:{" "}
               <span className="font-semibold text-[#00B7E8]">
                 {(normalizedRate * 100).toFixed()}%
+              </span>
+            </p>
+            <p className="text-sm text-slate-600 mt-1">
+              Salary:
+              <span className="font-semibold text-[#00B7E8] ml-1">
+                {salesOfficer.rokra}
               </span>
             </p>
           </div>

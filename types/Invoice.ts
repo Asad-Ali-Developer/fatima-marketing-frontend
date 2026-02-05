@@ -1,6 +1,6 @@
 import { Lead } from "./Leads";
 
-export type InvoiceStatus =  "pending" | "received_so"
+export type InvoiceStatus = "pending" | "received_so";
 
 // Types
 export interface Invoice {
@@ -21,7 +21,7 @@ export interface Invoice {
     id: string;
     name?: string;
   };
-  generatedByLead?: Lead
+  generatedByLead?: Lead;
 }
 
 export interface InvoiceFormData {
@@ -31,7 +31,7 @@ export interface InvoiceFormData {
   amount: string;
   date: string | Date;
   status: InvoiceStatus;
-  generatedByLead?: Lead
+  generatedByLead?: Lead;
 }
 
 export interface StatusOptions {

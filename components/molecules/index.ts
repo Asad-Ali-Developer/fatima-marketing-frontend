@@ -24,6 +24,8 @@ import AdminSalesOfficersTable from "./AdminSalesOfficers/AdminSalesOfficersTabl
 import SalesOfficerBlockModal from "./AdminSalesOfficers/SalesOfficerBlockModal";
 import SelectCommissionPeriodModal from "./AdminSalesOfficers/SelectCommissionPeriodModal";
 import CommissionInvoicesPreviewModal from "./AdminSalesOfficers/CommissionInvoicesPreviewModal";
+import CreateLeadModalSelfCreated from "./SelfCreatedLeadsPage/CreateLeadSelfCreated";
+import EditLeadSelfCreatedModal from "./SelfCreatedLeadsPage/EditLeadSelfCreatedModal";
 
 export {
   RemarksModal,
@@ -52,4 +54,6 @@ export {
   SalesOfficerBlockModal,
   SelectCommissionPeriodModal,
   CommissionInvoicesPreviewModal,
+  CreateLeadModalSelfCreated,
+  EditLeadSelfCreatedModal,
 };

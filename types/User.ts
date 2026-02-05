@@ -11,7 +11,8 @@ export interface User {
   role: RoleType;
   status?: "active" | "inactive";
   password?: string;
-  showPassword?: string; 
+  showPassword?: string;
+  rokra?: string; 
   profileImage?: string
   commissionedBy?: number
   gender?: string

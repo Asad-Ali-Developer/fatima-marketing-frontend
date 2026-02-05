@@ -13,6 +13,7 @@ import AdminInventoryManagementPageTemplate from "./AdminInventoryManagementTemp
 import AdminExpenseTrackerPageTemplate from "./AdminExpenseTrackerPageTemplate/AdminExpenseTrackerPageTemplate";
 import SuperAdminHomePageTemplete from "./SuperAdminHomePageTemplate/SuperAdminHomePageTemplete";
 import ProfilePageTemplate from "./ProfilePageTemplate/ProfilePageTemplate";
+import SalesOfficerLeadCreationPageTemplate from "./SalesOfficerLeadCreationPageTemplate/SalesOfficerLeadCreationPageTemplate";
 
 export {
   SignInPageTemplate,
@@ -30,4 +31,5 @@ export {
   AdminExpenseTrackerPageTemplate,
   SuperAdminHomePageTemplete,
   ProfilePageTemplate,
+  SalesOfficerLeadCreationPageTemplate,
 };

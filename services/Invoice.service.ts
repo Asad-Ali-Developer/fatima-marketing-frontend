@@ -16,7 +16,6 @@ class InvoiceService {
         },
         withCredentials: true,
       });
-      toast.success("Invoice created successfully!");
       return response.data;
     } catch (error: any) {
       console.error("Error creating invoice:", error);

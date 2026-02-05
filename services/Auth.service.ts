@@ -18,7 +18,7 @@ class AuthService {
   constructor() {}
 
   async register(data: RegisterData) {
-    const { full_name, email, password, role } = data;
+    const { full_name, email, password, role, rokra } = data;
 
     try {
       const response = await axios.post(`${baseUrl}/auth/register`, {
@@ -26,6 +26,7 @@ class AuthService {
         email,
         password,
         role,
+        rokra,
       });
       return response;
     } catch (error) {
@@ -76,6 +77,7 @@ class AuthService {
       status,
       commissionedBy,
       gender,
+      rokra,
     } = data;
 
     const payload = {
@@ -86,6 +88,7 @@ class AuthService {
       status,
       commissionedBy,
       gender,
+      rokra,
     };
 
     try {
@@ -225,6 +228,47 @@ class AuthService {
         throw new Error("You are not authorized to update this field.");
       }
       throw new Error("Failed to update profile. Please try again.");
+    }
+  }
+
+  // In authService.ts
+  async updateSalesOfficerAsAdmin(
+    id: string,
+    updateData: Partial<UpdateUserData>,
+  ): Promise<UserProfile> {
+    const token = getAuthToken();
+    if (!token) {
+      throw new Error("No access token found. Please log in.");
+    }
+
+    try {
+      const response = await axios.patch<UserProfile>(
+        `${baseUrl}/auth/sales-officer/${id}`, // ✅ Admin-managed endpoint
+        updateData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          withCredentials: true,
+        },
+      );
+      return response.data;
+    } catch (error: any) {
+      console.error("Sales officer update error:", error);
+      if (error.response?.status === 409) {
+        throw new Error("Email is already in use.");
+      }
+      if (error.response?.status === 400) {
+        throw new Error(error.response.data.message || "Invalid input data.");
+      }
+      if (error.response?.status === 403) {
+        throw new Error("You are not authorized to update this user.");
+      }
+      if (error.response?.status === 404) {
+        throw new Error("Sales officer not found.");
+      }
+      throw new Error("Failed to update sales officer. Please try again.");
     }
   }
 
