@@ -60,7 +60,7 @@ const ViewLeadModal: FC<ViewLeadModalProps> = ({
               <label className="text-xs font-bold uppercase tracking-wider text-slate-500">
                 Assigned To
               </label>
-              <p>{selectedLead.assignedTo.full_name}</p>
+              <p>{selectedLead?.assignedTo?.full_name}</p>
             </div>
             <div>
               <label className="text-xs font-bold uppercase tracking-wider text-slate-500">

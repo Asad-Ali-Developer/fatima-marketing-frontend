@@ -32,6 +32,7 @@ import {
   Lead,
   LeadFormData,
   leadsStatusOptions,
+  LeadStatus,
 } from "@/types/Leads";
 import { format } from "date-fns";
 import { CalendarIcon, Loader2 } from "lucide-react";
@@ -224,7 +225,7 @@ const AdminLeadCreationPageTemplate = () => {
   };
 
   const handleCreateLead = async () => {
-    if (!formData.userName.trim() || !formData.assignedTo.id) {
+    if (!formData.userName.trim() || !formData?.assignedTo?.id) {
       alert("Please fill in all required fields");
       return;
     }
@@ -260,8 +261,8 @@ const AdminLeadCreationPageTemplate = () => {
         location: formData.location.trim() || "",
         phoneNumber: formData.phoneNumber || "",
         time: formData.time,
-        status: "pending" as "pending" | "received_so" | "completed",
-        assignedTo: formData.assignedTo, // full object
+        status: "pending" as "pending" | "in_progress" | "completed",
+        assignedTo: formData?.assignedTo, // full object
         createdBy: formData.createdBy,
       };
 
@@ -446,7 +447,7 @@ const AdminLeadCreationPageTemplate = () => {
       userName: lead.userName,
       location: lead.location || "",
       time: new Date(lead.time), // convert string → Date
-      status: lead.status,
+      status: lead.status as LeadStatus,
       assignedTo: lead.assignedTo, // full object
     });
     setIsEditModalOpen(true);
@@ -694,7 +695,7 @@ const AdminLeadCreationPageTemplate = () => {
                         {lead.location || "-"}
                       </td>
                       <td className="px-6 py-4 text-sm capitalize text-slate-600">
-                        {lead.assignedTo.full_name}
+                        {lead?.assignedTo?.full_name}
                       </td>
                       <td className="px-6 py-4">
                         {format(new Date(lead.time), "dd MMM yyyy")}
@@ -718,7 +719,7 @@ const AdminLeadCreationPageTemplate = () => {
                             )?.color || "bg-slate-100 text-slate-700",
                           )}
                         >
-                          {lead.status.replace(/_/g, " ")}
+                          {lead?.status?.replace(/_/g, " ")}
                         </div>
                       </td>
                       <td className="px-6 py-4 text-right">
