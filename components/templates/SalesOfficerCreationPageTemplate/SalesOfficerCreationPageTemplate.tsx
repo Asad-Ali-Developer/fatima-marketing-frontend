@@ -464,7 +464,7 @@ export default function SalesOfficerCreationPageTemplate() {
                 credentials for regional marketing managers.
               </p>
             </div>
-            <div className="flex items-center gap-4 bg-white rounded-xl shadow-sm border border-slate-200 p-3">
+            <div className="flex w-fit items-center gap-4 bg-white rounded-xl shadow-sm border border-slate-200 p-3">
               <div className="text-center">
                 <div className="text-lg font-bold text-[#00a4d1]">
                   {totalFiltered}
@@ -556,7 +556,7 @@ export default function SalesOfficerCreationPageTemplate() {
         <div className="flex justify-end mb-4">
           <Button
             onClick={openCreateModal}
-            className="h-10 px-4 rounded-lg bg-[#00B7E8] hover:bg-[#00a8d6] text-white transition-colors flex items-center gap-2"
+            className="h-10 px-4 rounded-lg bg-[#00B7E8] hover:bg-[#00a8d6] text-white transition-colors font-medium flex items-center gap-2"
           >
             <FiUserPlus className="w-4 h-4" />
             Create Sales Officer

@@ -906,7 +906,7 @@ const SuperAdminHomePageTemplate = () => {
               <button
                 type="button"
                 onClick={() => setIsReportModalOpen(false)}
-                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-slate-100 rounded-lg cursor-pointer transition-colors"
               >
                 <FiX className="text-xl text-slate-500" />
               </button>
@@ -925,7 +925,7 @@ const SuperAdminHomePageTemplate = () => {
                         variant={reportRange === range ? "default" : "outline"}
                         onClick={() => setReportRange(range)}
                         className={cn(
-                          "h-auto py-3",
+                          "h-auto py-3 font-medium",
                           reportRange === range
                             ? "bg-[#00B7E8] hover:bg-[#029ec9] text-white shadow-md shadow-blue-200"
                             : "hover:bg-slate-50",
@@ -1010,14 +1010,14 @@ const SuperAdminHomePageTemplate = () => {
                 <Button
                   variant="outline"
                   onClick={() => setIsReportModalOpen(false)}
-                  className="flex-1 h-11"
+                  className="flex-1 h-11 font-medium"
                 >
                   Cancel
                 </Button>
                 <Button
                   onClick={generatePdfReport}
                   disabled={isGenerating}
-                  className="flex-1 h-11 bg-[#00B7E8] hover:bg-[#029ec9] text-white shadow-md shadow-blue-200"
+                  className="flex-1 h-11 font-medium bg-[#00B7E8] hover:bg-[#029ec9] text-white shadow-md shadow-blue-200"
                 >
                   {isGenerating ? (
                     <>

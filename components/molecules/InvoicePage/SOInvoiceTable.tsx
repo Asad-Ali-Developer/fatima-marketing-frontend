@@ -38,7 +38,7 @@ export default function SOInvoicesTable({
       <table className="w-full text-left border-collapse">
         <thead>
           <tr className="bg-slate-50 border-b border-slate-200">
-            <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-600 whitespace-nowrap">
+            <th className="px-6 py-3 text-xs font-bold uppercase tracking-wider text-slate-600 whitespace-nowrap">
               INVOICE NO.#
             </th>
             <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-600 whitespace-nowrap">

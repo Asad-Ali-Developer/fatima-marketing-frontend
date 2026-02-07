@@ -166,7 +166,7 @@ const ProfilePageTemplate = () => {
                   Personal Information
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-6 space-y-5">
+              <CardContent className="p-3 lg:p-6 space-y-5">
                 {/* Profile Image Section */}
                 <div className="flex items-start gap-4">
                   <div className="relative">

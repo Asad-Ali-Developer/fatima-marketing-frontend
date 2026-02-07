@@ -24,7 +24,7 @@ const EditSalesOfficerModal: FC<EditSalesOfficerModalProps> = ({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
-        <div className="p-4 border-b border-slate-200 flex items-center justify-between">
+        <div className="p-3 border-b border-slate-200 flex items-center justify-between">
           <h3 className="text-lg font-bold flex items-center gap-2 text-slate-900">
             <FiEdit2 className="text-[#00B7E8] w-5 h-5" />
             Edit Sales Officer
@@ -32,7 +32,7 @@ const EditSalesOfficerModal: FC<EditSalesOfficerModalProps> = ({
           <button
             type="button"
             onClick={closeEditModal}
-            className="p-1.5 rounded hover:bg-slate-100 transition-colors"
+            className="p-1.5 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors"
           >
             <FiX className="w-5 h-5 text-slate-500" />
           </button>
@@ -106,13 +106,13 @@ const EditSalesOfficerModal: FC<EditSalesOfficerModalProps> = ({
             <Button
               variant="outline"
               onClick={closeEditModal}
-              className="flex-1 h-10 text-sm"
+              className="flex-1 h-10 text-sm font-medium"
             >
               Cancel
             </Button>
             <Button
               onClick={handleEditSubmit}
-              className="flex-1 h-10 text-white text-sm bg-[#00B7E8] hover:bg-[#00a4d1]"
+              className="flex-1 h-10 text-white font-medium text-sm bg-[#00B7E8] hover:bg-[#00a4d1]"
             >
               Update
             </Button>

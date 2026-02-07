@@ -47,7 +47,7 @@ const AdminSalesOfficersTable: FC<AdminSalesOfficersTableProps> = ({
       <div className="p-4 border-b border-slate-200 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <FiUsers className="text-[#00a8d6] w-5 h-5" />
-          <h2 className="text-lg font-bold text-slate-900">
+          <h2 className="lg:text-lg font-bold text-slate-900">
             Manage Sales Officers
           </h2>
         </div>
@@ -73,7 +73,7 @@ const AdminSalesOfficersTable: FC<AdminSalesOfficersTableProps> = ({
         </div>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full text-sm lg:text-normal text-left border-collapse">
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
                 <th className="px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">

@@ -323,7 +323,7 @@ const AdminInventoryManagementPageTemplate = () => {
               <FiFileText className="text-base" />
               Inventory Management
             </div>
-            <h2 className="text-4xl font-black tracking-tight text-[#142C4B]">
+            <h2 className="text-2xl lg:text-4xl font-black tracking-tight text-[#142C4B]">
               Manage Inventory
             </h2>
             <p className="text-slate-500 max-w-xl">
@@ -334,7 +334,7 @@ const AdminInventoryManagementPageTemplate = () => {
           <Button
             onClick={() => setIsCreateModalOpen(true)}
             disabled={isCreating}
-            className="flex items-center gap-2 text-white bg-[#00B7E8] hover:bg-[#029ec9] transition-colors duration-150 cursor-pointer shadow-none rounded"
+            className="flex items-center gap-2 text-white bg-[#00B7E8] hover:bg-[#029ec9] transition-colors font-medium duration-150 cursor-pointer shadow-none rounded"
           >
             {isCreating ? (
               <>
@@ -352,7 +352,7 @@ const AdminInventoryManagementPageTemplate = () => {
 
         {/* Filters */}
         <section className="bg-white rounded-xl border border-slate-200 overflow-hidden mb-8 shadow-sm">
-          <div className="p-6">
+          <div className="p-3 lg:p-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Search */}
               <div className="relative">
@@ -376,7 +376,7 @@ const AdminInventoryManagementPageTemplate = () => {
                   onClick={() => {
                     setSearchTerm("");
                   }}
-                  className="w-full py-6 bg-[#08b8e8] rounded-lg text-white hover:bg-[#0da8d3]"
+                  className="w-full font-medium py-6 bg-[#08b8e8] rounded-lg text-white hover:bg-[#0da8d3]"
                 >
                   Clear Filters
                 </Button>
@@ -387,12 +387,12 @@ const AdminInventoryManagementPageTemplate = () => {
 
         {/* Inventory Table */}
         <section className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-          <div className="p-6 border-b border-slate-200 flex items-center justify-between">
+          <div className="px-4 lg:px-6 py-6 border-b border-slate-200 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <FiFileText className="text-primary text-xl" />
-              <h3 className="text-lg font-bold">Inventory Records</h3>
+              <FiFileText className="text-[#08b8e8] text-xl" />
+              <h3 className="text-sm lg:text-lg font-bold">Inventory Records</h3>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 lg:gap-2">
               <span
                 className={`hover:bg-gray-100 p-1.5 rounded-full cursor-pointer text-slate-600 transition-transform ${
                   isLoading ? "animate-spin" : ""
@@ -417,7 +417,7 @@ const AdminInventoryManagementPageTemplate = () => {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+              <table className="w-full text-sm lg:text-normal text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200">
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">

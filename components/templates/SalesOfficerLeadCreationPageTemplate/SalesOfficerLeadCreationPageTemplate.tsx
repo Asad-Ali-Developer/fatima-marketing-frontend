@@ -485,7 +485,7 @@ const SalesOfficerLeadCreationPageTemplate = () => {
               <FiFileText className="text-base" />
               Lead Management
             </div>
-            <h2 className="text-4xl font-black tracking-tight text-[#142C4B]">
+            <h2 className="text-2xl lg:text-4xl font-black tracking-tight text-[#142C4B]">
               Manage Leads
             </h2>
             <p className="text-slate-500 max-w-xl">
@@ -496,7 +496,7 @@ const SalesOfficerLeadCreationPageTemplate = () => {
           <Button
             onClick={() => setIsCreateModalOpen(true)}
             disabled={isCreating}
-            className="flex items-center gap-2 text-white bg-[#00B7E8] hover:bg-[#029ec9] transition-colors duration-150 cursor-pointer shadow-none rounded"
+            className="flex items-center font-medium gap-2 text-white bg-[#00B7E8] hover:bg-[#029ec9] transition-colors duration-150 cursor-pointer shadow-none rounded"
           >
             {isCreating ? (
               <>
@@ -514,7 +514,7 @@ const SalesOfficerLeadCreationPageTemplate = () => {
 
         {/* Filters */}
         <section className="bg-white rounded-xl border border-slate-200 overflow-hidden mb-8 shadow-sm">
-          <div className="p-6">
+          <div className="p-3 lg:p-6">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               {/* Search */}
               <div className="relative">
@@ -595,7 +595,7 @@ const SalesOfficerLeadCreationPageTemplate = () => {
                     setStatusFilter("all");
                     setDateFilter(undefined);
                   }}
-                  className="w-full border py-5 rounded-lg hover:bg-slate-50"
+                  className="w-full font-medium bg-[#08b8e8] border py-5 rounded-lg hover:bg-[#10afdb]"
                 >
                   Clear Filters
                 </Button>
@@ -606,9 +606,9 @@ const SalesOfficerLeadCreationPageTemplate = () => {
 
         {/* Leads Table */}
         <section className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-          <div className="p-6 border-b border-slate-200 flex items-center justify-between">
+          <div className="p-4 lg:p-6 border-b border-slate-200 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <FiFileText className="text-primary text-xl" />
+              <FiFileText className="text-[#08b8e8] text-xl" />
               <h3 className="text-lg font-bold">Lead Records</h3>
             </div>
             <div className="flex items-center gap-2">
@@ -636,13 +636,13 @@ const SalesOfficerLeadCreationPageTemplate = () => {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+              <table className="w-full text-sm lg:text-normal text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200">
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
                       User
                     </th>
-                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
+                    <th className="px-6 py-4 truncate max-w-[170px] text-xs font-bold uppercase tracking-wider text-slate-600">
                       Phone Number
                     </th>
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
@@ -674,10 +674,10 @@ const SalesOfficerLeadCreationPageTemplate = () => {
                       <td className="px-6 py-4 text-sm text-slate-600">
                         {lead.phoneNumber || "N/A"}
                       </td>
-                      <td className="px-6 py-4 text-sm text-slate-600">
+                      <td className="px-6 py-4 truncate max-w-[200px] text-sm text-slate-600">
                         {lead.location || "-"}
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-4 truncate max-w-[170px]">
                         {format(new Date(lead.time), "dd MMM yyyy")}
                       </td>
                       <td className="px-6 py-4">

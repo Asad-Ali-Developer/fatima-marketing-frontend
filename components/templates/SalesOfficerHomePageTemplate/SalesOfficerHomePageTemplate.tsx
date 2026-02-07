@@ -209,7 +209,7 @@ export default function SalesOfficerHomePageTemplate() {
                 <TrendingUp className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl lg:text-2xl font-bold">
+                <h1 className="text-lg lg:text-2xl font-bold">
                   Sales Officer Dashboard
                 </h1>
                 <p className="text-sm text-gray-500">
@@ -298,7 +298,7 @@ export default function SalesOfficerHomePageTemplate() {
 
         {/* Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+          <div className="bg-white text-sm lg:text-normal border border-gray-200 rounded-lg p-6 shadow-sm">
             <h3 className="text-lg font-semibold mb-4">
               Lead Status Distribution
             </h3>
@@ -329,8 +329,8 @@ export default function SalesOfficerHomePageTemplate() {
             </ResponsiveContainer>
           </div>
 
-          <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-            <h3 className="text-lg font-semibold mb-4">
+          <div className="bg-white text-sm lg:text-normal border border-gray-200 rounded-lg p-6 shadow-sm">
+            <h3 className="lg:text-lg font-semibold mb-4">
               Invoice Status Breakdown
             </h3>
             <ResponsiveContainer width="100%" height={250}>
@@ -360,8 +360,8 @@ export default function SalesOfficerHomePageTemplate() {
             </ResponsiveContainer>
           </div>
 
-          <div className="bg-white border border-gray-200 rounded-lg p-6 lg:col-span-2 shadow-sm">
-            <h3 className="text-lg font-semibold mb-4">
+          <div className="bg-white text-sm lg:text-normal border border-gray-200 rounded-lg p-6 lg:col-span-2 shadow-sm">
+            <h3 className="lg:text-lg font-semibold mb-4">
               Monthly Revenue Trend
             </h3>
             <ResponsiveContainer width="100%" height={300}>
@@ -402,7 +402,7 @@ export default function SalesOfficerHomePageTemplate() {
 
         {/* Tabs */}
         <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
-          <div className="flex border-b border-gray-200">
+          <div className="flex text-sm lg:text-normal border-b border-gray-200">
             <button
               onClick={() => setActiveTab("leads")}
               className={`flex-1 px-6 py-4 font-medium transition-colors ${
@@ -433,7 +433,7 @@ export default function SalesOfficerHomePageTemplate() {
 
           {/* Leads Tab */}
           {activeTab === "leads" && (
-            <div className="p-6">
+            <div className="p-3 lg:p-6 text-sm lg:text-normal">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
                 <div className="relative lg:col-span-2">
                   <Search className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
@@ -499,10 +499,10 @@ export default function SalesOfficerHomePageTemplate() {
                           key={lead._id}
                           className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
                         >
-                          <td className="px-4 py-4 font-medium">
+                          <td className="px-4 truncate max-w-[160px] py-4 font-medium">
                             {lead.userName}
                           </td>
-                          <td className="px-4 py-4 text-gray-600">
+                          <td className="px-4 truncate max-w-[200px] py-4 text-gray-600">
                             {lead.location}
                           </td>
                           <td className="px-4 py-4 text-gray-600">
@@ -539,7 +539,7 @@ export default function SalesOfficerHomePageTemplate() {
 
           {/* Invoices Tab */}
           {activeTab === "invoices" && (
-            <div className="p-6">
+            <div className="p-3 lg:p-6 text-sm lg:text-normal">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
                 <div className="relative lg:col-span-2">
                   <Search className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
@@ -625,19 +625,19 @@ export default function SalesOfficerHomePageTemplate() {
                           key={invoice._id}
                           className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
                         >
-                          <td className="px-4 py-4 font-medium">
+                          <td className="px-4 py-4 truncate max-w-[170px] font-medium">
                             {invoice.customerName}
                           </td>
                           <td className="px-4 py-4 text-gray-600">
                             {invoice.phoneNumber}
                           </td>
-                          <td className="px-4 py-4 text-gray-600">
+                          <td className="px-4 py-4 truncate max-w-[200px] text-gray-600">
                             {invoice.location || "—"}
                           </td>
                           <td className="px-4 py-4 text-gray-600">
                             {new Date(invoice.date).toLocaleDateString()}
                           </td>
-                          <td className="px-4 py-4">
+                          <td className="px-4 py-4 truncate max-w-[200px]">
                             <span
                               className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getInvoiceStatusColor(
                                 invoice.status,
@@ -648,7 +648,7 @@ export default function SalesOfficerHomePageTemplate() {
                               )?.label || invoice.status}
                             </span>
                           </td>
-                          <td className="px-4 py-4 text-right font-medium">
+                          <td className="px-4 py-4 truncate max-w-[200px] text-right font-medium">
                             Rs.{" "}
                             <span className="font-semibold">
                               {invoice.amount.toLocaleString()}

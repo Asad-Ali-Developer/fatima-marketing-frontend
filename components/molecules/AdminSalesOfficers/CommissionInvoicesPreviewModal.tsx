@@ -63,9 +63,9 @@ const CommissionInvoicesPreviewModal = ({
             <tr>
               <td>${inv.customerName}</td>
               <td>${inv.phoneNumber}</td>
-              <td class="text-right">Rs. ${inv.amount.toFixed()}</td>
+              <td class="text-right">Rs. ${inv.amount.toLocaleString()}</td>
               <td class="text-right">${(normalizedRate * 100).toFixed()}%</td>
-              <td class="text-right highlight">Rs. ${commission.toFixed()}</td>
+              <td class="text-right highlight">Rs. ${commission.toLocaleString()}</td>
             </tr>
           `;
       })
@@ -81,7 +81,7 @@ const CommissionInvoicesPreviewModal = ({
           <!-- Top Company Info -->
           <div class="header">
             <div class="company-info">Office number 111, first floor Capital Business Center F-10 Markaz Islamabad</div>
-            <div class="company-info">Www.fatimamarketing.com</div>
+            <div class="company-info">www.fatimamarketing.com</div>
             <div class="company-info">UAN # 0331-1111057</div>
           </div>
 
@@ -89,11 +89,11 @@ const CommissionInvoicesPreviewModal = ({
           <div class="summary-box">
             <h2 style="text-align:center; margin-bottom:8px;">Commission Statement</h2>
             <p><strong>Sales Officer:</strong> ${salesOfficer.full_name}</p>
-            <p><strong>Commission Rate:</strong> ${(normalizedRate * 100).toFixed()}%</p>
+            <p><strong>Commission Rate:</strong> ${(normalizedRate * 100).toLocaleString()}%</p>
             <p><strong>Salary:</strong> ${salesOfficer.rokra}%</p>
             <p><strong>Total Invoices:</strong> ${filteredInvoices.length}</p>
-            <p><strong>Total Amount:</strong> Rs. ${totalAmount.toFixed()}</p>
-            <p class="highlight"><strong>Total Commission:</strong> Rs. ${totalCommission.toFixed()}</p>
+            <p><strong>Total Amount:</strong> Rs. ${totalAmount.toLocaleString()}</p>
+            <p class="highlight"><strong>Total Commission:</strong> Rs. ${totalCommission.toLocaleString()}</p>
           </div>
 
           <!-- Table -->
@@ -127,7 +127,7 @@ const CommissionInvoicesPreviewModal = ({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl h-[90vh] overflow-y-auto flex flex-col">
-        <div className="p-4 border-b border-slate-200 flex items-center justify-between">
+        <div className="p-3 border-b border-slate-200 flex items-center justify-between">
           <div>
             <h3 className="text-lg font-bold">
               Commission for {salesOfficer.full_name}
@@ -197,13 +197,13 @@ const CommissionInvoicesPreviewModal = ({
                       <td className="px-4 py-2">{inv.customerName}</td>
                       <td className="px-4 py-2">{inv.phoneNumber}</td>
                       <td className="px-4 py-2 text-right">
-                        Rs. {inv.amount.toFixed()}
+                        Rs. {inv.amount.toLocaleString()}
                       </td>
                       <td className="px-4 py-2 text-right">
                         {(normalizedRate * 100).toFixed()}%
                       </td>
                       <td className="px-4 py-2 text-right font-bold text-[#00B7E8]">
-                        Rs. {commission.toFixed()}
+                        Rs. {commission.toLocaleString()}
                       </td>
                     </tr>
                   );
@@ -217,19 +217,19 @@ const CommissionInvoicesPreviewModal = ({
         <div className="px-6 py-3 bg-slate-50 border-t border-slate-200 text-sm flex justify-between items-center">
           <div>
             <span className="mr-4">
-              <strong>Total Amount:</strong> Rs. {totalAmount.toFixed()}
+              <strong>Total Amount:</strong> Rs. {totalAmount.toLocaleString()}
             </span>
             <span>
               <strong>Rate:</strong> {(normalizedRate * 100).toFixed()}%
             </span>
           </div>
           <div className="font-bold text-[#00B7E8]">
-            Total Commission: Rs. {totalCommission.toFixed()}
+            Total Commission: Rs. {totalCommission.toLocaleString()}
           </div>
         </div>
         <div className="px-6 py-2 text-center text-xs text-slate-600 bg-slate-50">
           Office number 111, first floor Capital Business Center F-10 Markaz
-          Islamabad • Www.fatimamarketing.com • UAN # 0331-1111057
+          Islamabad • www.fatimamarketing.com • UAN # 0331-1111057
         </div>
       </div>
     </div>

@@ -171,7 +171,7 @@ const CreateLeadModal: FC<CreateLeadModalProps> = ({
               value={formData?.assignedTo?.id} // ✅ Now a string (ID)
               onValueChange={handleAssignedToChange} // ✅ Maps ID → full object
             >
-              <SelectTrigger className="w-full border-slate-300 focus:ring-[#00B7E8] focus:border-[#00B7E8] px-5 py-4">
+              <SelectTrigger className="w-full border-slate-200 focus:ring-[#00B7E8] focus:border-[#00B7E8] px-5 py-5.5">
                 <SelectValue placeholder="Select sales officer" />
               </SelectTrigger>
               <SelectContent>

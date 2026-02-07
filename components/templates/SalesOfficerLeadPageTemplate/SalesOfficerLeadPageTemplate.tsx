@@ -292,7 +292,7 @@ import { generateInvoiceNumber } from "@/utils";
                 <FiFileText className="text-base" />
                 Lead Management
               </div>
-              <h2 className="text-4xl font-black tracking-tight text-[#142C4B]">
+              <h2 className="text-2xl lg:text-4xl font-black tracking-tight text-[#142C4B]">
                 Manage Leads
               </h2>
               <p className="text-slate-500 max-w-xl">
@@ -304,7 +304,7 @@ import { generateInvoiceNumber } from "@/utils";
 
           {/* Filters */}
           <section className="bg-white rounded-xl border border-slate-200 overflow-hidden mb-8 shadow-sm">
-            <div className="p-6">
+            <div className="p-3 lg:p-6">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 {/* Search */}
                 <div className="relative">
@@ -385,7 +385,7 @@ import { generateInvoiceNumber } from "@/utils";
                       setStatusFilter("all");
                       setDateFilter(undefined);
                     }}
-                    className="w-full border-slate-200 py-5 rounded-lg text-slate-600 hover:bg-slate-50"
+                    className="w-full font-medium bg-[#08b8e8] py-5 rounded-lg text-white hover:bg-[#07a6d2]"
                   >
                     Clear Filters
                   </Button>
@@ -396,12 +396,12 @@ import { generateInvoiceNumber } from "@/utils";
 
           {/* Leads Table */}
           <section className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-            <div className="p-6 border-b border-slate-200 flex items-center justify-between">
+            <div className="p-4 lg:p-6 border-b border-slate-200 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <FiFileText className="text-[#00B7E8] text-xl" />
                 <h3 className="text-lg font-bold">Lead Records</h3>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 lg:gap-2">
                 <span
                   className={`hover:bg-gray-100 p-1.5 rounded-full cursor-pointer text-slate-600 transition-transform ${
                     isLoading ? "animate-spin" : ""
@@ -432,7 +432,7 @@ import { generateInvoiceNumber } from "@/utils";
                       <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
                         User
                       </th>
-                      <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
+                      <th className="px-6 py-4 truncate max-w-[170px] text-xs font-bold uppercase tracking-wider text-slate-600">
                         Phone Number
                       </th>
                       <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
@@ -461,19 +461,19 @@ import { generateInvoiceNumber } from "@/utils";
                         key={lead._id}
                         className="hover:bg-slate-50/50 transition-colors"
                       >
-                        <td className="px-6 py-4 font-semibold">
+                        <td className="px-6 truncate max-w-[170px] py-4 font-semibold">
                           {lead.userName}
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-600">
                           {lead.phoneNumber || "N/A"}
                         </td>
-                        <td className="px-6 py-4 text-sm text-slate-600">
+                        <td className="px-6 truncate max-w-[200px] py-4 text-sm text-slate-600">
                           {lead.location || "N/A"}
                         </td>
-                        <td className="px-6 py-4 capitalize text-sm text-slate-600">
+                        <td className="px-6 py-4 truncate max-w-[170px] capitalize text-sm text-slate-600">
                           {lead?.createdBy?.full_name}
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-6 py-4 truncate max-w-[170px]">
                           {format(new Date(lead.time), "dd MMM yyyy")}
                         </td>
                         <td className="px-6 py-4">

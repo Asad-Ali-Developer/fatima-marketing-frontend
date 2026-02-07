@@ -48,6 +48,7 @@ import {
 } from "react-icons/fi";
 import { LuRefreshCcw } from "react-icons/lu";
 import { useSelector } from "react-redux";
+import { toast } from "react-toastify";
 
 // ✨ Shimmer Skeleton
 const LeadTableSkeleton = () => {
@@ -146,7 +147,6 @@ const AdminLeadCreationPageTemplate = () => {
   const [remarksInput, setRemarksInput] = useState("");
   const [updatingRemarks, setUpdatingRemarks] = useState(false);
 
-  // Fetch leads
   const fetchLeads = async (page = 1) => {
     setIsLoading(true);
     try {
@@ -226,7 +226,7 @@ const AdminLeadCreationPageTemplate = () => {
 
   const handleCreateLead = async () => {
     if (!formData.userName.trim() || !formData?.assignedTo?.id) {
-      alert("Please fill in all required fields");
+      toast.info("Please fill in all required fields");
       return;
     }
     setIsCreating(true);
@@ -243,8 +243,6 @@ const AdminLeadCreationPageTemplate = () => {
       createdAt: new Date().toISOString(),
       createdBy: formData.createdBy,
     };
-
-    console.log("New Lead: ", newLead);
 
     const wasOnPage1 = currentPage === 1;
     if (wasOnPage1) {
@@ -300,7 +298,7 @@ const AdminLeadCreationPageTemplate = () => {
         setLeads((prev) => prev.filter((lead) => lead._id !== newLead._id));
         setTotalLeads((prev) => Math.max(0, prev - 1));
       }
-      alert("Failed to create lead. Please try again.");
+      toast.error("Failed to create lead. Please try again.");
     } finally {
       setIsCreating(false);
     }
@@ -317,6 +315,7 @@ const AdminLeadCreationPageTemplate = () => {
       time: format(formData.time, "yyyy-MM-dd"),
       status: formData.status,
       assignedTo: formData.assignedTo,
+      phoneNumber: formData.phoneNumber,
     };
 
     setLeads((prev) =>
@@ -330,29 +329,39 @@ const AdminLeadCreationPageTemplate = () => {
         time: formData.time,
         status: formData.status,
         assignedTo: formData.assignedTo,
+        phoneNumber: formData.phoneNumber,
       };
       await leadService.updateLead(editingLead._id, payload);
       setIsEditModalOpen(false);
       setEditingLead(null);
+
+      setFormData({
+        userName: "",
+        location: "",
+        phoneNumber: "",
+        time: new Date(),
+        status: "pending",
+        assignedTo: {
+          id: "",
+          email: "",
+          full_name: "",
+        },
+        createdBy: {
+          id: "",
+          email: "",
+          full_name: "",
+        },
+      });
     } catch (error) {
       console.error("Failed to update lead:", error);
       setLeads((prev) =>
         prev.map((lead) => (lead._id === editingLead._id ? editingLead : lead)),
       );
-      alert("Failed to update lead. Please try again.");
+      toast.error("Failed to update lead. Please try again.");
     } finally {
       setIsUpdating(false);
     }
   };
-
-  // const handleStatusChange = (leadId: string, newStatus: string) => {
-  //   setShowConfirmModal({
-  //     isOpen: true,
-  //     type: "status",
-  //     leadId,
-  //     newStatus,
-  //   });
-  // };
 
   const confirmAction = async () => {
     if (showConfirmModal.type === "delete" && showConfirmModal.leadId) {
@@ -376,7 +385,7 @@ const AdminLeadCreationPageTemplate = () => {
         console.error("Failed to delete lead:", error);
         setLeads(prevLeads);
         setTotalLeads((prev) => prev + 1);
-        alert("Failed to delete lead.");
+        toast.error("Failed to delete lead.");
       } finally {
         setShowConfirmModal({ isOpen: false, type: "delete" });
         setIsDeleting(false);
@@ -416,7 +425,7 @@ const AdminLeadCreationPageTemplate = () => {
             lead._id === showConfirmModal.leadId ? leadToUpdate : lead,
           ),
         );
-        alert("Failed to update status.");
+        toast.error("Failed to update status.");
       } finally {
         setShowConfirmModal({ isOpen: false, type: "delete" });
         setIsChangingStatus(false);
@@ -449,6 +458,7 @@ const AdminLeadCreationPageTemplate = () => {
       time: new Date(lead.time), // convert string → Date
       status: lead.status as LeadStatus,
       assignedTo: lead.assignedTo, // full object
+      phoneNumber: lead.phoneNumber,
     });
     setIsEditModalOpen(true);
   };
@@ -510,7 +520,7 @@ const AdminLeadCreationPageTemplate = () => {
           <Button
             onClick={() => setIsCreateModalOpen(true)}
             disabled={isCreating}
-            className="flex items-center gap-2 text-white bg-[#00B7E8] hover:bg-[#029ec9] transition-colors duration-150 cursor-pointer shadow-none rounded"
+            className="flex items-center gap-2 text-white bg-[#00B7E8] hover:bg-[#029ec9] transition-colors font-medium duration-150 cursor-pointer shadow-none rounded"
           >
             {isCreating ? (
               <>
@@ -609,7 +619,7 @@ const AdminLeadCreationPageTemplate = () => {
                     setStatusFilter("all");
                     setDateFilter(undefined);
                   }}
-                  className="w-full border py-5 rounded-lg hover:bg-slate-50"
+                  className="w-full border font-medium py-5 rounded-lg hover:bg-slate-50"
                 >
                   Clear Filters
                 </Button>
@@ -622,8 +632,8 @@ const AdminLeadCreationPageTemplate = () => {
         <section className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
           <div className="p-6 border-b border-slate-200 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <FiFileText className="text-primary text-xl" />
-              <h3 className="text-lg font-bold">Lead Records</h3>
+              <FiFileText className="text-[#00B7E8] text-xl" />
+              <h3 className="lg:text-lg font-bold">Lead Records</h3>
             </div>
             <div className="flex items-center gap-2">
               <span
@@ -650,19 +660,19 @@ const AdminLeadCreationPageTemplate = () => {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+              <table className="w-full text-sm lg:text-normal text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200">
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
                       User
                     </th>
-                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
+                    <th className="px-6 py-4 text-xs truncate max-w-[170px] font-bold uppercase tracking-wider text-slate-600">
                       Phone Number
                     </th>
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
                       Location
                     </th>
-                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
+                    <th className="px-6 py-4 text-xs font-bold truncate max-w-[170px] uppercase tracking-wider text-slate-600">
                       Assigned To
                     </th>
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
@@ -685,7 +695,7 @@ const AdminLeadCreationPageTemplate = () => {
                       key={lead._id}
                       className="hover:bg-slate-50/50 transition-colors"
                     >
-                      <td className="px-6 py-4 font-semibold">
+                      <td className="px-6 py-4 truncate max-w-[200px] font-semibold">
                         {lead.userName}
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-600">
@@ -697,7 +707,7 @@ const AdminLeadCreationPageTemplate = () => {
                       <td className="px-6 py-4 text-sm capitalize text-slate-600">
                         {lead?.assignedTo?.full_name}
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 truncate max-w-[170px] py-4">
                         {format(new Date(lead.time), "dd MMM yyyy")}
                       </td>
                       <td className="px-6 py-4">

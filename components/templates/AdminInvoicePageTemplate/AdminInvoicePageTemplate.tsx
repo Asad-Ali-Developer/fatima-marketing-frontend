@@ -1,6 +1,6 @@
 "use client";
 import { InvoiceNumberCell } from "@/components/atoms";
-import AdminViewInvoice from "@/components/molecules/InvoicePage/AdminViewInvoice";
+import { AdminViewInvoice } from "@/components/molecules";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
@@ -220,7 +220,7 @@ const AdminInvoicePageTemplate = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 text-slate-900 font-sans">
-      <main className="px-1 lg:px-6 py-10">
+      <main className="px-3 lg:px-6 py-10">
         {/* Page Heading */}
         <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="space-y-1">
@@ -240,7 +240,7 @@ const AdminInvoicePageTemplate = () => {
 
         {/* Filters Section */}
         <section className="bg-white rounded-xl border border-slate-200 overflow-hidden mb-8 shadow-sm">
-          <div className="p-6">
+          <div className="p-3 lg:p-6">
             <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
               {/* Name Filter */}
               <div className="relative">
@@ -344,6 +344,8 @@ const AdminInvoicePageTemplate = () => {
                   variant="outline"
                   onClick={() => {
                     setSearchTerm("");
+                    setSearchPhone("")
+                    setSearchInvoice("")
                     setStatusFilter("all");
                     setDateFilter(undefined);
                   }}
@@ -360,10 +362,10 @@ const AdminInvoicePageTemplate = () => {
         <section className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
           <div className="p-6 border-b border-slate-200 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <FiFileText className="text-primary text-xl" />
-              <h3 className="text-lg font-bold">Invoice Records</h3>
+              <FiFileText className="text-[#00B7E8] text-xl" />
+              <h3 className="text-sm lg:text-lg font-bold">Invoice Records</h3>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 lg:gap-2">
               <span
                 className={`hover:bg-gray-100 p-1.5 rounded-full cursor-pointer text-slate-600 transition-transform ${
                   isLoading ? "animate-spin" : ""
@@ -388,7 +390,7 @@ const AdminInvoicePageTemplate = () => {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+              <table className="w-full text-sm lg:text-normal text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200">
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
@@ -400,13 +402,19 @@ const AdminInvoicePageTemplate = () => {
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
                       Phone
                     </th>
-                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
+                    <th className="px-6 py-4 truncate max-w-[180px] text-xs font-bold uppercase tracking-wider text-slate-600">
                       Sales Officer (SO)
                     </th>
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
                       Location
                     </th>
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
+                      Quantity
+                    </th>
+                    <th className="px-6 py-4 text-xs truncate max-w-[150px] font-bold uppercase tracking-wider text-slate-600">
+                      Property Type
+                    </th>
+                    <th className="px-6 py-4 text-xs font-bold truncate max-w-[150px] uppercase tracking-wider text-slate-600">
                       Amount
                     </th>
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
@@ -415,7 +423,7 @@ const AdminInvoicePageTemplate = () => {
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
                       Invoice Status
                     </th>
-                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
+                    <th className="px-6 py-4 truncate max-w-[170px] text-xs font-bold uppercase tracking-wider text-slate-600">
                       Approval Status
                     </th>
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600 text-right">
@@ -431,42 +439,53 @@ const AdminInvoicePageTemplate = () => {
                     >
                       <InvoiceNumberCell
                         invoice_number={invoice.invoice_number}
+                        // paddingX="px-3"
                       />
                       <td className="px-6 py-4">
-                        <span className="font-semibold text-slate-900">
+                        <span className="font-semibold text-slate-900 truncate max-w-[200px]">
                           {invoice.customerName}
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="text-sm text-slate-600">
+                        <span className="text-sm text-slate-600 truncate max-w-[120px]">
                           {invoice.phoneNumber}
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="text-sm text-slate-600">
+                        <span className="text-sm text-slate-600 truncate max-w-[150px]">
                           {invoice.created_by?.name || "N/A"}
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="text-sm text-slate-600">
+                        <span className="text-sm text-slate-600 truncate max-w-[130px]">
                           {invoice.location || "-"}
                         </span>
                       </td>
-                      <td className="px-6 py-4">
-                        <span className="font-semibold text-slate-900">
-                          Rs. {invoice.amount.toFixed()}
+                      <td className="px-6 py-4 text-center">
+                        <span className="text-sm text-slate-600">
+                          {invoice.quantity || "-"}
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="text-sm text-slate-600">
+                        <span className="text-sm text-slate-600 truncate max-w-[200px]">
+                          {invoice.property_type || "-"}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="font-semibold truncate block max-w-[150px] text-slate-900">
+                          Rs. {invoice.amount.toLocaleString()}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="text-sm text-slate-600 block truncate max-w-[200px]">
                           {format(new Date(invoice.date), "dd MMM yyyy")}
                         </span>
                       </td>
                       {/* ✅ Invoice Status: Read-only */}
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-3">
                         <span
                           className={cn(
-                            "inline-block px-6 py-3 rounded-full text-xs font-semibold",
+                            "px-6 py-3 rounded-full text-xs font-semibold truncate max-w-[200px] block",
                             statusOptions.find(
                               (opt) => opt.value === invoice.status,
                             )?.color || "bg-slate-100 text-slate-700",
@@ -480,7 +499,7 @@ const AdminInvoicePageTemplate = () => {
                         </span>
                       </td>
                       {/* ✅ Approval Status: Editable by admin */}
-                      <td className="px-1 py-4">
+                      <td className="px-6 py-4">
                         <Select
                           value={
                             invoice.reported_to?.admin_approval_status ||
@@ -496,7 +515,7 @@ const AdminInvoicePageTemplate = () => {
                         >
                           <SelectTrigger
                             className={cn(
-                              "w-[130px] px-3 py-1 rounded-full text-xs font-semibold border-none",
+                              "w-[100px] px-3 py-1 rounded-full text-xs font-semibold border-none",
                               adminInvoiceApprovalStatusOptions.find(
                                 (opt) =>
                                   opt.value ===
@@ -531,7 +550,6 @@ const AdminInvoicePageTemplate = () => {
                           >
                             <FiEye className="text-base" />
                           </button>
-                          {/* ❌ No edit/delete for admin */}
                         </div>
                       </td>
                     </tr>
@@ -543,7 +561,7 @@ const AdminInvoicePageTemplate = () => {
 
           {/* Pagination */}
           {paginatedInvoices.length > 0 && (
-            <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+            <div className="px-3 lg:px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
               <span className="text-xs font-semibold text-slate-600">
                 Showing {(currentPage - 1) * itemsPerPage + 1}-
                 {Math.min(currentPage * itemsPerPage, totalInvoices)} of{" "}
@@ -555,7 +573,7 @@ const AdminInvoicePageTemplate = () => {
                     setCurrentPage((prev) => Math.max(prev - 1, 1))
                   }
                   disabled={currentPage === 1}
-                  className="px-4 py-2 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-semibold"
+                  className="px-2 lg:px-4 py-1 lg:py-2 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors  text-xs lg:text-sm font-semibold"
                 >
                   Previous
                 </button>
@@ -581,7 +599,7 @@ const AdminInvoicePageTemplate = () => {
                     setCurrentPage((prev) => Math.min(prev + 1, totalPages))
                   }
                   disabled={currentPage === totalPages}
-                  className="px-4 py-2 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-semibold"
+                  className="px-2 lg:px-4 py-1 lg:py-2 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs lg:text-sm font-semibold"
                 >
                   Next
                 </button>

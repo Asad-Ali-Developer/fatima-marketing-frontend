@@ -486,7 +486,7 @@ const InvoicePageTemplate = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 text-slate-900 font-sans">
-      <main className="mx-auto px-1 lg:px-6 py-10">
+      <main className="mx-auto px-3 lg:px-6 py-10">
         {/* Page Heading */}
         <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="space-y-1">
@@ -494,7 +494,7 @@ const InvoicePageTemplate = () => {
               <FiFileText className="text-base" />
               Invoice Management
             </div>
-            <h2 className="text-4xl font-black tracking-tight text-[#142C4B]">
+            <h2 className="text-2xl lg:text-4xl font-black tracking-tight text-[#142C4B]">
               Manage Invoices
             </h2>
             <p className="text-slate-500 max-w-xl">
@@ -505,7 +505,7 @@ const InvoicePageTemplate = () => {
           <Button
             onClick={() => setIsCreateModalOpen(true)}
             disabled={isCreating}
-            className="flex items-center gap-2 text-white bg-[#00B7E8] hover:bg-[#029ec9] transition-colors duration-150 cursor-pointer shadow-none rounded"
+            className="flex items-center gap-2 text-white bg-[#00B7E8] hover:bg-[#029ec9] transition-colors font-medium duration-150 cursor-pointer shadow-none rounded"
           >
             {isCreating ? (
               <>
@@ -523,7 +523,7 @@ const InvoicePageTemplate = () => {
 
         {/* Filters Section */}
         <section className="bg-white rounded-xl border border-slate-200 overflow-hidden mb-8 shadow-sm">
-          <div className="p-6">
+          <div className="p-3 lg:p-6">
             <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
               {/* Invoice Filter */}
               <div className="relative">
@@ -635,7 +635,7 @@ const InvoicePageTemplate = () => {
                     setStatusFilter("all");
                     setDateFilter(undefined);
                   }}
-                  className="w-full border-slate-200 font-medium rounded-lg text-slate-600 hover:bg-slate-50 py-5"
+                  className="w-full font-medium bg-[#08b8e8] rounded-lg text-white hover:bg-[#11afda] py-5"
                 >
                   Clear Filters
                 </Button>
@@ -646,12 +646,12 @@ const InvoicePageTemplate = () => {
 
         {/* Invoices Table */}
         <section className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-          <div className="p-6 border-b border-slate-200 flex items-center justify-between">
+          <div className="p-4 lg:p-6 border-b border-slate-200 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <FiFileText className="text-[#00B7E8] text-xl" />
               <h3 className="text-lg font-bold">Invoice Records</h3>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 lg:gap-2">
               <span
                 className={`hover:bg-gray-100 p-1.5 rounded-full cursor-pointer text-slate-600 transition-transform ${
                   isLoading ? "animate-spin" : ""

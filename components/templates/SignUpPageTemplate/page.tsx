@@ -55,7 +55,7 @@ export default function SignUpPageTemplate() {
   return (
     <div className="flex w-full min-h-screen">
       {/* Left Form */}
-      <div className="w-full lg:w-1/2 flex flex-col justify-center px-8 sm:px-12 lg:px-24 py-6 bg-white dark:bg-zinc-900 shadow-xl z-10">
+      <div className="w-full lg:w-1/2 flex flex-col justify-center px-4 sm:px-12 lg:px-24 py-6 bg-white dark:bg-zinc-900 shadow-xl z-10">
         <div className="max-w-md w-full mx-auto">
           <div className="mb-2">
             <img
@@ -69,7 +69,7 @@ export default function SignUpPageTemplate() {
           </div>
 
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-zinc-900 dark:text-white mb-2">
+            <h1 className="text-2xl lg:text-3xl font-bold text-zinc-900 dark:text-white mb-2">
               Create an Account
             </h1>
             <p className="text-zinc-600 dark:text-zinc-400">
@@ -173,7 +173,7 @@ export default function SignUpPageTemplate() {
               />
               <label
                 htmlFor="terms"
-                className="block text-sm text-zinc-600 dark:text-zinc-400"
+                className="block text-xs lg:text-sm text-zinc-600 dark:text-zinc-400"
               >
                 I agree to the{" "}
                 <a
@@ -203,7 +203,7 @@ export default function SignUpPageTemplate() {
             Already have an account?{" "}
             <Link
               href="/signin"
-              className="text-zinc-900 dark:text-white font-bold hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors"
+              className="text-[#08b8e8] dark:text-white hover:text-zinc-700 dark:hover:text-zinc-300 font-medium transition-colors"
             >
               Log In
             </Link>

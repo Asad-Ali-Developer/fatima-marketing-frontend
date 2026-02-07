@@ -4,7 +4,15 @@ import { useState } from "react";
 import { Check, Copy } from "lucide-react";
 
 // Inside your component
-const InvoiceNumberCell = ({ invoice_number }: { invoice_number?: string }) => {
+const InvoiceNumberCell = ({
+  invoice_number,
+  paddingX,
+  paddingY,
+}: {
+  invoice_number?: string;
+  paddingX?: string;
+  paddingY?: string;
+}) => {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
@@ -26,7 +34,7 @@ const InvoiceNumberCell = ({ invoice_number }: { invoice_number?: string }) => {
   }
 
   return (
-    <td className="px-6 py-4 font-medium">
+    <td className={`${paddingX ? paddingX : "px-6"} ${paddingY ? paddingY : "py-4"} font-medium`}>
       <div className="flex items-center gap-2">
         <span className="text-sm text-slate-600 truncate w-[120px]">
           {invoice_number}
@@ -48,4 +56,4 @@ const InvoiceNumberCell = ({ invoice_number }: { invoice_number?: string }) => {
   );
 };
 
-export default InvoiceNumberCell
+export default InvoiceNumberCell;
