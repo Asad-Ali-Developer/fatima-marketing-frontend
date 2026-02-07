@@ -62,7 +62,7 @@ export default function SOInvoicesTable({
             <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-600 whitespace-nowrap text-right">
               AMOUNT
             </th>
-            <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-600 whitespace-nowrap">
+            <th className="px-4 py-3 text-xs truncate max-w-[200px] font-bold uppercase tracking-wider text-slate-600 whitespace-nowrap">
               DATE
             </th>
             <th className="px-4 py-3 text-xs font-bold uppercase tracking-wider text-slate-600 whitespace-nowrap">
@@ -117,7 +117,7 @@ export default function SOInvoicesTable({
               </td>
 
               {/* Quantity */}
-              <td className="px-4 py-3">
+              <td className="px-4 py-3 text-center">
                 <span className="text-sm text-slate-600">
                   {invoice.quantity ?? "N/A"}
                 </span>
@@ -125,7 +125,7 @@ export default function SOInvoicesTable({
 
               {/* Property Type */}
               <td className="px-4 py-3">
-                <span className="text-sm text-slate-600 truncate block max-w-[100px]">
+                <span className="text-sm text-slate-600 truncate block max-w-[130px]">
                   {invoice.property_type || "N/A"}
                 </span>
               </td>

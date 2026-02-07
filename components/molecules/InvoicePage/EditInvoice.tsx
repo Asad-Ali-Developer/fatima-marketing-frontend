@@ -43,7 +43,7 @@ const EditInvoice: FC<EditInvoiceProps> = ({
 }) => {
   console.log("Formdata: ", formData.status);
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 lg:p-4">
       <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-3 border-b border-slate-200 flex items-center justify-between">
           <h3 className="text-xl font-bold flex items-center gap-2">
@@ -59,7 +59,7 @@ const EditInvoice: FC<EditInvoiceProps> = ({
           </button>
         </div>
         <div>
-          <div className="p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="p-3 lg:p-6 grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
             <div className="space-y-2">
               <label className="text-xs font-bold uppercase tracking-wider text-slate-600">
                 Customer Name

@@ -1,14 +1,12 @@
 "use client";
-import { InvoiceNumberCell } from "@/components/atoms";
 import {
+  AdminViewInvoice,
   CreatInvoiceModal,
   DeleteInvoiceConfirmationModal,
   EditInvoice,
   RemarksModal,
-  SOInvoicesTable,
-  ViewInvoiceModal,
+  SOInvoicesTable
 } from "@/components/molecules";
-import AdminViewInvoice from "@/components/molecules/InvoicePage/AdminViewInvoice";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
@@ -30,22 +28,17 @@ import { InvoiceService } from "@/services";
 import {
   Invoice,
   InvoiceFormData,
-  InvoiceStatus,
-  statusOptions,
+  InvoiceStatus
 } from "@/types";
 import { leadsStatusOptions } from "@/types/Leads";
 import { generateInvoiceNumber } from "@/utils";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { BiSolidCommentDetail } from "react-icons/bi";
 import {
-  FiEdit2,
-  FiEye,
   FiFileText,
   FiPlus,
-  FiSearch,
-  FiTrash2,
+  FiSearch
 } from "react-icons/fi";
 import { LuRefreshCcw } from "react-icons/lu";
 import { toast } from "react-toastify";
