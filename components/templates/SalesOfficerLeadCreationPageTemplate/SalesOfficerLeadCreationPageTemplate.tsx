@@ -33,6 +33,7 @@ import {
   leadsStatusOptions,
   LeadStatus,
 } from "@/types/Leads";
+import { generateInvoiceNumber } from "@/utils";
 import { format } from "date-fns";
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -450,6 +451,8 @@ const SalesOfficerLeadCreationPageTemplate = () => {
     setInvoiceConfirmModal({ isOpen: false, lead: null });
     setIsCreatingInvoice(true);
 
+    const invoiceNumber = generateInvoiceNumber();
+
     try {
       const formData: InvoiceFormData = {
         customerName: lead.userName,
@@ -459,6 +462,7 @@ const SalesOfficerLeadCreationPageTemplate = () => {
         date: new Date(),
         status: "pending",
         generatedByLead: lead,
+        invoice_number: invoiceNumber,
       };
 
       await invoiceService.createInvoice(formData);

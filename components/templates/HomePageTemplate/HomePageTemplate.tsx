@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import AdminDashboardPageTemplate from "../AdminDashboardPageTemplate/AdminDashboardPageTemplate";
 import SuperAdminHomePageTemplete from "../SuperAdminHomePageTemplate/SuperAdminHomePageTemplete";
+import SalesOfficerHomePageTemplate from "../SalesOfficerHomePageTemplate/SalesOfficerHomePageTemplate";
 
 const HomePageTemplate = () => {
   const router = useRouter();
@@ -24,6 +25,8 @@ const HomePageTemplate = () => {
     return <AdminDashboardPageTemplate />;
   } else if (user?.role.role_type === "super_admin") {
     return <SuperAdminHomePageTemplete />;
+  } else if (user?.role.role_type === "sales_officer") {
+    return <SalesOfficerHomePageTemplate />;
   }
 
   return <div>HomePageTemplate</div>;

@@ -1,6 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Invoice, StatusOptions } from "@/types";
+import {
+  adminInvoiceApprovalStatusOptions,
+  Invoice,
+  StatusOptions,
+} from "@/types";
 import { useInvoicePrinter } from "@/utils";
 import { format } from "date-fns";
 import "jspdf-autotable";
@@ -12,14 +16,12 @@ interface AdminViewInvoiceProps {
   selectedInvoice: Invoice;
   setIsViewModalOpen: (isOpen: boolean) => void;
   statusOptions: StatusOptions[];
-  approvalStatusOptions: StatusOptions[];
 }
 
 const AdminViewInvoice: FC<AdminViewInvoiceProps> = ({
   selectedInvoice,
   setIsViewModalOpen,
   statusOptions,
-  approvalStatusOptions,
 }) => {
   const { handlePrint } = useInvoicePrinter();
 
@@ -115,7 +117,7 @@ const AdminViewInvoice: FC<AdminViewInvoiceProps> = ({
             <span
               className={cn(
                 "inline-block px-3 py-1 rounded text-xs font-semibold",
-                approvalStatusOptions.find(
+                adminInvoiceApprovalStatusOptions.find(
                   (opt) =>
                     opt.value ===
                     (selectedInvoice.reported_to?.admin_approval_status ||
@@ -124,7 +126,7 @@ const AdminViewInvoice: FC<AdminViewInvoiceProps> = ({
               )}
             >
               {
-                approvalStatusOptions.find(
+                adminInvoiceApprovalStatusOptions.find(
                   (opt) =>
                     opt.value ===
                     (selectedInvoice.reported_to?.admin_approval_status ||

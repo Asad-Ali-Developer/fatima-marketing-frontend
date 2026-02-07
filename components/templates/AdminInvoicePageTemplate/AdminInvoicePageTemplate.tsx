@@ -1,4 +1,5 @@
 "use client";
+import { InvoiceNumberCell } from "@/components/atoms";
 import AdminViewInvoice from "@/components/molecules/InvoicePage/AdminViewInvoice";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -18,7 +19,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { InvoiceService } from "@/services";
-import { Invoice } from "@/types";
+import { adminInvoiceApprovalStatusOptions, Invoice } from "@/types";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -41,20 +42,6 @@ const statusOptions = [
     label: "Cancelled",
     color: "bg-red-500/10 text-red-700",
   },
-];
-
-const approvalStatusOptions = [
-  {
-    value: "pending",
-    label: "Pending",
-    color: "bg-yellow-500/10 text-yellow-700",
-  },
-  {
-    value: "approved",
-    label: "Approved",
-    color: "bg-green-500/10 text-green-700",
-  },
-  { value: "rejected", label: "Rejected", color: "bg-red-500/10 text-red-700" },
 ];
 
 // ✨ Shimmer Skeleton Component
@@ -107,6 +94,8 @@ const AdminInvoicePageTemplate = () => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchPhone, setSearchPhone] = useState("");
+  const [searchInvoice, setSearchInvoice] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dateFilter, setDateFilter] = useState<Date | undefined>(undefined);
 
@@ -127,7 +116,7 @@ const AdminInvoicePageTemplate = () => {
         page,
         itemsPerPage,
         {
-          searchTerm,
+          searchTerm: searchTerm || searchPhone || searchInvoice,
           status: statusFilter === "all" ? undefined : statusFilter,
           date: dateFilter ? format(dateFilter, "yyyy-MM-dd") : undefined,
         },
@@ -153,7 +142,7 @@ const AdminInvoicePageTemplate = () => {
       fetchInvoices(1);
     }, 300);
     return () => clearTimeout(handler);
-  }, [searchTerm, statusFilter, dateFilter]);
+  }, [searchTerm, statusFilter, dateFilter, searchPhone, searchInvoice]);
 
   // Handle approval status change
   const handleApprovalStatusChange = (
@@ -231,7 +220,7 @@ const AdminInvoicePageTemplate = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 text-slate-900 font-sans">
-      <main className="max-w-[95%] lg:max-w-[90%] mx-auto px-1 lg:px-6 py-10">
+      <main className="px-1 lg:px-6 py-10">
         {/* Page Heading */}
         <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="space-y-1">
@@ -252,7 +241,22 @@ const AdminInvoicePageTemplate = () => {
         {/* Filters Section */}
         <section className="bg-white rounded-xl border border-slate-200 overflow-hidden mb-8 shadow-sm">
           <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+              {/* Name Filter */}
+              <div className="relative">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1 ml-1">
+                  Invoice
+                </label>
+                <div className="absolute left-3 top-2/3 -translate-y-2/3 text-slate-400">
+                  <FiSearch className="text-sm" />
+                </div>
+                <Input
+                  placeholder="Search by invoice..."
+                  value={searchInvoice}
+                  onChange={(e) => setSearchInvoice(e.target.value)}
+                  className="pl-10 pr-4 py-3 rounded-lg text-sm focus:border-[#00B7E8] w-full"
+                />
+              </div>
               {/* Name Filter */}
               <div className="relative">
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1 ml-1">
@@ -278,8 +282,8 @@ const AdminInvoicePageTemplate = () => {
                 </div>
                 <Input
                   placeholder="Search by phone..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  value={searchPhone}
+                  onChange={(e) => setSearchPhone(e.target.value)}
                   className="pl-10 pr-4 py-3 text-sm border-slate-300 focus:border-[#00B7E8] w-full rounded-lg"
                 />
               </div>
@@ -324,17 +328,12 @@ const AdminInvoicePageTemplate = () => {
                       )}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
+                  <PopoverContent className="w-auto px-0 py-6">
                     <Calendar
                       mode="single"
                       selected={dateFilter}
                       onSelect={setDateFilter}
                       initialFocus
-                      // classNames={{
-                      //   day_selected:
-                      //     "bg-[#00B7E8] text-white hover:bg-[#00B7E8]",
-                      //   day_today: "bg-blue-100 text-blue-700",
-                      // }}
                     />
                   </PopoverContent>
                 </Popover>
@@ -393,6 +392,9 @@ const AdminInvoicePageTemplate = () => {
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200">
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
+                      Invoice No. #
+                    </th>
+                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
                       Customer
                     </th>
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
@@ -402,10 +404,10 @@ const AdminInvoicePageTemplate = () => {
                       Sales Officer (SO)
                     </th>
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
-                      Received Amount
+                      Location
                     </th>
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
-                      Sent Amount
+                      Amount
                     </th>
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
                       Date
@@ -427,6 +429,9 @@ const AdminInvoicePageTemplate = () => {
                       key={invoice._id}
                       className="hover:bg-slate-50/50 transition-colors"
                     >
+                      <InvoiceNumberCell
+                        invoice_number={invoice.invoice_number}
+                      />
                       <td className="px-6 py-4">
                         <span className="font-semibold text-slate-900">
                           {invoice.customerName}
@@ -492,7 +497,7 @@ const AdminInvoicePageTemplate = () => {
                           <SelectTrigger
                             className={cn(
                               "w-[130px] px-3 py-1 rounded-full text-xs font-semibold border-none",
-                              approvalStatusOptions.find(
+                              adminInvoiceApprovalStatusOptions.find(
                                 (opt) =>
                                   opt.value ===
                                   (invoice.reported_to?.admin_approval_status ||
@@ -504,7 +509,7 @@ const AdminInvoicePageTemplate = () => {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectGroup>
-                              {approvalStatusOptions.map((option) => (
+                              {adminInvoiceApprovalStatusOptions.map((option) => (
                                 <SelectItem
                                   key={option.value}
                                   value={option.value}
@@ -592,7 +597,6 @@ const AdminInvoicePageTemplate = () => {
           selectedInvoice={selectedInvoice}
           setIsViewModalOpen={setIsViewModalOpen}
           statusOptions={statusOptions}
-          approvalStatusOptions={approvalStatusOptions}
         />
       )}
 
@@ -614,7 +618,7 @@ const AdminInvoicePageTemplate = () => {
                 Are you sure you want to change the approval status to{" "}
                 <strong>
                   {
-                    approvalStatusOptions.find(
+                    adminInvoiceApprovalStatusOptions.find(
                       (opt) => opt.value === showConfirmModal.newApprovalStatus,
                     )?.label
                   }

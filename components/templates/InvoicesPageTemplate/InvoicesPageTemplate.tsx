@@ -1,11 +1,14 @@
 "use client";
+import { InvoiceNumberCell } from "@/components/atoms";
 import {
   CreatInvoiceModal,
   DeleteInvoiceConfirmationModal,
   EditInvoice,
   RemarksModal,
+  SOInvoicesTable,
   ViewInvoiceModal,
 } from "@/components/molecules";
+import AdminViewInvoice from "@/components/molecules/InvoicePage/AdminViewInvoice";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
@@ -24,8 +27,14 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { InvoiceService } from "@/services";
-import { Invoice, InvoiceFormData, InvoiceStatus, statusOptions } from "@/types";
+import {
+  Invoice,
+  InvoiceFormData,
+  InvoiceStatus,
+  statusOptions,
+} from "@/types";
 import { leadsStatusOptions } from "@/types/Leads";
+import { generateInvoiceNumber } from "@/utils";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -39,6 +48,7 @@ import {
   FiTrash2,
 } from "react-icons/fi";
 import { LuRefreshCcw } from "react-icons/lu";
+import { toast } from "react-toastify";
 
 // ✨ Shimmer Skeleton Component
 const InvoiceTableSkeleton = () => {
@@ -99,12 +109,16 @@ const InvoicePageTemplate = () => {
     amount: "",
     date: new Date(),
     status: "pending" as InvoiceStatus,
+    quantity: "",
+    property_type: "",
   });
 
   // Table states
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchInvoice, setSearchInvoice] = useState("");
+  const [searchPhone, setSearchPhone] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dateFilter, setDateFilter] = useState<Date | undefined>(undefined);
 
@@ -129,7 +143,7 @@ const InvoicePageTemplate = () => {
     setIsLoading(true);
     try {
       const response = await invoiceService.getInvoices(page, itemsPerPage, {
-        searchTerm,
+        searchTerm: searchTerm || searchPhone || searchInvoice,
         status: statusFilter === "all" ? undefined : statusFilter,
         date: dateFilter ? format(dateFilter, "yyyy-MM-dd") : undefined,
       });
@@ -156,7 +170,7 @@ const InvoicePageTemplate = () => {
       fetchInvoices(1);
     }, 300);
     return () => clearTimeout(handler);
-  }, [searchTerm, statusFilter, dateFilter]);
+  }, [searchTerm, statusFilter, dateFilter, searchPhone, searchInvoice]);
 
   // Handle form input changes
   const handleInputChange = (
@@ -178,9 +192,11 @@ const InvoicePageTemplate = () => {
       !formData.phoneNumber.trim() ||
       !formData.amount
     ) {
-      alert("Please fill in all required fields");
+      toast.info("Please fill in all required fields");
       return;
     }
+
+    const invoiceNumber = generateInvoiceNumber();
 
     setIsCreating(true);
     const newInvoice: Invoice = {
@@ -192,6 +208,9 @@ const InvoicePageTemplate = () => {
       date: format(formData.date, "yyyy-MM-dd"),
       status: formData.status,
       createdAt: new Date().toISOString(),
+      invoice_number: invoiceNumber,
+      quantity: formData.quantity,
+      property_type: formData.property_type,
     };
 
     const wasOnPage1 = currentPage === 1;
@@ -211,9 +230,10 @@ const InvoicePageTemplate = () => {
         amount: formData.amount,
         date: format(formData.date, "yyyy-MM-dd"),
         status: formData.status,
+        invoice_number: invoiceNumber,
+        quantity: formData.quantity,
+        property_type: formData.property_type,
       };
-
-      console.log("Formdata: ", payload);
 
       const response = await invoiceService.createInvoice(payload);
 
@@ -235,6 +255,8 @@ const InvoicePageTemplate = () => {
         amount: "",
         date: new Date(),
         status: "pending",
+        quantity: "",
+        property_type: "",
       });
     } catch (error) {
       console.error("Failed to create invoice:", error);
@@ -260,6 +282,8 @@ const InvoicePageTemplate = () => {
       amount: parseFloat(formData.amount),
       date: format(formData.date, "yyyy-MM-dd"),
       status: formData.status,
+      quantity: formData.quantity,
+      property_type: formData.property_type,
     };
 
     setInvoices((prev) =>
@@ -276,6 +300,8 @@ const InvoicePageTemplate = () => {
         amount: parseFloat(formData.amount),
         date: format(formData.date, "yyyy-MM-dd"),
         status: formData.status,
+        quantity: formData.quantity,
+        property_type: formData.property_type,
       };
       await invoiceService.updateInvoice(editingInvoice._id, payload);
       setIsEditModalOpen(false);
@@ -402,6 +428,8 @@ const InvoicePageTemplate = () => {
       amount: invoice.amount.toString(),
       date: new Date(invoice.date),
       status: invoice.status,
+      quantity: invoice.quantity,
+      property_type: invoice.property_type,
     });
     setIsEditModalOpen(true);
   };
@@ -458,7 +486,7 @@ const InvoicePageTemplate = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 text-slate-900 font-sans">
-      <main className="max-w-[95%] lg:max-w-[90%] mx-auto px-1 lg:px-6 py-10">
+      <main className="mx-auto px-1 lg:px-6 py-10">
         {/* Page Heading */}
         <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="space-y-1">
@@ -496,7 +524,22 @@ const InvoicePageTemplate = () => {
         {/* Filters Section */}
         <section className="bg-white rounded-xl border border-slate-200 overflow-hidden mb-8 shadow-sm">
           <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+              {/* Invoice Filter */}
+              <div className="relative">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1 ml-1">
+                  Invoice Number
+                </label>
+                <div className="absolute left-3 top-2/3 -translate-y-2/3 text-slate-400">
+                  <FiSearch className="text-sm" />
+                </div>
+                <Input
+                  placeholder="Search by invoice..."
+                  value={searchInvoice}
+                  onChange={(e) => setSearchInvoice(e.target.value)}
+                  className="pl-10 pr-4 py-3 font-medium rounded-lg text-sm focus:border-[#00B7E8] w-full"
+                />
+              </div>
               {/* Name Filter */}
               <div className="relative">
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1 ml-1">
@@ -522,8 +565,8 @@ const InvoicePageTemplate = () => {
                 </div>
                 <Input
                   placeholder="Search by phone..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  value={searchPhone}
+                  onChange={(e) => setSearchPhone(e.target.value)}
                   className="pl-10 pr-4 py-3 text-sm focus:border-[#00B7E8] w-full rounded-lg"
                 />
               </div>
@@ -632,178 +675,17 @@ const InvoicePageTemplate = () => {
               No invoices found. Create your first invoice!
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200">
-                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
-                      Customer
-                    </th>
-                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
-                      Phone
-                    </th>
-                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
-                      Report to
-                    </th>
-                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
-                      Location
-                    </th>
-                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
-                      Amount
-                    </th>
-                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
-                      Date
-                    </th>
-                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
-                      Remarks
-                    </th>
-                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
-                      Status
-                    </th>
-                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
-                      Approval Status
-                    </th>
-                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600 text-right">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {paginatedInvoices.map((invoice) => (
-                    <tr
-                      key={invoice._id}
-                      className="hover:bg-slate-50/50 transition-colors"
-                    >
-                      <td className="px-6 py-4">
-                        <span className="font-semibold text-slate-900">
-                          {invoice.customerName}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-sm text-slate-600">
-                          {invoice.phoneNumber}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-sm text-slate-600">
-                          {invoice.reported_to?.name || "N/A"}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-sm text-slate-600">
-                          {invoice.location || "-"}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="font-semibold text-slate-900">
-                          Rs. {invoice.amount.toFixed()}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          {format(new Date(invoice.date), "dd MMM yyyy")}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <button
-                          type="button"
-                          onClick={() => handleOpenRemarksModal(invoice)}
-                          className="text-xs font-medium text-[#00B7E8] hover:text-[#029ec9] hover:underline transition-colors cursor-pointer"
-                          title="Add or edit remarks"
-                        >
-                          <BiSolidCommentDetail className="text-lg" />
-                        </button>
-                      </td>
-                      <td className="px-1 py-4">
-                        <Select
-                          value={invoice.status}
-                          onValueChange={(value) =>
-                            handleStatusChange(invoice._id, value)
-                          }
-                          disabled={isChangingStatus}
-                        >
-                          <SelectTrigger
-                            className={cn(
-                              "w-[130px] px-3  rounded-full text-xs font-semibold border-none",
-                              leadsStatusOptions.find(
-                                (opt) => opt.value === invoice.status,
-                              )?.color || "bg-slate-100 text-slate-700",
-                            )}
-                          >
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectGroup>
-                              {statusOptions.map((option) => (
-                                <SelectItem
-                                  key={option.value}
-                                  value={option.value}
-                                >
-                                  {option.label}
-                                </SelectItem>
-                              ))}
-                            </SelectGroup>
-                          </SelectContent>
-                        </Select>
-                      </td>
-                      <td className="px-6 py-4">
-                        {invoice.reported_to?.admin_approval_status ? (
-                          <span
-                            className={cn(
-                              "inline-block px-6 py-2.5 rounded-full text-xs font-semibold",
-                              invoice.reported_to.admin_approval_status ===
-                                "pending"
-                                ? "bg-yellow-500/10 text-yellow-700"
-                                : invoice.reported_to.admin_approval_status ===
-                                    "approved"
-                                  ? "bg-green-500/10 text-green-700"
-                                  : "bg-red-500/10 text-red-700",
-                            )}
-                          >
-                            {invoice.reported_to.admin_approval_status
-                              .charAt(0)
-                              .toUpperCase() +
-                              invoice.reported_to.admin_approval_status.slice(
-                                1,
-                              )}
-                          </span>
-                        ) : (
-                          <span className="text-slate-500 text-sm">—</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            type="button"
-                            onClick={() => handleViewInvoice(invoice)}
-                            className="p-2 hover:bg-primary/10 rounded-lg text-slate-600 hover:text-primary transition-colors"
-                            title="View"
-                          >
-                            <FiEye className="text-base" />
-                          </button>
-                          <button
-                            onClick={() => handleEditInvoice(invoice)}
-                            className="p-2 hover:bg-blue-50 rounded-lg text-slate-600 hover:text-blue-600 transition-colors"
-                            title="Edit"
-                            disabled={isUpdating}
-                          >
-                            <FiEdit2 className="text-base" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteInvoice(invoice._id)}
-                            className="p-2 hover:bg-red-50 rounded-lg text-slate-600 hover:text-red-600 transition-colors"
-                            title="Delete"
-                            disabled={isDeleting}
-                          >
-                            <FiTrash2 className="text-base" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <SOInvoicesTable
+              invoices={invoices}
+              isDeleting={isDeleting}
+              isUpdating={isDeleting}
+              isChangingStatus={isChangingStatus}
+              handleViewInvoice={handleViewInvoice}
+              handleEditInvoice={handleEditInvoice}
+              handleStatusChange={handleStatusChange}
+              handleDeleteInvoice={handleDeleteInvoice}
+              handleOpenRemarksModal={handleOpenRemarksModal}
+            />
           )}
 
           {/* Pagination */}
@@ -889,10 +771,11 @@ const InvoicePageTemplate = () => {
 
       {/* View Invoice Modal */}
       {isViewModalOpen && selectedInvoice && (
-        <ViewInvoiceModal
+        <AdminViewInvoice
           selectedInvoice={selectedInvoice}
           setIsViewModalOpen={setIsViewModalOpen}
           statusOptions={leadsStatusOptions}
+          
         />
       )}
 

@@ -14,532 +14,437 @@ export const generateInvoicePDF = ({
   const printWindow = window.open("", "_blank");
   if (!printWindow) return;
 
-  const invoiceNumber = `FM-${invoice._id.slice(-6).toUpperCase()}`;
   const formattedDate = format(new Date(invoice.date), "dd MMM yyyy");
   const createdBy = invoice.created_by?.name || "System";
+  const createdAtFormatted = format(
+    new Date(invoice.createdAt),
+    "dd MMM yyyy HH:mm",
+  );
+
+  // Generate QR code URL (using quickchart.io - no API key needed)
+  const qrCodeUrl = `https://quickchart.io/qr?text=${encodeURIComponent(invoice.invoice_number || "NO_INVOICE")}&size=120`;
 
   const styles = `
-    <style>
-      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Playfair+Display:wght@600;700&display=swap');
-      
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-      
-      body {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-        background: #f5f5f5;
-        padding: 40px 20px;
-        color: #333;
-        line-height: 1.6;
-      }
-      
-      .invoice-container {
-        max-width: 800px;
-        margin: 0 auto;
-        background: white;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-        border-radius: 0;
-        overflow: hidden;
-      }
-      
-      /* Header Section */
-      .header {
-        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-        color: white;
-        padding: 40px;
-        display: table;
-        width: 100%;
-      }
-      
-      .header-cell {
-        display: table-cell;
-        vertical-align: middle;
-      }
-      
-      .logo-section {
-        width: 60%;
-      }
-      
-      .logo-placeholder {
-        width: 70px;
-        height: 70px;
-        background: #c9a227;
-        border-radius: 8px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 28px;
-        font-weight: 700;
-        color: #1a1a2e;
-        margin-right: 20px;
-        vertical-align: middle;
-      }
-      
-      .company-title {
-        display: inline-block;
-        vertical-align: middle;
-      }
-      
-      .company-title h1 {
-        font-family: 'Playfair Display', serif;
-        font-size: 32px;
-        font-weight: 600;
-        letter-spacing: 1px;
-        margin-bottom: 4px;
-      }
-      
-      .company-title span {
-        font-size: 11px;
-        color: #000;
-        text-transform: uppercase;
-        letter-spacing: 3px;
-        font-weight: 500;
-      }
-      
-      .invoice-meta {
-        text-align: right;
-        width: 40%;
-      }
-      
-      .invoice-meta h2 {
-        font-family: 'Playfair Display', serif;
-        font-size: 42px;
-        font-weight: 300;
-        color: #c9a227;
-        margin-bottom: 12px;
-        letter-spacing: 2px;
-      }
-      
-      .meta-row {
-        font-size: 13px;
-        margin: 6px 0;
-        color: #ccc;
-      }
-      
-      .meta-row strong {
-        color: white;
-        display: inline-block;
-        width: 90px;
-        font-weight: 500;
-      }
-      
-      /* Info Section */
-      .info-section {
-        padding: 30px 40px;
-        background: #fafafa;
-      }
-      
-      .info-table {
-        width: 100%;
-        border-collapse: separate;
-        border-spacing: 15px 0;
-        margin: 0 -15px;
-      }
-      
-      .info-table td {
-        width: 50%;
-        vertical-align: top;
-      }
-      
-      .info-box {
-        background: white;
-        padding: 25px;
-        border-radius: 6px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-        border: 1px solid #eee;
-      }
-      
-      .info-label {
-        font-size: 11px;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-        color: #999;
-        margin-bottom: 12px;
-        font-weight: 700;
-      }
-      
-      .info-content {
-        font-size: 14px;
-        line-height: 1.8;
-        color: #666;
-      }
-      
-      .info-content strong {
-        color: #1a1a2e;
-        font-size: 18px;
-        display: block;
-        margin-bottom: 6px;
-        font-weight: 600;
-      }
-      
-      .phone {
-        color: #666;
-        font-size: 13px;
-      }
-      
-      .location {
-        color: #888;
-        font-size: 13px;
-        margin-top: 4px;
-      }
-      
-      .uan {
-        color: #c9a227;
-        font-weight: 700;
-        font-size: 13px;
-        margin-top: 8px;
-      }
-      
-      .website {
-        color: #666;
-        font-size: 12px;
-        margin-top: 4px;
-      }
-      
-      /* Items Table */
-      .items-section {
-        padding: 0 40px 30px 40px;
-      }
-      
-      .items-table {
-        width: 100%;
-        border-collapse: collapse;
-        border: 1px solid #e0e0e0;
-        font-size: 13px;
-      }
-      
-      .items-table th {
-        background: #1a1a2e;
-        color: white;
-        padding: 16px 12px;
-        text-align: left;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        font-size: 11px;
-      }
-      
-      .items-table th:last-child {
-        text-align: right;
-      }
-      
-      .items-table td {
-        padding: 20px 12px;
-        border-bottom: 1px solid #eee;
-        vertical-align: top;
-      }
-      
-      .items-table tr:nth-child(even) {
-        background: #fafafa;
-      }
-      
-      .items-table tr:last-child td {
-        border-bottom: 2px solid #1a1a2e;
-      }
-      
-      .customer-name {
-        font-weight: 700;
-        color: #1a1a2e;
-        font-size: 14px;
-        margin-bottom: 4px;
-      }
-      
-      .customer-phone {
-        color: #888;
-        font-size: 12px;
-      }
-      
-      .type-badge {
-        display: inline-block;
-        padding: 4px 14px;
-        background: #f0f0f0;
-        border-radius: 20px;
-        font-size: 10px;
-        font-weight: 700;
-        color: #666;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-      }
-      
-      .qty {
-        text-align: center;
-        font-weight: 600;
-        color: #666;
-      }
-      
-      .amount {
-        text-align: right;
-        font-family: 'Courier New', monospace;
-        font-weight: 700;
-        color: #1a1a2e;
-        font-size: 14px;
-      }
-      
-      /* Totals Table */
-      .totals-section {
-        padding: 0 40px 30px 40px;
-      }
-      
-      .totals-table {
-        width: 300px;
-        margin-left: auto;
-        border-collapse: collapse;
-      }
-      
-      .totals-table td {
-        padding: 10px 15px;
-        font-size: 14px;
-      }
-      
-      .totals-table .label {
-        text-align: right;
-        color: #666;
-      }
-      
-      .totals-table .value {
-        text-align: right;
-        font-family: 'Courier New', monospace;
-        width: 140px;
-        color: #333;
-      }
-      
-      .total-row {
-        background: #1a1a2e;
-        color: white;
-      }
-      
-      .total-row .label {
-        color: white;
-        font-weight: 700;
-        font-size: 13px;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-      }
-      
-      .total-row .value {
-        color: #c9a227;
-        font-weight: 700;
-        font-size: 18px;
-      }
-      
-      /* Footer */
-      .footer {
-        background: #1a1a2e;
-        color: white;
-        padding: 30px 40px;
-        margin-top: 20px;
-      }
-      
-      .footer-table {
-        width: 100%;
-      }
-      
-      .footer-table td {
-        vertical-align: top;
-      }
-      
-      .footer-left {
-        width: 65%;
-      }
-      
-      .footer-right {
-        width: 35%;
-        text-align: right;
-      }
-      
-      .footer-title {
-        color: #c9a227;
-        font-size: 11px;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-        margin-bottom: 12px;
-        font-weight: 700;
-      }
-      
-      .footer-content {
-        font-size: 12px;
-        line-height: 2;
-        color: #aaa;
-      }
-      
-      .signature-line {
-        border-top: 1px solid #c9a227;
-        width: 160px;
-        margin-top: 30px;
-        margin-left: auto;
-        padding-top: 8px;
-        text-align: center;
-        font-size: 11px;
-        color: #c9a227;
-        font-style: italic;
-      }
-      
-      .created-by {
-        font-size: 10px;
-        color: #666;
-        margin-top: 10px;
-      }
-      
-      @media print {
-        body {
-          background: white;
-          padding: 0;
-        }
-        .invoice-container {
-          box-shadow: none;
-        }
-      }
-    </style>
+  <style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #fff;
+    color: #1e293b;
+    padding: 40px 20px;
+    font-size: 14px;
+  }
+
+  .invoice-container {
+    max-width: 820px;
+    margin: auto;
+    background: #fff;
+  }
+
+  /* ================= HEADER ================= */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding-bottom: 25px;
+    border-bottom: 2px solid #f1f5f9;
+  }
+
+  .logo-section {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+  }
+
+  .logo-placeholder {
+    width: 90px;
+    height: 90px;
+    background: #00B7E8;
+    color: #fff;
+    border-radius: 10px;
+    font-size: 32px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .company-info h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    color: #1a1a2e;
+  }
+
+  .company-info span {
+    font-size: 12px;
+    letter-spacing: 1px;
+    color: #64748b;
+    text-transform: uppercase;
+  }
+
+  .invoice-meta {
+    text-align: right;
+  }
+
+  .invoice-meta h2 {
+    font-size: 34px;
+    color: #00B7E8;
+    letter-spacing: 2px;
+    margin-bottom: 6px;
+  }
+
+  .meta-row {
+    font-size: 13px;
+    color: #475569;
+    margin-top: 2px;
+  }
+
+  .meta-row strong {
+    color: #1e293b;
+  }
+
+  /* ================= BILL TO ================= */
+  .billto-section {
+    padding: 25px 0 15px;
+  }
+
+  .billto-title {
+    font-size: 12px;
+    letter-spacing: 1px;
+    color: #64748b;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+  }
+
+  .billto-name {
+    font-size: 17px;
+    font-weight: 600;
+    color: #1e293b;
+  }
+
+  .billto-meta {
+    margin-top: 3px;
+    font-size: 13px;
+    color: #475569;
+  }
+
+  .billto-remarks {
+    margin-top: 8px;
+    font-size: 13px;
+    font-style: italic;
+    color: #64748b;
+  }
+
+  /* ================= ITEMS ================= */
+  .items-section {
+    margin-top: 20px;
+  }
+
+  .items-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .items-table th {
+    background: #f8fafc;
+    padding: 14px;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    color: #475569;
+    border-bottom: 2px solid #e5e7eb;
+    text-align: left;
+  }
+
+  .items-table td {
+    padding: 15px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 14px;
+  }
+
+  .customer-name {
+    font-weight: 600;
+    margin-bottom: 3px;
+  }
+
+  .customer-phone {
+    font-size: 13px;
+    color: #64748b;
+  }
+
+  .type-badge {
+    background: #f0f9ff;
+    border: 1px solid #bae6fd;
+    color: #0284c7;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .qty {
+    text-align: center;
+    font-weight: 600;
+  }
+
+  .amount {
+    text-align: right;
+    font-weight: 700;
+    font-size: 15px;
+  }
+
+  /* ================= TOTALS ================= */
+  .totals-section {
+    margin-top: 20px;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .totals-table {
+    width: 320px;
+  }
+
+  .totals-table td {
+    padding: 7px 0;
+    font-size: 14px;
+  }
+
+  .totals-table .label {
+    color: #64748b;
+    text-align: right;
+  }
+
+  .totals-table .value {
+    text-align: right;
+    font-weight: 600;
+    color: #1e293b;
+  }
+
+  .total-row .label {
+    font-weight: 700;
+    color: #1e293b;
+  }
+
+  .total-row .value {
+    font-size: 18px;
+    color: #00B7E8;
+    font-weight: 700;
+  }
+
+  /* ================= FROM ================= */
+  .from-section {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .from-left {
+    font-size: 13px;
+    line-height: 1.6;
+    color: #475569;
+  }
+
+  .from-left strong {
+    font-size: 14px;
+    color: #1e293b;
+  }
+
+  .from-right {
+    text-align: right;
+    font-size: 12px;
+    color: #64748b;
+  }
+
+  /* ================= FOOTER ================= */
+  .footer {
+    margin-top: 25px;
+    padding-top: 15px;
+    border-top: 1px dashed #e5e7eb;
+    display: flex;
+    justify-content: end;
+    align-items: flex-start;
+  }
+
+  .terms {
+    font-size: 12px;
+    color: #64748b;
+    max-width: 60%;
+  }
+
+  .terms ul {
+    list-style: none;
+    padding-left: 0;
+  }
+
+  .terms li {
+    margin-bottom: 4px;
+  }
+
+  .qr-section {
+    text-align: right;
+    max-width: 35%;
+  }
+
+  .qr-code {
+    width: 100px;
+    height: 100px;
+    margin: 0 auto;
+  }
+
+  .qr-label {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 8px;
+    text-align: center;
+  }
+
+  .signature-line {
+    margin-top: 20px;
+    width: 170px;
+    border-top: 1px solid #00B7E8;
+    padding-top: 6px;
+    font-size: 12px;
+    color: #00B7E8;
+    text-align: center;
+  }
+
+  @media print {
+    body {
+      padding: 0;
+    }
+    .qr-code {
+      width: 100px !important;
+      height: 100px !important;
+    }
+  }
+  </style>
   `;
 
   const content = `
-    <html>
-      <head>
-        <title>Invoice #${invoiceNumber} - ${invoice.customerName}</title>
-        ${styles}
-      </head>
-      <body>
-        <div class="invoice-container">
-          <!-- Header -->
-          <div class="header">
-            <div class="header-cell logo-section">
-              ${
-                logoUrl
-                  ? `<img src="${logoUrl}" style="height: 70px; margin-right: 20px; vertical-align: middle;" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-flex';" /><div class="logo-placeholder" style="display: none;">FM</div>`
-                  : `<div class="logo-placeholder">FM</div>`
-              }
-              <div class="company-title">
-                <h1>FATIMA MARKETING</h1>
-                <span>Real Estate Solutions</span>
-              </div>
-            </div>
-            <div class="header-cell invoice-meta">
-              <h2>INVOICE</h2>
-              <div class="meta-row"><strong>Invoice #</strong> ${invoiceNumber}</div>
-              <div class="meta-row"><strong>Date</strong> ${formattedDate}</div>
-              <div class="meta-row"><strong>Status</strong> ${invoice.status.toUpperCase()}</div>
-            </div>
-          </div>
+  <html>
+  <head>
+    <title>Invoice #${invoice.invoice_number}</title>
+    ${styles}
+  </head>
 
-          <!-- Bill To / From -->
-          <div class="info-section">
-            <table class="info-table">
-              <tr>
-                <td>
-                  <div class="info-box">
-                    <div class="info-label">Bill To</div>
-                    <div class="info-content">
-                      <strong>${invoice.customerName}</strong>
-                      <div class="phone">${invoice.phoneNumber}</div>
-                      <div class="location">${invoice.location || "Islamabad"}</div>
-                      ${invoice.remarks ? `<div style="margin-top: 8px; font-size: 12px; color: #999; font-style: italic;">"${invoice.remarks}"</div>` : ""}
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  <div class="info-box">
-                    <div class="info-label">From</div>
-                    <div class="info-content">
-                      <strong>Fatima Marketing</strong>
-                      <div class="location">Office # 111, First Floor</div>
-                      <div class="location">Capital Business Center</div>
-                      <div class="location">F-10 Markaz, Islamabad</div>
-                      <div class="uan">UAN: 0331-1111057</div>
-                      <div class="website">www.fatimamarketing.com</div>
-                    </div>
-                  </div>
-                </td>
-              </tr>
-            </table>
-          </div>
-
-          <!-- Items Table -->
-          <div class="items-section">
-            <table class="items-table">
-              <thead>
-                <tr>
-                  <th style="width: 8%; text-align: center;">#</th>
-                  <th style="width: 42%;">Customer Details</th>
-                  <th style="width: 20%; text-align: center;">Property Type</th>
-                  <th style="width: 10%; text-align: center;">Qty</th>
-                  <th style="width: 20%; text-align: right;">Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td style="text-align: center; color: #999;">1</td>
-                  <td>
-                    <div class="customer-name">${invoice.customerName}</div>
-                    <div class="customer-phone">${invoice.phoneNumber}</div>
-                  </td>
-                  <td style="text-align: center;">
-                    <span class="type-badge">Property</span>
-                  </td>
-                  <td class="qty">1</td>
-                  <td class="amount">PKR ${Math.round(invoice.amount).toLocaleString()}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <!-- Totals -->
-          <div class="totals-section">
-            <table class="totals-table">
-              <tr>
-                <td class="label">Subtotal:</td>
-                <td class="value">PKR ${Math.round(invoice.amount).toLocaleString()}</td>
-              </tr>
-              <tr>
-                <td class="label">Tax (0%):</td>
-                <td class="value">PKR 0</td>
-              </tr>
-              <tr class="total-row">
-                <td class="label">Total:</td>
-                <td class="value">PKR ${Math.round(invoice.amount).toLocaleString()}</td>
-              </tr>
-            </table>
-          </div>
-
-          <!-- Footer -->
-          <div class="footer">
-            <table class="footer-table">
-              <tr>
-                <td class="footer-left">
-                  <div class="footer-title">Terms & Conditions</div>
-                  <div class="footer-content">
-                    1. Payment is due within 15 days of invoice date.<br>
-                    2. All properties are subject to availability and verification.<br>
-                    3. This invoice is computer generated and valid without signature.
-                  </div>
-                  <div class="created-by">Created by: ${createdBy} | ${format(new Date(invoice.createdAt), "dd MMM yyyy HH:mm")}</div>
-                </td>
-                <td class="footer-right">
-                  <div class="signature-line">Authorized Signature</div>
-                </td>
-              </tr>
-            </table>
+  <body>
+    <div class="invoice-container">
+      <!-- HEADER -->
+      <div class="header">
+        <div class="logo-section">
+          ${
+            logoUrl
+              ? `<img src="${logoUrl}" style="height:90px;border-radius:10px" />
+                 <div class="logo-placeholder" style="display:none">FM</div>`
+              : `<div class="logo-placeholder">FM</div>`
+          }
+          <div class="company-info">
+            <h1>FATIMA MARKETING</h1>
+            <span>Real Estate Solutions</span>
           </div>
         </div>
-      </body>
-    </html>
+
+        <div class="invoice-meta">
+          <h2>INVOICE</h2>
+          <div class="meta-row"><strong>No:</strong> ${invoice.invoice_number || "-"}</div>
+          <div class="meta-row"><strong>Date:</strong> ${formattedDate}</div>
+          <div class="meta-row"><strong>Status:</strong> ${invoice.status.replace("_", " ").toUpperCase()}</div>
+        </div>
+      </div>
+
+      <!-- BILL TO -->
+      <div class="billto-section">
+        <div class="billto-title">Bill To</div>
+        <div class="billto-name">${invoice.customerName}</div>
+        <div class="billto-meta">${invoice.phoneNumber}<br/>${invoice.location || "Lahore, Punjab"}</div>
+        ${invoice.remarks ? `<div class="billto-remarks">"${invoice.remarks}"</div>` : ""}
+      </div>
+
+      <!-- ITEMS -->
+      <div class="items-section">
+        <table class="items-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Customer</th>
+              <th>Property</th>
+              <th>Qty</th>
+              <th>Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td>
+                <div class="customer-name">${invoice.customerName}</div>
+                <div class="customer-phone">${invoice.phoneNumber}</div>
+              </td>
+              <td><span class="type-badge">${invoice.property_type || "N/A"}</span></td>
+              <td class="qty">${invoice.quantity || 1}</td>
+              <td class="amount">PKR ${Math.round(invoice.amount).toLocaleString()}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- TOTALS -->
+      <div class="totals-section">
+        <table class="totals-table">
+          <tr><td class="label">Subtotal</td><td class="value">PKR ${Math.round(invoice.amount).toLocaleString()}</td></tr>
+          <tr><td class="label">Tax (0%)</td><td class="value">PKR 0</td></tr>
+          <tr class="total-row"><td class="label">Total</td><td class="value">PKR ${Math.round(invoice.amount).toLocaleString()}</td></tr>
+        </table>
+      </div>
+
+      <!-- FROM -->
+      <div class="from-section">
+        <div class="from-left">
+          <strong>Fatima Marketing</strong><br/>
+          Office #111, First Floor<br/>
+          Capital Business Center<br/>
+          F-10 Markaz, Islamabad<br/>
+          UAN: 0331-1111057<br/>
+          www.fatimamarketing.com
+        </div>
+        <div class="from-right">
+          Generated by<br/>
+          ${createdBy}<br/>
+          ${createdAtFormatted}
+        </div>
+      </div>
+
+      <!-- FOOTER -->
+      <div class="footer">
+        <div class="qr-section">
+          <img src="${qrCodeUrl}" alt="QR Code" class="qr-code" />
+          <div class="qr-label">Scan to verify invoice</div>
+        </div>
+      </div>
+    </div>
+  </body>
+  </html>
   `;
 
   printWindow.document.write(content);
   printWindow.document.close();
   printWindow.focus();
 
-  // Delay print to allow styles to load
   setTimeout(() => {
     printWindow.print();
-    // Don't close immediately to allow user to save as PDF
-    // printWindow.close();
-  }, 250);
+  }, 300);
 };
 
-// React Hook for using in components
+/* ================= HOOK ================= */
 export const useInvoicePrinter = () => {
   const printRef = useRef<Window | null>(null);
 

@@ -4,3 +4,4 @@ export * from "./formatDateTime";
 export * from "./ColorScheme";
 export * from "./compressImage";
 export * from "./InvoiceGenerator";
+export * from "./generateInvoiceNumber";

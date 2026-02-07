@@ -26,6 +26,7 @@ import SelectCommissionPeriodModal from "./AdminSalesOfficers/SelectCommissionPe
 import CommissionInvoicesPreviewModal from "./AdminSalesOfficers/CommissionInvoicesPreviewModal";
 import CreateLeadModalSelfCreated from "./SelfCreatedLeadsPage/CreateLeadSelfCreated";
 import EditLeadSelfCreatedModal from "./SelfCreatedLeadsPage/EditLeadSelfCreatedModal";
+import SOInvoicesTable from "./InvoicePage/SOInvoiceTable";
 
 export {
   RemarksModal,
@@ -56,4 +57,5 @@ export {
   CommissionInvoicesPreviewModal,
   CreateLeadModalSelfCreated,
   EditLeadSelfCreatedModal,
+  SOInvoicesTable,
 };

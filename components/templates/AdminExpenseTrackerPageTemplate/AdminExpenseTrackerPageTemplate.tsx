@@ -118,8 +118,6 @@ const AdminExpenseTrackerPageTemplate = () => {
         dateFilter: dateFilter === "all" ? undefined : dateFilter,
       });
 
-      console.log("Response: ", response);
-
       // ✅ Add safety check
       if (!response?.data || !Array.isArray(response.data)) {
         throw new Error("Invalid response format");
@@ -303,7 +301,6 @@ const AdminExpenseTrackerPageTemplate = () => {
         <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-[#00B7E8] font-bold text-xs uppercase tracking-widest mb-2 bg-slate-100 border border-slate-100 px-3 py-1 rounded-full w-max">
-              <FiDollarSign className="text-base text-[#00a8d6]" />
               Expense Tracker
             </div>
             <h2 className="text-4xl font-black tracking-tight text-[#142C4B]">
