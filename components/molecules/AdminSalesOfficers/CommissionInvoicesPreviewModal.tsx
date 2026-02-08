@@ -125,11 +125,17 @@ const CommissionInvoicesPreviewModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl h-[90vh] overflow-y-auto flex flex-col">
-        <div className="p-3 border-b border-slate-200 flex items-center justify-between">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 lg:p-4">
+      <div className="bg-white text-sm lg:text-normal rounded-xl shadow-2xl w-full max-w-5xl h-[90vh] overflow-y-auto flex flex-col relative">
+        <button
+          onClick={onClose}
+          className="p-2 hover:bg-slate-100 rounded lg:hidden absolute top-3 right-3"
+        >
+          <FiX />
+        </button>
+        <div className="p-3 border-b border-slate-200 flex flex-col lg:flex-row items-start lg:items-center justify-between">
           <div>
-            <h3 className="text-lg font-bold">
+            <h3 className="text-md lg:text-lg font-bold">
               Commission for {salesOfficer.full_name}
             </h3>
             <p className="text-sm text-slate-600 mt-1">
@@ -145,14 +151,14 @@ const CommissionInvoicesPreviewModal = ({
               </span>
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-col pt-2 lg:pt-0 lg:flex-row w-full gap-2 relative">
             <div className="relative">
               <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <Input
                 placeholder="Search customer or phone..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 w-64"
+                className="pl-10 w-full lg:w-64"
               />
             </div>
             <button
@@ -163,14 +169,17 @@ const CommissionInvoicesPreviewModal = ({
             </button>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-slate-100 rounded"
+              className="p-2 hover:bg-slate-100 rounded hidden lg:block"
             >
               <FiX />
             </button>
           </div>
         </div>
 
-        <div className="overflow-y-auto flex-1 p-6" ref={printRef}>
+        <div
+          className="overflow-y-auto flex-1 px-0 py-4 lg:px-6 lg:py-6"
+          ref={printRef}
+        >
           {filteredInvoices.length === 0 ? (
             <p className="text-center text-slate-500 py-8">
               No invoices found.
@@ -194,9 +203,9 @@ const CommissionInvoicesPreviewModal = ({
                       key={inv._id}
                       className="border-b border-slate-100 hover:bg-slate-50"
                     >
-                      <td className="px-4 py-2">{inv.customerName}</td>
-                      <td className="px-4 py-2">{inv.phoneNumber}</td>
-                      <td className="px-4 py-2 text-right">
+                      <td className="px-4 py-3 lg:py-2">{inv.customerName}</td>
+                      <td className="px-4 py-3 lg:py-2">{inv.phoneNumber}</td>
+                      <td className="px-4 py-3 lg:py-2 text-right truncate max-w-[150px]">
                         Rs. {inv.amount.toLocaleString()}
                       </td>
                       <td className="px-4 py-2 text-right">
@@ -214,7 +223,7 @@ const CommissionInvoicesPreviewModal = ({
         </div>
 
         {/* Bottom Summary + Company Info */}
-        <div className="px-6 py-3 bg-slate-50 border-t border-slate-200 text-sm flex justify-between items-center">
+        <div className="px-2 lg:px-6 py-3 bg-slate-50 border-t border-slate-200 text-sm flex items-start  justify-between lg:items-center flex-col lg:flex-row">
           <div>
             <span className="mr-4">
               <strong>Total Amount:</strong> Rs. {totalAmount.toLocaleString()}

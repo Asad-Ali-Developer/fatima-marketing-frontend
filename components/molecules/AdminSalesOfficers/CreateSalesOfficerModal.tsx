@@ -35,7 +35,7 @@ const CreateSalesOfficerModal: FC<CreateSalesOfficerModalProps> = ({
   isCreatingSalesOfficer,
 }) => {
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/50 text-sm lg:text-base flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
         <div className="p-3 border-b border-slate-200 flex items-center justify-between">
           <h3 className="text-lg font-bold flex items-center gap-2 text-slate-900">
@@ -50,7 +50,7 @@ const CreateSalesOfficerModal: FC<CreateSalesOfficerModalProps> = ({
             <FiX className="w-5 h-5 text-slate-500" />
           </button>
         </div>
-        <div className="p-5 space-y-4">
+        <div className="p-3 lg:p-5 space-y-3 lg:space-y-4">
           <div className="space-y-2">
             <label className="text-xs font-medium text-slate-700">
               Full Name <span className="text-red-500">*</span>

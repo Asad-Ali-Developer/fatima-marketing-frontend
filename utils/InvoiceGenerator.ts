@@ -367,7 +367,6 @@ export const generateInvoicePDF = ({
         <div class="billto-title">Bill To</div>
         <div class="billto-name">${invoice.customerName}</div>
         <div class="billto-meta">${invoice.phoneNumber}<br/>${invoice.location || "Lahore, Punjab"}</div>
-        ${invoice.remarks ? `<div class="billto-remarks">"${invoice.remarks}"</div>` : ""}
       </div>
 
       <!-- ITEMS -->
@@ -427,7 +426,6 @@ export const generateInvoicePDF = ({
       <div class="footer">
         <div class="qr-section">
           <img src="${qrCodeUrl}" alt="QR Code" class="qr-code" />
-          <div class="qr-label">Scan to verify invoice</div>
         </div>
       </div>
     </div>

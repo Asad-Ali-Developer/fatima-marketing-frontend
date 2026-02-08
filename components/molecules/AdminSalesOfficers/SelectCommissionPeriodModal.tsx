@@ -51,7 +51,7 @@ const SelectCommissionPeriodModal = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="fixed text-sm lg:text-base inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
         <div className="p-3 border-b border-slate-200 flex items-center justify-between">
           <h3 className="text-lg font-bold">Select Period</h3>
@@ -59,7 +59,7 @@ const SelectCommissionPeriodModal = ({
             <FiX />
           </button>
         </div>
-        <div className="p-6 space-y-4">
+        <div className="p-3 lg:p-6 space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <Button
               variant="outline"

@@ -22,7 +22,7 @@ const EditSalesOfficerModal: FC<EditSalesOfficerModalProps> = ({
   handleEditCommissionChange,
 }) => {
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="fixed text-sm lg:text-base inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
         <div className="p-3 border-b border-slate-200 flex items-center justify-between">
           <h3 className="text-lg font-bold flex items-center gap-2 text-slate-900">
