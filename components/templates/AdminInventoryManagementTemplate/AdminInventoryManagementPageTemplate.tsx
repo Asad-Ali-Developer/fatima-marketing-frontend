@@ -366,7 +366,7 @@ const AdminInventoryManagementPageTemplate = () => {
                   placeholder="Search by registration number..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-4 rounded-lg text-sm border-slate-300 focus:border-[#00B7E8] w-full"
+                  className="pl-10 pr-4 py-3 rounded-lg text-sm border-slate-300 focus:border-[#00B7E8] w-full"
                 />
               </div>
               {/* Clear */}
@@ -376,7 +376,7 @@ const AdminInventoryManagementPageTemplate = () => {
                   onClick={() => {
                     setSearchTerm("");
                   }}
-                  className="w-full font-medium py-6 bg-[#08b8e8] rounded-lg text-white hover:bg-[#0da8d3]"
+                  className="w-full font-medium py-5 bg-[#08b8e8] rounded-lg text-white hover:bg-[#0da8d3]"
                 >
                   Clear Filters
                 </Button>

@@ -538,7 +538,7 @@ const AdminLeadCreationPageTemplate = () => {
 
         {/* Filters */}
         <section className="bg-white rounded-xl border border-slate-200 overflow-hidden mb-8 shadow-sm">
-          <div className="p-6">
+          <div className="p-3 lg:p-6">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               {/* Search */}
               <div className="relative">
@@ -619,7 +619,7 @@ const AdminLeadCreationPageTemplate = () => {
                     setStatusFilter("all");
                     setDateFilter(undefined);
                   }}
-                  className="w-full border font-medium py-5 rounded-lg hover:bg-slate-50"
+                  className="w-full border bg-[#00B7E8] hover:bg-[#01a7d5]  font-medium py-5 rounded-lg text-white"
                 >
                   Clear Filters
                 </Button>
@@ -630,7 +630,7 @@ const AdminLeadCreationPageTemplate = () => {
 
         {/* Leads Table */}
         <section className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-          <div className="p-6 border-b border-slate-200 flex items-center justify-between">
+          <div className="p-4 lg:p-6 border-b border-slate-200 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <FiFileText className="text-[#00B7E8] text-xl" />
               <h3 className="lg:text-lg font-bold">Lead Records</h3>

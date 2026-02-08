@@ -595,7 +595,7 @@ const SalesOfficerLeadCreationPageTemplate = () => {
                     setStatusFilter("all");
                     setDateFilter(undefined);
                   }}
-                  className="w-full font-medium bg-[#08b8e8] border py-5 rounded-lg hover:bg-[#10afdb]"
+                  className="w-full font-medium text-white bg-[#08b8e8] border py-5 rounded-lg hover:bg-[#10afdb]"
                 >
                   Clear Filters
                 </Button>

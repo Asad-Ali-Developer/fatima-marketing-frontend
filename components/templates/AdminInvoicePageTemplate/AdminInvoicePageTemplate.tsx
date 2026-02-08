@@ -228,7 +228,7 @@ const AdminInvoicePageTemplate = () => {
               <FiFileText className="text-base" />
               Admin Invoice Dashboard
             </div>
-            <h2 className="text-4xl font-black tracking-tight text-slate-900">
+            <h2 className="text-2xl lg:text-4xl font-black tracking-tight text-slate-900">
               Manage Invoices
             </h2>
             <p className="text-slate-500 max-w-xl">
@@ -349,7 +349,7 @@ const AdminInvoicePageTemplate = () => {
                     setStatusFilter("all");
                     setDateFilter(undefined);
                   }}
-                  className="w-full border-slate-300 rounded-lg text-slate-600 hover:bg-slate-50"
+                  className="w-full border-slate-300 bg-[#00B7E8] hover:bg-[#01afdf] rounded-lg  text-white font-medium"
                 >
                   Clear Filters
                 </Button>
@@ -622,8 +622,8 @@ const AdminInvoicePageTemplate = () => {
       {showConfirmModal.isOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
-            <div className="p-6 border-b border-slate-200 flex items-center justify-between">
-              <h3 className="text-xl font-semibold">Confirm Approval Change</h3>
+            <div className="p-3 lg:p-6 border-b border-slate-200 flex items-center justify-between">
+              <h3 className="text-lg lg:text-xl font-semibold">Confirm Approval Change</h3>
               <button
                 onClick={cancelApprovalUpdate}
                 className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
@@ -631,7 +631,7 @@ const AdminInvoicePageTemplate = () => {
                 <FiX className="text-xl" />
               </button>
             </div>
-            <div className="p-6 space-y-4">
+            <div className="p-3 lg:p-6 space-y-4">
               <p className="text-slate-700">
                 Are you sure you want to change the approval status to{" "}
                 <strong>

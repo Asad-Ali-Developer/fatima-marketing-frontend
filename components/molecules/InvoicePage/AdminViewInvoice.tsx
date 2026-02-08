@@ -41,7 +41,7 @@ const AdminViewInvoice: FC<AdminViewInvoiceProps> = ({
             <Button
               size="sm"
               onClick={() => handlePrint(selectedInvoice, LOGO_PATH)}
-              className="text-xs font-medium bg-[#00B7E8] hover:bg-[#029ec9] text-white hover:text-white transition-colors duration-150 flex items-center shadow-none rounded cursor-pointer"
+              className="text-xs font-medium bg-[#00B7E8] hover:bg-[#029ec9] text-white hover:text-white px-2 lg:px-3 transition-colors duration-150 flex items-center shadow-none rounded cursor-pointer"
             >
               <IoCloudDownloadOutline className="mr-1" />
               Download PDF
@@ -57,7 +57,7 @@ const AdminViewInvoice: FC<AdminViewInvoiceProps> = ({
           </div>
         </div>
 
-        <div className="p-3 lg:p-6 pb-8 space-y-4">
+        <div className="p-3 lg:p-6 pb-8 space-y-4 text-sm lg:text-normal">
           {/* Basic Info */}
           <div className="grid grid-cols-2 gap-2 lg:gap-4">
             <div>
@@ -209,7 +209,7 @@ const AdminViewInvoice: FC<AdminViewInvoiceProps> = ({
               </label>
               <div className="flex gap-1 items-center">
                 <p>{selectedInvoice.reported_to.name}</p>{" "}
-                <span className="text-slate-400"> (You)</span>
+                <span className="text-slate-400"></span>
               </div>
             </div>
           )}

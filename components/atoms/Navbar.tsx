@@ -18,7 +18,6 @@ const Navbar = () => {
   const router = useRouter();
   const dispatch = useDispatch();
   const authService = new AuthService();
-
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -51,9 +50,9 @@ const Navbar = () => {
     return () => window.removeEventListener("keydown", handleEscape);
   }, []);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     dispatch(clearUser());
-    authService.logout();
+    await authService.logout();
     localStorage.removeItem("authToken");
     router.push("/signin");
   };

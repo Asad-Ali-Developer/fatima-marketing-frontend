@@ -37,7 +37,7 @@ const EditSalesOfficerModal: FC<EditSalesOfficerModalProps> = ({
             <FiX className="w-5 h-5 text-slate-500" />
           </button>
         </div>
-        <div className="p-5 space-y-4">
+        <div className="p-3 lg:p-5 space-y-2 lg:space-y-4">
           <div className="space-y-2">
             <label className="text-xs font-medium text-slate-700">
               Full Name
