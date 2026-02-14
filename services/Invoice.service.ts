@@ -1,39 +1,26 @@
-import { baseUrl } from "@/config";
+import { apiClient } from "@/config";
 import { InvoiceFormData } from "@/types";
-import { getAuthToken } from "@/utils";
-import axios from "axios";
 import { toast } from "react-toastify";
 
 class InvoiceService {
-  constructor() {}
-
   async createInvoice(data: InvoiceFormData) {
     try {
-      const token = getAuthToken();
-      const response = await axios.post(`${baseUrl}/invoices`, data, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        withCredentials: true,
-      });
+      const response = await apiClient.post("/invoices", data);
       return response.data;
     } catch (error: any) {
       console.error("Error creating invoice:", error);
 
-      // Default fallback message
-      let errorMessage = "❌ Failed to create invoice. Please try again.";
+      let errorMessage = "Failed to create invoice. Please try again.";
 
-      if (axios.isAxiosError(error)) {
-        const status = error.response?.status;
-        const responseData = error.response?.data;
+      if (error.response) {
+        const status = error.response.status;
+        const responseData = error.response.data;
 
         if (status === 400 && responseData?.message) {
-          // Handle validation errors from NestJS (class-validator)
           const messages = Array.isArray(responseData.message)
             ? responseData.message
             : [responseData.message];
 
-          // Map known field errors to user-friendly toasts
           const fieldMessages: string[] = [];
 
           for (const msg of messages) {
@@ -56,7 +43,6 @@ class InvoiceService {
                 "• Status must be one of: Pending, Received (SO), or Cancelled.",
               );
             } else {
-              // Generic validation message
               fieldMessages.push(`• ${msg}`);
             }
           }
@@ -65,7 +51,7 @@ class InvoiceService {
             errorMessage =
               "⚠️ Please fix the following:\n" + fieldMessages.join("\n");
             toast.error(errorMessage, {
-              style: { whiteSpace: "pre-line" }, // Preserves line breaks
+              style: { whiteSpace: "pre-line" },
             });
           } else {
             toast.error("⚠️ Invalid form data. Please check all fields.");
@@ -79,19 +65,15 @@ class InvoiceService {
             "💥 Something went wrong on our end. Please try again later.",
           );
         } else {
-          // Other client/server errors
           toast.error(errorMessage);
         }
       } else {
-        // Non-Axios errors (network, etc.)
         if (error.message?.includes("Network Error")) {
           toast.error("🌐 Network error. Please check your connection.");
         } else {
           toast.error(errorMessage);
         }
       }
-
-      throw error; // Re-throw for upstream handling if needed
     }
   }
 
@@ -101,11 +83,10 @@ class InvoiceService {
     filters: {
       searchTerm?: string;
       status?: string;
-      date?: string; // YYYY-MM-DD
+      date?: string;
     } = {},
   ) {
     try {
-      const token = getAuthToken();
       const params: Record<string, string | number> = {
         page,
         limit,
@@ -114,17 +95,10 @@ class InvoiceService {
         ...(filters.date && { date: filters.date }),
       };
 
-      const response = await axios.get(`${baseUrl}/invoices`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        withCredentials: true,
-        params,
-      });
+      const response = await apiClient.get("/invoices", { params });
       return response.data;
     } catch (error) {
       console.error("Error fetching invoices:", error);
-      throw error;
     }
   }
 
@@ -132,45 +106,31 @@ class InvoiceService {
     filters: {
       searchTerm?: string;
       status?: string;
-      // Time-based filters
       timeRange?: "lastWeek" | "lastMonth" | "last6Months" | "lastYear";
-      from?: string; // ISO string or YYYY-MM-DD
-      to?: string; // ISO string or YYYY-MM-DD
-      // Target user
+      from?: string;
+      to?: string;
       salesOfficerId?: string;
     } = {},
   ) {
     try {
-      const token = getAuthToken();
-
-      // Build params safely — only include defined values
       const params: Record<string, string> = {};
-
       if (filters.searchTerm) params.searchTerm = filters.searchTerm;
       if (filters.status) params.status = filters.status;
       if (filters.salesOfficerId)
         params.salesOfficerId = filters.salesOfficerId;
-
-      // Time filters
       if (filters.timeRange) params.timeRange = filters.timeRange;
       if (filters.from) params.from = filters.from;
       if (filters.to) params.to = filters.to;
 
-      const response = await axios.get(
-        `${baseUrl}/invoices/sales-officers-invoices`,
+      const response = await apiClient.get(
+        "/invoices/sales-officers-invoices",
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          withCredentials: true,
           params,
         },
       );
-
       return response.data;
     } catch (error) {
-      console.error("Error fetching invoices:", error);
-      throw error;
+      console.error("Error fetching invoices:", error)
     }
   }
 
@@ -184,7 +144,6 @@ class InvoiceService {
     } = {},
   ) {
     try {
-      const token = getAuthToken();
       const params: Record<string, string | number> = {
         page,
         limit,
@@ -193,15 +152,12 @@ class InvoiceService {
         ...(filters.date && { date: filters.date }),
       };
 
-      const response = await axios.get(`${baseUrl}/invoices/reported-to-me`, {
-        headers: { Authorization: `Bearer ${token}` },
-        withCredentials: true,
+      const response = await apiClient.get("/invoices/reported-to-me", {
         params,
       });
       return response.data;
     } catch (error) {
       console.error("Error fetching invoices reported to admin:", error);
-      throw error;
     }
   }
 
@@ -209,101 +165,65 @@ class InvoiceService {
     invoiceId: string,
     data: { admin_approval_status: string },
   ) {
-    const token = getAuthToken();
-    const response = await axios.patch(
-      `${baseUrl}/invoices/${invoiceId}/approval-status`,
+    const response = await apiClient.patch(
+      `/invoices/${invoiceId}/approval-status`,
       data,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-        withCredentials: true,
-      },
     );
     return response.data;
   }
 
   async getInvoiceById(id: string) {
     try {
-      const token = getAuthToken();
-      const response = await axios.get(`${baseUrl}/invoices/${id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        withCredentials: true,
-      });
+      const response = await apiClient.get(`/invoices/${id}`);
       return response.data;
     } catch (error) {
       console.error("Error fetching invoice by ID:", error);
-      throw error;
     }
   }
 
   async updateInvoice(id: string, data: any) {
     try {
-      const token = getAuthToken();
-      const response = await axios.put(`${baseUrl}/invoices/${id}`, data, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        withCredentials: true,
-      });
+      const response = await apiClient.put(`/invoices/${id}`, data);
       toast.success("Invoice updated successfully!");
       return response.data;
     } catch (error) {
       console.error("Error updating invoice:", error);
-      throw error;
     }
   }
 
   async deleteInvoice(id: string) {
     try {
-      const token = getAuthToken();
-      const response = await axios.delete(`${baseUrl}/invoices/${id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        withCredentials: true,
-      });
+      const response = await apiClient.delete(`/invoices/${id}`);
       toast.success("Invoice deleted successfully!");
       return response.data;
     } catch (error) {
       console.error("Error deleting invoice:", error);
-      throw error;
     }
   }
 
   async updateInvoiceRemarks(invoiceId: string, remarks: string | null) {
     try {
-      const token = getAuthToken();
-      const response = await axios.patch(
-        `${baseUrl}/invoices/${invoiceId}/remarks`,
-        { remarks },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          withCredentials: true,
-        },
-      );
+      const response = await apiClient.patch(`/invoices/${invoiceId}/remarks`, {
+        remarks,
+      });
       toast.success("Remarks updated successfully!");
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating remarks:", error);
-      // Optional: show error toast
-      if (axios.isAxiosError(error)) {
-        const status = error.response?.status;
+      if (error.response) {
+        const status = error.response.status;
         if (status === 401) {
           toast.error("🔒 Your session has expired. Please log in again.");
         } else if (status === 403 || status === 404) {
           toast.error("🚫 You're not authorized to update this invoice.");
         } else {
-          toast.error("❌ Failed to update remarks. Please try again.");
+          toast.error("Failed to update remarks. Please try again.");
         }
       } else {
         toast.error(
-          "❌ Failed to update remarks. Please check your connection.",
+          "Failed to update remarks. Please check your connection.",
         );
       }
-      throw error;
     }
   }
 }

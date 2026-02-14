@@ -53,7 +53,6 @@ const Navbar = () => {
   const handleLogout = async () => {
     dispatch(clearUser());
     await authService.logout();
-    localStorage.removeItem("authToken");
     router.push("/signin");
   };
 

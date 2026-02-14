@@ -701,7 +701,7 @@ const AdminLeadCreationPageTemplate = () => {
                       <td className="px-6 py-4 text-sm text-slate-600">
                         {lead.phoneNumber || "N/A"}
                       </td>
-                      <td className="px-6 py-4 text-sm text-slate-600">
+                      <td className="px-6 py-4 truncate max-w-[220px] text-sm text-slate-600">
                         {lead.location || "-"}
                       </td>
                       <td className="px-6 py-4 text-sm capitalize text-slate-600">

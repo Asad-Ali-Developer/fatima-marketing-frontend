@@ -1,7 +1,5 @@
-import { baseUrl } from "@/config";
+import { apiClient } from "@/config";
 import { LeadFormData } from "@/types/Leads";
-import { getAuthToken } from "@/utils";
-import axios from "axios";
 import { toast } from "react-toastify";
 
 class LeadsService {
@@ -9,23 +7,17 @@ class LeadsService {
 
   async createLead(data: Omit<LeadFormData, "_id" | "createdAt">) {
     try {
-      const token = getAuthToken();
-      const response = await axios.post(`${baseUrl}/leads`, data, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        withCredentials: true,
-      });
+      const response = await apiClient.post("/leads", data);
       toast.success("Lead created successfully!");
       return response.data;
     } catch (error: any) {
       console.error("Error creating lead:", error);
 
-      let errorMessage = "❌ Failed to create lead. Please try again.";
+      let errorMessage = "Failed to create lead. Please try again.";
 
-      if (axios.isAxiosError(error)) {
-        const status = error.response?.status;
-        const responseData = error.response?.data;
+      if (error.response) {
+        const status = error.response.status;
+        const responseData = error.response.data;
 
         if (status === 400 && responseData?.message) {
           const messages = Array.isArray(responseData.message)
@@ -98,7 +90,6 @@ class LeadsService {
     } = {},
   ) {
     try {
-      const token = getAuthToken();
       const params: Record<string, string | number> = {
         page,
         limit,
@@ -107,17 +98,10 @@ class LeadsService {
         ...(filters.date && { date: filters.date }),
       };
 
-      const response = await axios.get(`${baseUrl}/leads`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        withCredentials: true,
-        params,
-      });
+      const response = await apiClient.get("/leads", { params });
       return response.data;
     } catch (error) {
       console.error("Error fetching leads:", error);
-      throw error;
     }
   }
 
@@ -131,7 +115,6 @@ class LeadsService {
     } = {},
   ) {
     try {
-      const token = getAuthToken();
       const params: Record<string, string | number> = {
         page,
         limit,
@@ -140,13 +123,7 @@ class LeadsService {
         ...(filters.date && { date: filters.date }),
       };
 
-      const response = await axios.get(`${baseUrl}/leads/for-so`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        withCredentials: true,
-        params,
-      });
+      const response = await apiClient.get("/leads/for-so", { params });
       return response.data;
     } catch (error) {
       console.error("Error fetching leads:", error);
@@ -156,20 +133,14 @@ class LeadsService {
 
   async updateLead(id: string, data: Partial<LeadFormData>) {
     try {
-      const token = getAuthToken();
-      const response = await axios.put(`${baseUrl}/leads/${id}`, data, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        withCredentials: true,
-      });
+      const response = await apiClient.put(`/leads/${id}`, data);
       toast.success("Lead updated successfully!");
       return response.data;
     } catch (error: any) {
       console.error("Error updating lead:", error);
 
-      if (axios.isAxiosError(error)) {
-        const status = error.response?.status;
+      if (error.response) {
+        const status = error.response.status;
         if (status === 401) {
           toast.error("🔒 Session expired. Please log in again.");
         } else if (status === 403 || status === 404) {
@@ -177,41 +148,33 @@ class LeadsService {
         } else if (status === 400) {
           toast.error("⚠️ Invalid data. Please check your inputs.");
         } else {
-          toast.error("❌ Failed to update lead. Please try again.");
+          toast.error("Failed to update lead. Please try again.");
         }
       } else {
-        toast.error("❌ Failed to update lead. Check your connection.");
+        toast.error("Failed to update lead. Check your connection.");
       }
-
-      throw error;
     }
   }
 
   async deleteLead(id: string) {
     try {
-      const token = getAuthToken();
-      const response = await axios.delete(`${baseUrl}/leads/${id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        withCredentials: true,
-      });
+      const response = await apiClient.delete(`/leads/${id}`);
       toast.success("Lead deleted successfully!");
       return response.data;
     } catch (error: any) {
       console.error("Error deleting lead:", error);
 
-      if (axios.isAxiosError(error)) {
-        const status = error.response?.status;
+      if (error.response) {
+        const status = error.response.status;
         if (status === 401) {
           toast.error("🔒 Session expired. Please log in again.");
         } else if (status === 403 || status === 404) {
           toast.error("🚫 You cannot delete this lead.");
         } else {
-          toast.error("❌ Failed to delete lead. Please try again.");
+          toast.error("Failed to delete lead. Please try again.");
         }
       } else {
-        toast.error("❌ Network error. Could not delete lead.");
+        toast.error("Network error. Could not delete lead.");
       }
 
       throw error;
@@ -220,33 +183,25 @@ class LeadsService {
 
   async updateLeadRemarks(leadId: string, remarks: string | null) {
     try {
-      const token = getAuthToken();
-      const response = await axios.patch(
-        `${baseUrl}/leads/${leadId}/remarks`,
-        { remarks },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          withCredentials: true,
-        },
-      );
+      const response = await apiClient.patch(`/leads/${leadId}/remarks`, {
+        remarks,
+      });
       toast.success("Remarks updated successfully!");
       return response.data;
     } catch (error: any) {
       console.error("Error updating remarks:", error);
 
-      if (axios.isAxiosError(error)) {
-        const status = error.response?.status;
+      if (error.response) {
+        const status = error.response.status;
         if (status === 401) {
           toast.error("🔒 Your session has expired. Please log in again.");
         } else if (status === 403 || status === 404) {
           toast.error("🚫 You're not authorized to update this lead.");
         } else {
-          toast.error("❌ Failed to update remarks. Please try again.");
+          toast.error("Failed to update remarks. Please try again.");
         }
       } else {
-        toast.error("❌ Failed to update remarks. Check your connection.");
+        toast.error("Failed to update remarks. Check your connection.");
       }
 
       throw error;
@@ -258,30 +213,24 @@ class LeadsService {
     status: "pending" | "in_progress" | "completed",
   ) {
     try {
-      const token = getAuthToken();
-      const response = await axios.patch(
-        `${baseUrl}/leads/${leadId}/status`,
-        { status },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-          withCredentials: true,
-        },
-      );
+      const response = await apiClient.patch(`/leads/${leadId}/status`, {
+        status,
+      });
       toast.success("Status updated successfully!");
       return response.data;
     } catch (error: any) {
       console.error("Error updating status:", error);
-      if (axios.isAxiosError(error)) {
-        const status = error.response?.status;
+      if (error.response) {
+        const status = error.response.status;
         if (status === 401) {
           toast.error("🔒 Your session has expired. Please log in again.");
         } else if (status === 403 || status === 404) {
           toast.error("🚫 You're not authorized to update this lead.");
         } else {
-          toast.error("❌ Failed to update status. Please try again.");
+          toast.error("Failed to update status. Please try again.");
         }
       } else {
-        toast.error("❌ Failed to update status. Check your connection.");
+        toast.error("Failed to update status. Check your connection.");
       }
       throw error;
     }
@@ -289,36 +238,21 @@ class LeadsService {
 
   async getSalesOfficers() {
     try {
-      const token = getAuthToken();
-      const response = await axios.get(`${baseUrl}/leads/sales-officers/all`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        withCredentials: true,
-      });
+      const response = await apiClient.get("/leads/sales-officers/all");
       return response.data;
     } catch (error) {
       console.error("Error fetching sales officers:", error);
-      toast.error("❌ Failed to load sales officers.");
-      throw error;
+      toast.error("Failed to load sales officers.");
     }
   }
 
   async getLeadsByOfficer(officerId: string) {
     try {
-      const token = getAuthToken();
-      const response = await axios.get(
-        `${baseUrl}/leads/officer/${officerId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-          withCredentials: true,
-        },
-      );
+      const response = await apiClient.get(`/leads/officer/${officerId}`);
       return response.data;
     } catch (error) {
       console.error("Error fetching leads by officer:", error);
-      toast.error("❌ Failed to load officer leads.");
-      throw error;
+      toast.error("Failed to load officer leads.");
     }
   }
 }

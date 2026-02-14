@@ -16,4 +16,5 @@ export interface User {
   profileImage?: string
   commissionedBy?: number
   gender?: string
+  refreshToken?: string;
 }

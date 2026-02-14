@@ -2,7 +2,6 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { userReducer } from "./slices";
 
-// ✅ Create store ONLY on the client
 let store: ReturnType<typeof makeStore>;
 
 function makeStore() {
@@ -13,19 +12,18 @@ function makeStore() {
   });
 }
 
-// ✅ Safe store getter
 export const getStore = () => {
   if (typeof window === "undefined") {
-    // On server, return a new store (not used)
     return makeStore();
   }
-
-  // On client, reuse existing store
   if (!store) {
     store = makeStore();
   }
   return store;
 };
+
+// ✅ Export dispatch helper for non-React files
+export const getDispatch = () => getStore().dispatch;
 
 export type AppStore = ReturnType<typeof makeStore>;
 export type RootState = ReturnType<AppStore["getState"]>;

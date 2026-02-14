@@ -1,7 +1,5 @@
-import { baseUrl } from "@/config";
+import { apiClient } from "@/config";
 import { LoginData, RegisterData, UpdateUserData, User } from "@/types";
-import { getAuthToken } from "@/utils";
-import axios from "axios";
 import { toast } from "react-toastify";
 
 interface UserProfile {
@@ -9,19 +7,11 @@ interface UserProfile {
   data: User;
 }
 
-// Add this to your types file
-export interface UpdateUser {
-  profileImage?: string; // pure Base64 string (without data:image/... prefix)
-}
-
 class AuthService {
-  constructor() {}
-
   async register(data: RegisterData) {
     const { full_name, email, password, role, rokra } = data;
-
     try {
-      const response = await axios.post(`${baseUrl}/auth/register`, {
+      const response = await apiClient.post("/auth/register", {
         full_name,
         email,
         password,
@@ -30,41 +20,26 @@ class AuthService {
       });
       return response;
     } catch (error) {
-      console.log("Error: ", error);
+      console.error("Registration error:", error);
+      throw error;
     }
   }
 
   async registerAdmin(data: RegisterData) {
     const { full_name, email, showPassword, role, status } = data;
-
     const payload = {
       full_name,
       email,
-      ...(showPassword && { showPassword }), // only include if truthy
+      ...(showPassword && { showPassword }),
       role,
       status,
     };
-
     try {
-      const token = getAuthToken();
-
-      if (!token) {
-        throw new Error("No access token found");
-      }
-
-      const response = await axios.post(
-        `${baseUrl}/auth/register-admin`,
-        payload,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          withCredentials: true,
-        },
-      );
+      const response = await apiClient.post("/auth/register-admin", payload);
       return response;
     } catch (error) {
-      console.log("Error: ", error);
+      console.error("Admin registration error:", error);
+      throw error;
     }
   }
 
@@ -83,7 +58,7 @@ class AuthService {
     const payload = {
       full_name,
       email,
-      ...(showPassword && { showPassword }), // only include if truthy
+      ...(showPassword && { showPassword }),
       role,
       status,
       commissionedBy,
@@ -92,54 +67,37 @@ class AuthService {
     };
 
     try {
-      const token = getAuthToken();
-
-      if (!token) {
-        throw new Error("No access token found");
-      }
-
-      const response = await axios.post(
-        `${baseUrl}/auth/register-sales-officer`,
+      const response = await apiClient.post(
+        "/auth/register-sales-officer",
         payload,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          withCredentials: true,
-        },
       );
       return response;
     } catch (error) {
-      console.log("Error: ", error);
+      console.error("Sales officer registration error:", error);
+      throw error;
     }
   }
 
   async login(data: LoginData) {
     const { email, password, rememberMe } = data;
     try {
-      const response = await axios.post(`${baseUrl}/auth/login`, {
+      const response = await apiClient.post("/auth/login", {
         email,
         password,
         rememberMe,
       });
-
-      console.log("Responed: ", response);
       return response;
     } catch (error) {
-      console.log("Error: ", error);
+      console.error("Login error:", error);
+      throw error;
     }
   }
 
-  // ✅ NEW: Fetch user profile
-  async getProfile(accessToken: string) {
+  // ✅ No token needed — cookies handle auth
+  async getProfile() {
     try {
-      const response = await axios.get<UserProfile>(`${baseUrl}/auth/profile`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-        withCredentials: true,
-      });
-      return response.data; // Return just the data part
+      const response = await apiClient.get<UserProfile>("/auth/profile");
+      return response.data;
     } catch (error) {
       console.error("Profile fetch error:", error);
       throw error;
@@ -148,117 +106,66 @@ class AuthService {
 
   async logout() {
     try {
-      const token = getAuthToken();
-      const response = await axios.get(`${baseUrl}/auth/logout`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        withCredentials: true,
-      });
+      const response = await apiClient.get("/auth/logout");
       return response;
     } catch (error) {
-      console.log("Error: ", error);
+      console.error("Logout error:", error);
+      throw error;
     }
   }
 
   async updateProfileImage(updateData: {
     profileImage?: string;
     email?: string;
-  }): Promise<UserProfile> {
-    const token = getAuthToken();
-    if (!token) {
-      throw new Error("No access token found. Please log in.");
-    }
-
+  }) {
     try {
-      const response = await axios.patch<UserProfile>(
-        `${baseUrl}/auth/profile-image`,
-        updateData, // 👈 Send full DTO object
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          withCredentials: true,
-        },
+      const response = await apiClient.patch<UserProfile>(
+        "/auth/profile-image",
+        updateData,
       );
       return response.data;
     } catch (error: any) {
-      console.error("Profile update error:", error);
-      if (error.response?.status === 409) {
-        throw new Error("Email is already in use.");
-      }
+      console.error("Profile image update error:", error);
       if (error.response?.status === 400) {
         throw new Error(
           error.response.data.message || "Invalid image format or size.",
         );
       }
-      throw new Error("Failed to update profile. Please try again.");
+      throw new Error("Failed to update profile image.");
     }
   }
 
-  async updateProfile(updateData: UpdateUserData): Promise<UserProfile> {
-    const token = getAuthToken();
-    if (!token) {
-      throw new Error("No access token found. Please log in.");
-    }
-
+  async updateProfile(updateData: UpdateUserData) {
     try {
-      const response = await axios.patch<UserProfile>(
-        `${baseUrl}/auth/profile`, // 👈 Self-update endpoint
+      const response = await apiClient.patch<UserProfile>(
+        "/auth/profile",
         updateData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          withCredentials: true,
-        },
       );
       return response.data;
     } catch (error: any) {
       console.error("Profile update error:", error);
-      if (error.response?.status === 409) {
-        throw new Error("Email is already in use.");
-      }
       if (error.response?.status === 400) {
         throw new Error(error.response.data.message || "Invalid input data.");
       }
       if (error.response?.status === 403) {
-        throw new Error("You are not authorized to update this field.");
+        throw new Error("Not authorized to update this field.");
       }
-      throw new Error("Failed to update profile. Please try again.");
+      throw new Error("Failed to update profile.");
     }
   }
 
-  // In authService.ts
   async updateSalesOfficerAsAdmin(
     id: string,
     updateData: Partial<UpdateUserData>,
-  ): Promise<UserProfile> {
-    const token = getAuthToken();
-    if (!token) {
-      throw new Error("No access token found. Please log in.");
-    }
-
+  ) {
     try {
-      const response = await axios.patch<UserProfile>(
-        `${baseUrl}/auth/sales-officer/${id}`, // ✅ Admin-managed endpoint
+      const response = await apiClient.patch<UserProfile>(
+        `/auth/sales-officer/${id}`,
         updateData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          withCredentials: true,
-        },
       );
       return response.data;
     } catch (error: any) {
       console.error("Sales officer update error:", error);
-      if (error.response?.status === 409) {
-        throw new Error("Email is already in use.");
-      }
       if (error.response?.status === 400) {
         throw new Error(error.response.data.message || "Invalid input data.");
       }
@@ -268,21 +175,21 @@ class AuthService {
       if (error.response?.status === 404) {
         throw new Error("Sales officer not found.");
       }
-      throw new Error("Failed to update sales officer. Please try again.");
+      throw new Error("Failed to update sales officer.");
     }
   }
 
   async deleteSalesOfficer(soId: string) {
-    const token = getAuthToken();
-    const response = await axios.delete(`${baseUrl}/auth/users/${soId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-      withCredentials: true,
-    });
-
-    if (response.status) {
+    try {
+      const response = await apiClient.delete(`/auth/users/${soId}`);
       toast.success("Sales Officer deleted successfully!");
+      return response;
+    } catch (error) {
+      console.error("Delete sales officer error:", error);
+      toast.error("Failed to delete sales officer.");
+      throw error;
     }
   }
 }
 
-export default AuthService;
+export default AuthService; // ✅ Export singleton instance

@@ -2,22 +2,19 @@
 
 import { RootState } from "@/store";
 import { User } from "@/types";
-import { getAuthToken } from "@/utils";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import AdminDashboardPageTemplate from "../AdminDashboardPageTemplate/AdminDashboardPageTemplate";
-import SuperAdminHomePageTemplete from "../SuperAdminHomePageTemplate/SuperAdminHomePageTemplete";
 import SalesOfficerHomePageTemplate from "../SalesOfficerHomePageTemplate/SalesOfficerHomePageTemplate";
+import SuperAdminHomePageTemplete from "../SuperAdminHomePageTemplate/SuperAdminHomePageTemplete";
 
 const HomePageTemplate = () => {
   const router = useRouter();
-
-  const token = getAuthToken();
   const user = useSelector(
     (state: RootState) => state.auth.user,
   ) as User | null;
 
-  if (!token) {
+  if (!user) {
     router.push("/signin");
   }
 

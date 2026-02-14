@@ -33,27 +33,15 @@ export default function SignInPageTemplate() {
 
     const response = await authService.login(payload);
 
-    if (!response?.data?.accessToken) {
-      toast.error(`Invalid Credentials!`);
-      return;
-    }
-
-    const { accessToken } = response.data;
-
-    if (accessToken) {
+    if(response.data) {
       toast.success("Login successful!");
+      const profileData = await authService.getProfile();
+  
+      // ✅ Correct (passes only the user object)
+      dispatch(setUser({ user: profileData.data }));
+  
+      router.push("/");
     }
-
-    localStorage.setItem("accessToken", accessToken);
-
-    const profileData = await authService.getProfile(accessToken);
-
-    // ✅ Correct (passes only the user object)
-    dispatch(setUser({ user: profileData.data, accessToken }));
-
-    router.push("/");
-
-    console.log("Profile Data: ", profileData);
   };
 
   return (

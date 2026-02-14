@@ -1,31 +1,21 @@
-import { baseUrl } from "@/config";
+import { apiClient } from "@/config";
 import { InventoryFormData } from "@/types";
-import { getAuthToken } from "@/utils";
-import axios from "axios";
 import { toast } from "react-toastify";
 
 class InventoryService {
-  constructor() {}
-
   async createInventory(data: InventoryFormData) {
     try {
-      const token = getAuthToken();
-      const response = await axios.post(`${baseUrl}/inventory`, data, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        withCredentials: true,
-      });
+      const response = await apiClient.post("/inventory", data);
       toast.success("✅ Inventory item added successfully!");
       return response.data;
     } catch (error: any) {
       console.error("Error creating inventory item:", error);
 
-      let errorMessage = "❌ Failed to add inventory item. Please try again.";
+      let errorMessage = "Failed to add inventory item. Please try again.";
 
-      if (axios.isAxiosError(error)) {
-        const status = error.response?.status;
-        const responseData = error.response?.data;
+      if (error.response) {
+        const status = error.response.status;
+        const responseData = error.response.data;
 
         if (status === 400 && responseData?.message) {
           const messages = Array.isArray(responseData.message)
@@ -85,66 +75,43 @@ class InventoryService {
   async getInventory(
     page: number = 1,
     limit: number = 10,
-    filters: {
-      searchTerm?: string;
-    } = {},
+    filters: { searchTerm?: string } = {},
   ) {
     try {
-      const token = getAuthToken();
       const params: Record<string, string | number> = {
         page,
         limit,
         ...(filters.searchTerm && { searchTerm: filters.searchTerm }),
       };
 
-      const response = await axios.get(`${baseUrl}/inventory`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        withCredentials: true,
-        params,
-      });
+      const response = await apiClient.get("/inventory", { params });
       return response.data;
     } catch (error) {
       console.error("Error fetching inventory:", error);
-      toast.error("❌ Failed to load inventory items.");
       throw error;
     }
   }
 
   async getInventoryById(id: string) {
     try {
-      const token = getAuthToken();
-      const response = await axios.get(`${baseUrl}/inventory/${id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        withCredentials: true,
-      });
+      const response = await apiClient.get(`/inventory/${id}`);
       return response.data;
     } catch (error) {
       console.error("Error fetching inventory by ID:", error);
-      toast.error("❌ Failed to load inventory details.");
       throw error;
     }
   }
 
   async updateInventory(id: string, data: Partial<InventoryFormData>) {
     try {
-      const token = getAuthToken();
-      const response = await axios.put(`${baseUrl}/inventory/${id}`, data, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        withCredentials: true,
-      });
-      toast.success("✅ Inventory updated successfully!");
+      const response = await apiClient.put(`/inventory/${id}`, data);
+      toast.success("Inventory updated successfully!");
       return response.data;
     } catch (error: any) {
       console.error("Error updating inventory:", error);
 
-      if (axios.isAxiosError(error)) {
-        const status = error.response?.status;
+      if (error.response) {
+        const status = error.response.status;
         if (status === 400) {
           toast.error("⚠️ Invalid data. Please check your inputs.");
         } else if (status === 401) {
@@ -154,10 +121,10 @@ class InventoryService {
         } else if (status === 500) {
           toast.error("💥 Server error. Please try again later.");
         } else {
-          toast.error("❌ Failed to update inventory.");
+          toast.error("Failed to update inventory.");
         }
       } else {
-        toast.error("❌ Update failed. Check your connection.");
+        toast.error("Update failed. Check your connection.");
       }
       throw error;
     }
@@ -165,20 +132,14 @@ class InventoryService {
 
   async deleteInventory(id: string) {
     try {
-      const token = getAuthToken();
-      const response = await axios.delete(`${baseUrl}/inventory/${id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        withCredentials: true,
-      });
-      toast.success("🗑️ Inventory item deleted successfully!");
+      const response = await apiClient.delete(`/inventory/${id}`);
+      toast.success("Inventory item deleted successfully!");
       return response.data;
     } catch (error: any) {
       console.error("Error deleting inventory:", error);
 
-      if (axios.isAxiosError(error)) {
-        const status = error.response?.status;
+      if (error.response) {
+        const status = error.response.status;
         if (status === 401) {
           toast.error("🔒 Session expired. Please log in again.");
         } else if (status === 403 || status === 404) {
@@ -186,10 +147,10 @@ class InventoryService {
         } else if (status === 500) {
           toast.error("💥 Server error during deletion.");
         } else {
-          toast.error("❌ Failed to delete inventory item.");
+          toast.error("Failed to delete inventory item.");
         }
       } else {
-        toast.error("❌ Deletion failed. Check your network.");
+        toast.error("Deletion failed. Check your network.");
       }
       throw error;
     }

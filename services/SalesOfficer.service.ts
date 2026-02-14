@@ -1,27 +1,19 @@
-import { baseUrl } from "@/config";
-import { getAuthToken } from "@/utils";
-import axios from "axios";
+import { apiClient } from "@/config";
 
 class SalesOfficerService {
   constructor() {}
 
   async getAllSalesOfficerMadeByAdmin(page: number, limit: number) {
     try {
-      const token = getAuthToken();
-      const response = await axios.get(
-        `${baseUrl}/sales-officer/sales-officers/created-by-admin`,
+      const response = await apiClient.get(
+        "/sales-officer/sales-officers/created-by-admin",
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          withCredentials: true,
           params: { page, limit },
         },
       );
       return response;
     } catch (error) {
       console.log("Error: ", error);
-      throw error;
     }
   }
 
@@ -40,24 +32,18 @@ class SalesOfficerService {
     date?: string;
   }) {
     try {
-      const token = getAuthToken();
-      const response = await axios.get(`${baseUrl}/sales-officer/leads`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        withCredentials: true,
-        params: {
-          page,
-          limit,
-          ...(searchTerm !== undefined && { searchTerm }),
-          ...(status !== undefined && { status }),
-          ...(date !== undefined && { date }),
-        },
-      });
+      const params: Record<string, string | number> = {
+        page,
+        limit,
+        ...(searchTerm !== undefined && { searchTerm }),
+        ...(status !== undefined && { status }),
+        ...(date !== undefined && { date }),
+      };
+
+      const response = await apiClient.get("/sales-officer/leads", { params });
       return response.data;
     } catch (error) {
       console.error("Error fetching leads:", error);
-      throw error;
     }
   }
 
@@ -76,44 +62,30 @@ class SalesOfficerService {
     date?: string;
   }) {
     try {
-      const token = getAuthToken();
-      const response = await axios.get(`${baseUrl}/sales-officer/invoices`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        withCredentials: true,
-        params: {
-          page,
-          limit,
-          ...(searchTerm !== undefined && { searchTerm }),
-          ...(status !== undefined && { status }),
-          ...(date !== undefined && { date }),
-        },
+      const params: Record<string, string | number> = {
+        page,
+        limit,
+        ...(searchTerm !== undefined && { searchTerm }),
+        ...(status !== undefined && { status }),
+        ...(date !== undefined && { date }),
+      };
+
+      const response = await apiClient.get("/sales-officer/invoices", {
+        params,
       });
       return response.data;
     } catch (error) {
       console.error("Error fetching invoices:", error);
-      throw error;
     }
   }
 
   // ─── NEW: Get Dashboard Summary Stats ────────────────────────────────
   async getDashboardStats() {
     try {
-      const token = getAuthToken();
-      const response = await axios.get(
-        `${baseUrl}/sales-officer/dashboard-stats`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          withCredentials: true,
-        },
-      );
+      const response = await apiClient.get("/sales-officer/dashboard-stats");
       return response.data;
     } catch (error) {
       console.error("Error fetching dashboard stats:", error);
-      throw error;
     }
   }
 }
