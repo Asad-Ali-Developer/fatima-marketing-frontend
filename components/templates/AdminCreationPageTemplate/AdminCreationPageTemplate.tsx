@@ -69,7 +69,7 @@ export default function AdminCreationPageTemplate() {
         itemsPerPage
       );
 
-      const { data, pagination } = response.data;
+      const { data, pagination } = response?.data;
       const adminDisplays = data.map(toAdminDisplay);
 
       setAdmins(adminDisplays);
