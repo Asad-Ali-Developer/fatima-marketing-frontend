@@ -7,6 +7,7 @@ import {
   DeleteSalesOfficerConfirmationModal,
   EditSalesOfficerModal,
   SalesOfficerBlockModal,
+  SalesOfficerReportModal,
   SelectCommissionPeriodModal,
 } from "@/components/molecules";
 import { Button } from "@/components/ui/button";
@@ -43,6 +44,8 @@ export default function SalesOfficerCreationPageTemplate() {
     useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [hasNextPage, setHasNextPage] = useState<boolean>(false);
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [selectedSalesOfficerId, setSelectedSalesOfficerId] = useState("");
 
   // 👇 Filters (NO commissionedBy filter)
   const [filters, setFilters] = useState({
@@ -436,6 +439,11 @@ export default function SalesOfficerCreationPageTemplate() {
     }
   };
 
+  const openSOReportModal = (salesOfficer: SalesOfficerDisplay) => {
+    setSelectedSalesOfficer(salesOfficer);
+    setReportModalOpen(true);
+  };
+
   const getStatusBadge = (status: string) => (
     <span
       className={cn(
@@ -578,6 +586,7 @@ export default function SalesOfficerCreationPageTemplate() {
           fetchSalesOfficers={fetchSalesOfficers}
           filteredSalesOfficers={filteredSalesOfficers}
           onCreateCommissionInvoice={handleCreateCommissionInvoice}
+          openSOReportModal={openSOReportModal}
         />
       </main>
 
@@ -638,6 +647,13 @@ export default function SalesOfficerCreationPageTemplate() {
           onClose={() => setIsPreviewModalOpen(false)}
           salesOfficer={selectedSalesOfficer}
           commissionRateOfSO={(commissionRateOfSO as number) / 100}
+        />
+      )}
+
+      {reportModalOpen && (
+        <SalesOfficerReportModal
+          salesOfficer={selectedSalesOfficer}
+          setOpenSalesOfficerReportModal={setReportModalOpen}
         />
       )}
     </div>

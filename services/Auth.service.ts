@@ -6,7 +6,6 @@ interface UserProfile {
   message: string;
   data: User;
 }
-
 class AuthService {
   async register(data: RegisterData) {
     const { full_name, email, password, role, rokra } = data;
@@ -80,16 +79,42 @@ class AuthService {
 
   async login(data: LoginData) {
     const { email, password, rememberMe } = data;
+
     try {
       const response = await apiClient.post("/auth/login", {
         email,
         password,
         rememberMe,
       });
-      return response;
-    } catch (error) {
-      console.error("Login error:", error);
-      throw error;
+
+      return { success: true, data: response.data };
+    } catch (error: any) {
+      console.error("Login request failed:", error);
+
+      let message = "An unexpected error occurred. Please try again.";
+
+      if (error.response) {
+        const { status, data } = error.response;
+
+        // Use backend's exact message if provided
+        if (data?.message) {
+          message = data.message;
+        } else {
+          // Fallback based on status
+          if (status === 400) {
+            message = "Email and password are required.";
+          } else if (status === 401) {
+            message = "Invalid email or password.";
+          } else if (status >= 500) {
+            message = "Server error. Please try again later.";
+          }
+        }
+      } else if (error.request) {
+        message = "Network error. Please check your connection.";
+      }
+
+      toast.error(message);
+      return { success: false, error: message };
     }
   }
 

@@ -207,6 +207,38 @@ class SOLeadsService {
       throw error;
     }
   }
+
+  async getLeadsBySalesOfficer(
+    salesOfficerId: string,
+    page: number,
+    itemsPerPage: number,
+    filters: {
+      searchTerm?: string;
+      status?: string;
+      dateFrom?: string;
+      dateTo?: string;
+    },
+  ) {
+    try {
+      const response = await apiClient.get(
+        `/so-leads/sales-officer/${salesOfficerId}`,
+        {
+          params: {
+            page,
+            limit: itemsPerPage,
+            searchTerm: filters.searchTerm,
+            status: filters.status,
+            dateFrom: filters.dateFrom,
+            dateTo: filters.dateTo,
+          },
+        },
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching sales officer leads:", error);
+      throw error;
+    }
+  }
 }
 
 export default SOLeadsService;

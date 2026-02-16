@@ -73,7 +73,7 @@ apiClient.interceptors.response.use(
       dispatch(clearUser());
       
       // Redirect to login
-      window.location.href = "/signin";
+      // window.location.href = "/signin";
       
       return Promise.reject(refreshError);
     } finally {

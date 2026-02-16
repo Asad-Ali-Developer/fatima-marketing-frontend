@@ -28,6 +28,7 @@ import CreateLeadModalSelfCreated from "./SelfCreatedLeadsPage/CreateLeadSelfCre
 import EditLeadSelfCreatedModal from "./SelfCreatedLeadsPage/EditLeadSelfCreatedModal";
 import SOInvoicesTable from "./InvoicePage/SOInvoiceTable";
 import AdminViewInvoice from "./InvoicePage/AdminViewInvoice";
+import SalesOfficerReportModal from "./AdminSalesOfficers/SalesOfficerReportModal";
 
 export {
   RemarksModal,
@@ -59,5 +60,6 @@ export {
   CreateLeadModalSelfCreated,
   EditLeadSelfCreatedModal,
   SOInvoicesTable,
-  AdminViewInvoice
+  AdminViewInvoice,
+  SalesOfficerReportModal,
 };

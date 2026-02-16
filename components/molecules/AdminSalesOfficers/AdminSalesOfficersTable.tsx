@@ -3,6 +3,7 @@ import { User } from "@/types";
 import { FC } from "react";
 import { FiEdit2, FiTrash2, FiUsers, FiFileText } from "react-icons/fi"; // 👈 Added FiFileText
 import { MdBlock, MdCheckCircle } from "react-icons/md";
+import { HiOutlineDocumentReport } from "react-icons/hi";
 
 interface SalesOfficerDisplay extends User {
   date: string;
@@ -25,6 +26,7 @@ interface AdminSalesOfficersTableProps {
   hasNextPage: boolean;
   // 👇 New prop for commission invoice
   onCreateCommissionInvoice: (so: SalesOfficerDisplay) => void;
+  openSOReportModal: (salesOfficer: SalesOfficerDisplay) => void;
 }
 
 const AdminSalesOfficersTable: FC<AdminSalesOfficersTableProps> = ({
@@ -41,6 +43,7 @@ const AdminSalesOfficersTable: FC<AdminSalesOfficersTableProps> = ({
   handleActivate,
   hasNextPage,
   onCreateCommissionInvoice, // 👈 Destructure new prop
+  openSOReportModal,
 }) => {
   return (
     <section className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
@@ -97,6 +100,9 @@ const AdminSalesOfficersTable: FC<AdminSalesOfficersTableProps> = ({
                 <th className="px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">
                   Status
                 </th>
+                <th className="px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                  Report
+                </th>
                 <th className="px-4 py-3 text-xs font-semibold text-slate-600 uppercase tracking-wider text-right">
                   Actions
                 </th>
@@ -141,6 +147,12 @@ const AdminSalesOfficersTable: FC<AdminSalesOfficersTableProps> = ({
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap">
                     {getStatusBadge(so.status || "inactive")}
+                  </td>
+                  <td className="px-4 py-4">
+                    <HiOutlineDocumentReport
+                      className="w-4 h-4 text-slate-500 hover:text-[#00B7E8] cursor-pointer"
+                      onClick={() => openSOReportModal(so)}
+                    />
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end gap-2">

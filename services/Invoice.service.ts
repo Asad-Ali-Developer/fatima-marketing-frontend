@@ -130,7 +130,7 @@ class InvoiceService {
       );
       return response.data;
     } catch (error) {
-      console.error("Error fetching invoices:", error)
+      console.error("Error fetching invoices:", error);
     }
   }
 
@@ -158,6 +158,38 @@ class InvoiceService {
       return response.data;
     } catch (error) {
       console.error("Error fetching invoices reported to admin:", error);
+    }
+  }
+
+  async getInvoicesBySalesOfficer(
+    salesOfficerId: string,
+    page: number,
+    itemsPerPage: number,
+    filters: {
+      searchTerm?: string;
+      status?: string;
+      dateFrom?: string;
+      dateTo?: string;
+    },
+  ) {
+    try {
+      const response = await apiClient.get(
+        `/invoices/sales-officer/${salesOfficerId}`,
+        {
+          params: {
+            page,
+            limit: itemsPerPage,
+            searchTerm: filters.searchTerm,
+            status: filters.status,
+            dateFrom: filters.dateFrom,
+            dateTo: filters.dateTo,
+          },
+        },
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching sales officer invoices:", error);
+      throw error;
     }
   }
 
@@ -220,9 +252,7 @@ class InvoiceService {
           toast.error("Failed to update remarks. Please try again.");
         }
       } else {
-        toast.error(
-          "Failed to update remarks. Please check your connection.",
-        );
+        toast.error("Failed to update remarks. Please check your connection.");
       }
     }
   }
