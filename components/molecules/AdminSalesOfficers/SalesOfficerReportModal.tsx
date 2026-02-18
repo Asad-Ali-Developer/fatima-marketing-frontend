@@ -379,7 +379,9 @@ const SalesOfficerReportModal: React.FC<SalesOfficerReportModalProps> = ({
             </h2>
             <p className="text-sm lg:text-sm text-slate-600 mt-1">
               View detailed leads and invoices data of{" "}
-              <span className="font-semibold">{salesOfficer?.full_name}</span>.
+              <span className="font-semibold ml-1 py-1 px-2 bg-slate-200/50 rounded">
+                {salesOfficer?.full_name}
+              </span>
             </p>
           </div>
           <button
@@ -401,7 +403,7 @@ const SalesOfficerReportModal: React.FC<SalesOfficerReportModalProps> = ({
               className={cn(
                 "px-3 lg:px-6 py-2 lg:py-3 cursor-pointer font-medium lg:font-semibold text-sm  transition-all",
                 activeTab === "leads"
-                  ? "bg-white text-[#00B7E8] border-t-2 border-[#00B7E8]"
+                  ? "bg-white text-[#00B7E8] border-[#00B7E8] rounded-t-xl border-2 border-b-0"
                   : "bg-transparent text-slate-600 hover:bg-slate-100",
               )}
             >
@@ -415,7 +417,7 @@ const SalesOfficerReportModal: React.FC<SalesOfficerReportModalProps> = ({
               className={cn(
                 "px-3 lg:px-6 py-2 lg:py-3 font-semibold cursor-pointer text-sm transition-all",
                 activeTab === "invoices"
-                  ? "bg-white text-[#00B7E8] border-t-2 border-[#00B7E8]"
+                  ? "bg-white text-[#00B7E8] border-[#00B7E8] rounded-t-xl border-2 border-b-0"
                   : "bg-transparent text-slate-600 hover:bg-slate-100",
               )}
             >
@@ -674,28 +676,28 @@ const SalesOfficerReportModal: React.FC<SalesOfficerReportModalProps> = ({
               {activeTab === "leads" ? "Lead Records" : "Invoice Records"}
             </h3>
           </div>
-          <div className="flex items-center gap-1 lg:gap-2">
+          <div className="flex items-center bg-slate-100 p-1 pr-2 rounded-full gap-1 lg:gap-2">
             <span
-              className={`hover:bg-gray-100 p-1.5 rounded-full cursor-pointer text-slate-600 transition-transform ${
+              className={`bg-white p-1.5 rounded-xl cursor-pointer text-slate-600 transition-transform ${
                 isLoading ? "animate-spin" : ""
               }`}
               onClick={handleRefresh}
             >
               <RefreshCcw className="w-4 h-4" />
             </span>
-            <span className="text-sm text-slate-500">
+            <span className="text-sm text-slate-700">
               {totalItems} {activeTab === "leads" ? "leads" : "invoices"} found
             </span>
           </div>
         </div>
 
         {/* Table Content */}
-        <div className="flex-1 overflow-y-auto px-3 lg:px-6 py-2 lg:py-4">
+        <div className="flex-1 relative overflow-y-auto py-2 lg:py-4">
           {isLoading ? (
             <TableSkeleton columns={activeTab === "leads" ? 6 : 7} />
           ) : activeTab === "leads" ? (
             leads.length === 0 ? (
-              <div className="py-12 text-center text-slate-500">
+              <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center text-slate-500">
                 No leads found for this period.
               </div>
             ) : (
@@ -773,7 +775,7 @@ const SalesOfficerReportModal: React.FC<SalesOfficerReportModalProps> = ({
               </div>
             )
           ) : invoices.length === 0 ? (
-            <div className="py-12 text-center text-slate-500">
+            <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2  text-center text-slate-500">
               No invoices found for this period.
             </div>
           ) : (
