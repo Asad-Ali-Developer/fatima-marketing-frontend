@@ -35,20 +35,29 @@ apiClient.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // Skip if not 401, already retried, or is refresh request itself
-    if (
-      error.response?.status !== 401 ||
-      originalRequest._retry ||
-      originalRequest.url?.includes("/auth/refresh")
-    ) {
+    if (!error.response) {
+      return Promise.reject(error);
+    }
+
+    // ❌ If not 401 → stop
+    if (error.response.status !== 401) {
+      return Promise.reject(error);
+    }
+
+    // ❌ If already retried → stop
+    if (originalRequest._retry) {
+      return Promise.reject(error);
+    }
+
+    // ❌ If refresh endpoint itself → stop
+    if (originalRequest.url?.includes("/auth/refresh")) {
       return Promise.reject(error);
     }
 
     originalRequest._retry = true;
 
-    // ✅ If already refreshing, queue this request
     if (isRefreshing) {
-      return new Promise((resolve) => {
+      return new Promise((resolve, reject) => {
         subscribeTokenRefresh(() => {
           resolve(apiClient(originalRequest));
         });
@@ -58,28 +67,23 @@ apiClient.interceptors.response.use(
     isRefreshing = true;
 
     try {
-      // ✅ Call refresh endpoint (cookies sent automatically)
       await apiClient.get("/auth/refresh");
-      
-      // Notify all queued requests
-      onTokenRefreshed("refreshed"); // Value doesn't matter, cookies handle it
-      
+
+      onTokenRefreshed("done");
+
       return apiClient(originalRequest);
     } catch (refreshError) {
-      console.error("Token refresh failed:", refreshError);
-      
-      // ✅ Clear Redux state using store dispatch
+      // ✅ HARD STOP — no loop
       const dispatch = getDispatch();
       dispatch(clearUser());
-      
-      // Redirect to login
-      // window.location.href = "/signin";
-      
+
+      window.location.href = "/signin";
+
       return Promise.reject(refreshError);
     } finally {
       isRefreshing = false;
     }
-  }
+  },
 );
 
 export default apiClient;

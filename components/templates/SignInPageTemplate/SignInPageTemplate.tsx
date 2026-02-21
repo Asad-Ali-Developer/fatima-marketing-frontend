@@ -25,25 +25,24 @@ export default function SignInPageTemplate() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const payload = {
-      email,
-      password,
-      rememberMe,
-    };
+    try {
+      const payload = { email, password, rememberMe };
 
-    const response = await authService.login(payload);
+      const response = await authService.login(payload);
 
-    if(response.data) {
+      if (!response?.data) return;
+
       toast.success("Login successful!");
-      const profileData = await authService.getProfile();
-  
-      // ✅ Correct (passes only the user object)
-      dispatch(setUser({ user: profileData.data }));
-  
+
+      // ✅ Use login response directly
+      dispatch(setUser({ user: response.data.user }));
+
       router.push("/");
+    } catch (error) {
+      toast.error("Invalid credentials");
     }
   };
-
+  
   return (
     <div className="flex flex-col md:flex-row min-h-screen">
       {/* Left Image Section */}
