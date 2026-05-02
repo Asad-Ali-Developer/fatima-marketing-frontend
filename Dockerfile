@@ -13,24 +13,31 @@ COPY package*.json ./
 RUN npm install
 
 # Copy app files
-COPY . .
+# COPY . .
 
-# Fix permissions
-RUN chown -R app:app /app
+# 🔥 FIX: Give app user ownership BEFORE switching users
+# Step 7: Fix permissions
+# RUN chown -R app:app /app         
+
+# ✅ With this single fast line:
+COPY --chown=app:app . .
 
 # Switch to non-root user
 USER app
 
 # Environment variables
-ENV PORT=3000
-ENV NODE_ENV=development
+# ENV PORT=3000
+# ENV NODE_ENV=development
 
 EXPOSE 3000
 
 # Command Shell Form
 # CMD npm start
 
+# Build the app (Specific for Next.js)
+RUN npm run build
+
 # ENTRYPOINT ["npm", "start"] # This will override CMD if both are present
 
 # Command Execution Form (According to Mosh, Always use the Execution Form AND Mosh personally prefers this)
-CMD ["npm", "start", "run", "dev"]
+CMD ["npm", "start"]
