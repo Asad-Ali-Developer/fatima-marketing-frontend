@@ -3,7 +3,9 @@ FROM node:24.15-alpine3.22
 # Create non-root user
 RUN addgroup -S app && adduser -S -G app app
 
+# Working directory (as app user - owned by app:app) (We can check by: ls -l in the terminal or pwd)
 WORKDIR /app
+
 
 # Copy package files in both ways
 # COPY package.json package-lock.json ./ 
@@ -15,12 +17,16 @@ RUN npm install
 # Copy app files
 # COPY . .
 
-# 🔥 FIX: Give app user ownership BEFORE switching users
-# Step 7: Fix permissions
-# RUN chown -R app:app /app         
-
 # ✅ With this single fast line:
 COPY --chown=app:app . .
+
+# 🔥 FIX: Give app user ownership BEFORE switching users
+# Step 7: Fix permissions
+RUN chown -R app:app /app         
+
+
+# Create data directory (as app user - owned by app:app
+# RUN mkdir -p /app/data && chown -R app:app /app/data
 
 # Switch to non-root user
 USER app

@@ -1,0 +1,17 @@
+# Simple Development Dockerfile
+FROM node:24.15-alpine3.22
+
+WORKDIR /app
+
+# 1. Install dependencies
+COPY package*.json ./
+RUN npm install
+
+# 2. Copy source code (No chown needed for dev)
+COPY . .
+
+# 3. Expose port for development
+EXPOSE 3000
+
+# 4. Start Next.js in dev mode
+CMD ["npm", "run", "dev"]

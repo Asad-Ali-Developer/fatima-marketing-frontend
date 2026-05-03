@@ -45,7 +45,6 @@ export default function SignUpPageTemplate() {
     console.log("✅ Form submitted:", payload);
 
     const response = await authService.register(payload);
-
     if (response?.status) {
       toast.success("Account created successfully!");
       router.push("/signin");
