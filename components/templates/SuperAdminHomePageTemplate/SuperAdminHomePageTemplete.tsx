@@ -553,7 +553,7 @@ const SuperAdminHomePageTemplate = () => {
   // RENDER
   // ============================
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100 text-slate-900 font-sans">
+    <div className="bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100 text-slate-900 font-sans">
       <main className="max-w-[95%] lg:max-w-[90%] mx-auto px-1 sm:px-6 py-8">
         {/* ===== HEADER ===== */}
         <div className="mb-8">
