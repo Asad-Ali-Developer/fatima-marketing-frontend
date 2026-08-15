@@ -5,6 +5,8 @@ import "./globals.css";
 import { ToastContainer } from "react-toastify";
 // @ts-ignore
 import "react-toastify/dist/ReactToastify.css";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 export default function RootLayout({
   children,
@@ -14,6 +16,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={fonts.zalandoSans.variable}>
+        <Analytics />
+        <SpeedInsights/>
         <ReduxProvider>
           <MainLayout>
             {children}
