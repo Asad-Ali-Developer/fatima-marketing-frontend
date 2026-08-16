@@ -323,7 +323,7 @@ const AdminInventoryManagementPageTemplate = () => {
               <FiFileText className="text-base" />
               Inventory Management
             </div>
-            <h2 className="text-2xl lg:text-4xl font-black tracking-tight text-[#142C4B]">
+            <h2 className="text-2xl lg:text-3xl font-bold tracking-tight text-[#142C4B]">
               Manage Inventory
             </h2>
             <p className="text-slate-500 max-w-xl">

@@ -22,7 +22,6 @@ import {
 import { cn } from "@/lib/utils";
 import { AdminService, AuthService, InvoiceService } from "@/services";
 import {
-  GenderStatus,
   Invoice,
   SalesOfficerCreationFormData,
   UpdateUserData,

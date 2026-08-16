@@ -1,8 +1,6 @@
-import React from "react";
 import { User } from "@/types";
-import { FC } from "react";
-import { FiEdit2, FiTrash2, FiUsers, FiFileText } from "react-icons/fi"; // 👈 Added FiFileText
-import { MdBlock, MdCheckCircle } from "react-icons/md";
+import React, { FC } from "react";
+import { FiEdit2, FiFileText, FiTrash2, FiUsers } from "react-icons/fi"; // 👈 Added FiFileText
 import { HiOutlineDocumentReport } from "react-icons/hi";
 
 interface SalesOfficerDisplay extends User {
@@ -20,7 +18,7 @@ interface AdminSalesOfficersTableProps {
   openDeleteModal: (so: SalesOfficerDisplay) => void;
   fetchSalesOfficers: (page: number) => Promise<void>;
   currentPage: number;
-  itemsPerPage: 20;
+  itemsPerPage: number;
   totalFiltered: number;
   handleActivate: (id: string) => void;
   hasNextPage: boolean;
@@ -224,19 +222,19 @@ const AdminSalesOfficersTable: FC<AdminSalesOfficersTableProps> = ({
         <div className="flex items-center gap-2">
           <button
             onClick={() => fetchSalesOfficers(currentPage - 1)}
-            disabled={currentPage === 1}
-            className="px-3 py-1.5 text-sm rounded border border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={currentPage === 1 || isLoading}
+            className="px-3 py-1.5 text-sm cursor-pointer rounded border border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Previous
           </button>
-          <span className="px-3 py-1.5 text-sm font-medium bg-[#00B7E8] text-white rounded">
+          <span className="px-3 py-1.5 text-sm cursor-pointer font-medium bg-[#00B7E8] text-white rounded">
             {currentPage}
           </span>
           <button
             type="button"
             onClick={() => fetchSalesOfficers(currentPage + 1)}
-            disabled={!hasNextPage}
-            className="px-3 py-1.5 text-sm rounded border border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={!hasNextPage || isLoading}
+            className="px-3 py-1.5 text-sm cursor-pointer rounded border border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Next
           </button>

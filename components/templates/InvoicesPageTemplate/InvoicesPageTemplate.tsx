@@ -5,7 +5,7 @@ import {
   DeleteInvoiceConfirmationModal,
   EditInvoice,
   RemarksModal,
-  SOInvoicesTable
+  SOInvoicesTable,
 } from "@/components/molecules";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -25,21 +25,13 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { InvoiceService } from "@/services";
-import {
-  Invoice,
-  InvoiceFormData,
-  InvoiceStatus
-} from "@/types";
+import { Invoice, InvoiceFormData, InvoiceStatus } from "@/types";
 import { leadsStatusOptions } from "@/types/Leads";
-import { generateInvoiceNumber } from "@/utils";
+import { generateInvoiceNumber, getPageNumbers } from "@/utils";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import {
-  FiFileText,
-  FiPlus,
-  FiSearch
-} from "react-icons/fi";
+import { FiFileText, FiPlus, FiSearch } from "react-icons/fi";
 import { LuRefreshCcw } from "react-icons/lu";
 import { toast } from "react-toastify";
 
@@ -487,7 +479,7 @@ const InvoicePageTemplate = () => {
               <FiFileText className="text-base" />
               Invoice Management
             </div>
-            <h2 className="text-2xl lg:text-4xl font-black tracking-tight text-[#142C4B]">
+            <h2 className="text-2xl lg:text-3xl font-bold tracking-tight text-[#142C4B]">
               Manage Invoices
             </h2>
             <p className="text-slate-500 max-w-xl">
@@ -691,36 +683,37 @@ const InvoicePageTemplate = () => {
               </span>
               <div className="flex gap-2">
                 <button
-                  onClick={() =>
-                    setCurrentPage((prev) => Math.max(prev - 1, 1))
-                  }
-                  disabled={currentPage === 1}
+                  onClick={() => {
+                    if (currentPage > 1) fetchInvoices(currentPage - 1);
+                  }}
+                  disabled={currentPage === 1 || isLoading}
                   className="px-4 py-2 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-semibold"
                 >
                   Previous
                 </button>
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  const pageNum = i + 1;
-                  return (
-                    <button
-                      key={pageNum}
-                      onClick={() => fetchInvoices(pageNum)}
-                      className={cn(
-                        "w-10 h-10 rounded-lg text-sm font-bold transition-colors",
-                        currentPage === pageNum
-                          ? "bg-[#00B7E8] text-white"
-                          : "border border-slate-300 text-slate-600 hover:bg-slate-100",
-                      )}
-                    >
-                      {pageNum}
-                    </button>
-                  );
-                })}
+
+                {getPageNumbers(currentPage, totalPages).map((pageNum) => (
+                  <button
+                    key={pageNum}
+                    onClick={() => fetchInvoices(pageNum)}
+                    disabled={isLoading}
+                    className={cn(
+                      "w-10 h-10 rounded-lg text-sm font-bold transition-colors",
+                      currentPage === pageNum
+                        ? "bg-[#00B7E8] text-white"
+                        : "border border-slate-300 text-slate-600 hover:bg-slate-100",
+                    )}
+                  >
+                    {pageNum}
+                  </button>
+                ))}
+
                 <button
-                  onClick={() =>
-                    setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-                  }
-                  disabled={currentPage === totalPages}
+                  onClick={() => {
+                    if (currentPage < totalPages)
+                      fetchInvoices(currentPage + 1);
+                  }}
+                  disabled={currentPage === totalPages || isLoading}
                   className="px-4 py-2 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-semibold"
                 >
                   Next
@@ -768,7 +761,6 @@ const InvoicePageTemplate = () => {
           selectedInvoice={selectedInvoice}
           setIsViewModalOpen={setIsViewModalOpen}
           statusOptions={leadsStatusOptions}
-          
         />
       )}
 

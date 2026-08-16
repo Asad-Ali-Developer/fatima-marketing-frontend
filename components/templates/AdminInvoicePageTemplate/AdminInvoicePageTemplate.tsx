@@ -20,6 +20,7 @@ import {
 import { cn } from "@/lib/utils";
 import { InvoiceService } from "@/services";
 import { adminInvoiceApprovalStatusOptions, Invoice } from "@/types";
+import { getPageNumbers } from "@/utils";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -228,7 +229,7 @@ const AdminInvoicePageTemplate = () => {
               <FiFileText className="text-base" />
               Admin Invoice Dashboard
             </div>
-            <h2 className="text-2xl lg:text-4xl font-black tracking-tight text-slate-900">
+            <h2 className="text-2xl lg:text-3xl font-bold tracking-tight text-slate-900">
               Manage Invoices
             </h2>
             <p className="text-slate-500 max-w-xl">
@@ -344,8 +345,8 @@ const AdminInvoicePageTemplate = () => {
                   variant="outline"
                   onClick={() => {
                     setSearchTerm("");
-                    setSearchPhone("")
-                    setSearchInvoice("")
+                    setSearchPhone("");
+                    setSearchInvoice("");
                     setStatusFilter("all");
                     setDateFilter(undefined);
                   }}
@@ -528,14 +529,16 @@ const AdminInvoicePageTemplate = () => {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectGroup>
-                              {adminInvoiceApprovalStatusOptions.map((option) => (
-                                <SelectItem
-                                  key={option.value}
-                                  value={option.value}
-                                >
-                                  {option.label}
-                                </SelectItem>
-                              ))}
+                              {adminInvoiceApprovalStatusOptions.map(
+                                (option) => (
+                                  <SelectItem
+                                    key={option.value}
+                                    value={option.value}
+                                  >
+                                    {option.label}
+                                  </SelectItem>
+                                ),
+                              )}
                             </SelectGroup>
                           </SelectContent>
                         </Select>
@@ -569,37 +572,38 @@ const AdminInvoicePageTemplate = () => {
               </span>
               <div className="flex gap-2">
                 <button
-                  onClick={() =>
-                    setCurrentPage((prev) => Math.max(prev - 1, 1))
-                  }
-                  disabled={currentPage === 1}
-                  className="px-2 lg:px-4 py-1 lg:py-2 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors  text-xs lg:text-sm font-semibold"
+                  onClick={() => {
+                    if (currentPage > 1) fetchInvoices(currentPage - 1);
+                  }}
+                  disabled={currentPage === 1 || isLoading}
+                  className="px-2 lg:px-4 py-1 cursor-pointer lg:py-2 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs lg:text-sm font-semibold"
                 >
                   Previous
                 </button>
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  const pageNum = i + 1;
-                  return (
-                    <button
-                      key={pageNum}
-                      onClick={() => fetchInvoices(pageNum)}
-                      className={cn(
-                        "w-10 h-10 rounded-lg text-sm font-bold transition-colors",
-                        currentPage === pageNum
-                          ? "bg-[#00B7E8] text-white"
-                          : "border border-slate-300 text-slate-600 hover:bg-slate-100",
-                      )}
-                    >
-                      {pageNum}
-                    </button>
-                  );
-                })}
+
+                {getPageNumbers(currentPage, totalPages).map((pageNum) => (
+                  <button
+                    key={pageNum}
+                    onClick={() => fetchInvoices(pageNum)}
+                    disabled={isLoading}
+                    className={cn(
+                      "w-10 h-10 rounded-lg cursor-pointer text-sm font-bold transition-colors",
+                      currentPage === pageNum
+                        ? "bg-[#00B7E8] text-white"
+                        : "border border-slate-300 text-slate-600 hover:bg-slate-100",
+                    )}
+                  >
+                    {pageNum}
+                  </button>
+                ))}
+
                 <button
-                  onClick={() =>
-                    setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-                  }
-                  disabled={currentPage === totalPages}
-                  className="px-2 lg:px-4 py-1 lg:py-2 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs lg:text-sm font-semibold"
+                  onClick={() => {
+                    if (currentPage < totalPages)
+                      fetchInvoices(currentPage + 1);
+                  }}
+                  disabled={currentPage === totalPages || isLoading}
+                  className="px-2 lg:px-4 py-1 cursor-pointer lg:py-2 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs lg:text-sm font-semibold"
                 >
                   Next
                 </button>
@@ -623,7 +627,9 @@ const AdminInvoicePageTemplate = () => {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
             <div className="p-3 lg:p-6 border-b border-slate-200 flex items-center justify-between">
-              <h3 className="text-lg lg:text-xl font-semibold">Confirm Approval Change</h3>
+              <h3 className="text-lg lg:text-xl font-semibold">
+                Confirm Approval Change
+              </h3>
               <button
                 onClick={cancelApprovalUpdate}
                 className="p-2 hover:bg-slate-100 rounded-lg transition-colors"

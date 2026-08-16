@@ -562,7 +562,7 @@ const SuperAdminHomePageTemplate = () => {
               <FiShield className="text-white text-xl" />
             </div>
             <div>
-              <h1 className="text-lg lg:text-3xl font-black tracking-tight text-[#142C4B]">
+              <h1 className="text-lg lg:text-3xl font-bold tracking-tight text-[#142C4B]">
                 Super Admin Dashboard
               </h1>
               <p className="text-sm text-slate-500">

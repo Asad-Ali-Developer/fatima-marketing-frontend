@@ -32,6 +32,7 @@ import { LuRefreshCcw } from "react-icons/lu";
 import { Loader2 } from "lucide-react";
 import { useSelector } from "react-redux";
 import { format } from "date-fns";
+import { getPageNumbers } from "@/utils";
 
 // ✨ Shimmer Skeleton
 const ExpenseTableSkeleton = () => {
@@ -303,7 +304,7 @@ const AdminExpenseTrackerPageTemplate = () => {
             <div className="flex items-center gap-2 text-[#00B7E8] font-bold text-xs uppercase tracking-widest mb-2 bg-slate-100 border border-slate-100 px-3 py-1 rounded-full w-max">
               Expense Tracker
             </div>
-            <h2 className="text-2xl lg:text-4xl font-black tracking-tight text-[#142C4B]">
+            <h2 className="text-2xl lg:text-3xl font-bold tracking-tight text-[#142C4B]">
               Track Expenses
             </h2>
             <p className="text-slate-500 max-w-xl">
@@ -505,37 +506,38 @@ const AdminExpenseTrackerPageTemplate = () => {
               </span>
               <div className="flex gap-2">
                 <button
-                  onClick={() =>
-                    setCurrentPage((prev) => Math.max(prev - 1, 1))
-                  }
-                  disabled={currentPage === 1}
-                  className="px-4 py-2 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-semibold"
+                  onClick={() => {
+                    if (currentPage > 1) fetchExpenses(currentPage - 1);
+                  }}
+                  disabled={currentPage === 1 || isLoading}
+                  className="px-4 py-2 cursor-pointer rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-semibold"
                 >
                   Previous
                 </button>
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  const pageNum = i + 1;
-                  return (
-                    <button
-                      key={pageNum}
-                      onClick={() => fetchExpenses(pageNum)}
-                      className={cn(
-                        "w-10 h-10 rounded-lg text-sm font-bold transition-colors",
-                        currentPage === pageNum
-                          ? "bg-[#00B7E8] text-white"
-                          : "border border-slate-300 text-slate-600 hover:bg-slate-100",
-                      )}
-                    >
-                      {pageNum}
-                    </button>
-                  );
-                })}
+
+                {getPageNumbers(currentPage, totalPages).map((pageNum) => (
+                  <button
+                    key={pageNum}
+                    onClick={() => fetchExpenses(pageNum)}
+                    disabled={isLoading}
+                    className={cn(
+                      "w-10 h-10 rounded-lg text-sm font-bold transition-colors",
+                      currentPage === pageNum
+                        ? "bg-[#00B7E8] text-white"
+                        : "border border-slate-300 text-slate-600 hover:bg-slate-100",
+                    )}
+                  >
+                    {pageNum}
+                  </button>
+                ))}
+
                 <button
-                  onClick={() =>
-                    setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-                  }
-                  disabled={currentPage === totalPages}
-                  className="px-4 py-2 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-semibold"
+                  onClick={() => {
+                    if (currentPage < totalPages)
+                      fetchExpenses(currentPage + 1);
+                  }}
+                  disabled={currentPage === totalPages || isLoading}
+                  className="px-4 py-2 cursor-pointer rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-semibold"
                 >
                   Next
                 </button>
