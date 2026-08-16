@@ -63,15 +63,20 @@ interface DashboardStats {
   todayExpenses: number;
 }
 
-interface RecentActivity {
-  id: string;
-  type: "lead" | "invoice" | "expense" | "inventory";
-  title: string;
-  subtitle: string;
-  time: string;
-  icon: React.ReactNode;
-  color: string;
+// Replace this interface with the shape the new API returns
+interface OfficerPerformance {
+  salesOfficerId: string;
+  full_name: string;
+  email: string;
+  leadCounts: {
+    pending: number;
+    in_progress: number;
+    completed: number;
+    total: number;
+  };
 }
+
+type PerformancePeriod = "daily" | "weekly" | "monthly" | "custom";
 
 interface TrendData {
   current: number;
@@ -121,14 +126,17 @@ const SuperAdminHomePageTemplate = () => {
     isPositive: false,
   });
 
-  const [officerReports, setOfficerReports] = useState<
-    { officer: User; stats: Record<string, number>; total: number }[]
-  >([]);
-
-  const [recentActivities, setRecentActivities] = useState<RecentActivity[]>(
+  const [officerReports, setOfficerReports] = useState<OfficerPerformance[]>(
     [],
   );
 
+  // New: period filter state for the performance section
+  const [performancePeriod, setPerformancePeriod] =
+    useState<PerformancePeriod>("monthly");
+  const [performanceCustomRange, setPerformanceCustomRange] = useState<{
+    from: Date | undefined;
+    to: Date | undefined;
+  }>({ from: undefined, to: undefined });
   const [invoiceStats, setInvoiceStats] = useState({
     pending: 0,
     received: 0,
@@ -154,6 +162,37 @@ const SuperAdminHomePageTemplate = () => {
     to: undefined,
   });
   const [isGenerating, setIsGenerating] = useState(false);
+
+  // Fetch sales officers performance (lead status breakdown), scoped to this admin,
+  // filtered by daily/weekly/monthly/custom period
+  const fetchOfficerPerformance = async (
+    period: PerformancePeriod,
+    customRange?: { from: Date | undefined; to: Date | undefined },
+  ) => {
+    // Guard: custom period needs both dates before we call the API
+    if (period === "custom" && (!customRange?.from || !customRange?.to)) {
+      return;
+    }
+
+    setIsLeadsLoading(true);
+    try {
+      const response = await adminService.getSalesOfficersPerformance({
+        period,
+        ...(period === "custom" && customRange?.from && customRange?.to
+          ? {
+              from: format(customRange.from, "yyyy-MM-dd"),
+              to: format(customRange.to, "yyyy-MM-dd"),
+            }
+          : {}),
+      });
+      setOfficerReports(response.data);
+    } catch (err) {
+      console.error("Failed to fetch officer performance", err);
+      setOfficerReports([]);
+    } finally {
+      setIsLeadsLoading(false);
+    }
+  };
 
   // ============================
   // DATA FETCHING FUNCTIONS
@@ -338,61 +377,33 @@ const SuperAdminHomePageTemplate = () => {
     }
   };
 
-  // Generate recent activities (mock data for demonstration)
-  const generateRecentActivities = () => {
-    const activities: RecentActivity[] = [
-      {
-        id: "2",
-        type: "invoice",
-        title: "Invoice approved",
-        subtitle: "Rs. 50,000 - Customer XYZ",
-        time: "15 min ago",
-        icon: <FiCheckCircle className="text-lg" />,
-        color: "bg-green-100 text-green-600",
-      },
-      {
-        id: "3",
-        type: "expense",
-        title: "Expense recorded",
-        subtitle: "Marketing costs - Rs. 15,000",
-        time: "1 hour ago",
-        icon: <FiDollarSign className="text-lg" />,
-        color: "bg-purple-100 text-purple-600",
-      },
-      {
-        id: "4",
-        type: "inventory",
-        title: "Inventory added",
-        subtitle: "FM-REG-A1B2C3D4 - 5 Kanal",
-        time: "2 hours ago",
-        icon: <FiPackage className="text-lg" />,
-        color: "bg-orange-100 text-orange-600",
-      },
-      {
-        id: "5",
-        type: "lead",
-        title: "Lead completed",
-        subtitle: "Alice Johnson - Deal closed",
-        time: "3 hours ago",
-        icon: <MdCheckCircle className="text-lg" />,
-        color: "bg-green-100 text-green-600",
-      },
-    ];
-
-    setRecentActivities(activities);
-  };
-
-  // Initial data load
   useEffect(() => {
     if (user?.role.role_type === "super_admin") {
       fetchDashboardStats();
       fetchExpenseSummary();
-      fetchLeadReports();
+      fetchOfficerPerformance(performancePeriod); // 👈 was fetchLeadReports()
       fetchInvoiceStats();
-      generateRecentActivities();
     }
   }, [user]);
 
+  useEffect(() => {
+    if (
+      user?.role.role_type === "super_admin" &&
+      performancePeriod !== "custom"
+    ) {
+      fetchOfficerPerformance(performancePeriod);
+    }
+  }, [performancePeriod, user]);
+
+  // Explicit handler for the custom-range "Apply" button
+  const [isCustomPopoverOpen, setIsCustomPopoverOpen] = useState(false);
+
+  const handleApplyCustomRange = () => {
+    if (!performanceCustomRange.from || !performanceCustomRange.to) return;
+    setPerformancePeriod("custom");
+    fetchOfficerPerformance("custom", performanceCustomRange);
+    setIsCustomPopoverOpen(false);
+  };
   // ============================
   // REPORT GENERATION
   // ============================
@@ -798,14 +809,106 @@ const SuperAdminHomePageTemplate = () => {
 
         {/* ===== SALES OFFICERS PERFORMANCE ===== */}
         <section>
-          <div className="mb-6">
-            <h2 className="text-lg font-bold flex items-center gap-2">
-              <FiUsers className="text-[#00B7E8]" />
-              Sales Officers Performance
-            </h2>
-            <p className="text-sm text-slate-500">
-              Lead status breakdown by assigned officer
-            </p>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div>
+              <h2 className="text-lg font-bold flex items-center gap-2">
+                <FiUsers className="text-[#00B7E8]" />
+                Sales Officers Performance
+              </h2>
+              <p className="text-sm text-slate-500">
+                Lead status breakdown by assigned officer
+              </p>
+            </div>
+
+            {/* Period selector */}
+            <div className="flex flex-wrap items-center gap-2">
+              {(["daily", "weekly", "monthly"] as const).map((p) => (
+                <Button
+                  key={p}
+                  size="sm"
+                  variant={performancePeriod === p ? "default" : "outline"}
+                  onClick={() => setPerformancePeriod(p)}
+                  className={cn(
+                    "font-medium capitalize",
+                    performancePeriod === p
+                      ? "bg-[#00B7E8] hover:bg-[#029ec9] text-white"
+                      : "hover:bg-slate-50",
+                  )}
+                >
+                  {p}
+                </Button>
+              ))}
+
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant={
+                      performancePeriod === "custom" ? "default" : "outline"
+                    }
+                    className={cn(
+                      "font-medium flex items-center gap-1.5",
+                      performancePeriod === "custom"
+                        ? "bg-[#00B7E8] hover:bg-[#029ec9] text-white"
+                        : "hover:bg-slate-50",
+                    )}
+                  >
+                    <LuCalendarRange className="text-sm" />
+                    {performancePeriod === "custom" &&
+                    performanceCustomRange.from &&
+                    performanceCustomRange.to
+                      ? `${format(performanceCustomRange.from, "dd MMM")} – ${format(performanceCustomRange.to, "dd MMM")}`
+                      : "Custom"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-3" align="end">
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-xs font-semibold text-slate-500 mb-1">
+                        From
+                      </p>
+                      <Calendar
+                        mode="single"
+                        selected={performanceCustomRange.from}
+                        onSelect={(date) =>
+                          setPerformanceCustomRange((prev) => ({
+                            ...prev,
+                            from: date,
+                          }))
+                        }
+                        initialFocus
+                      />
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-slate-500 mb-1">
+                        To
+                      </p>
+                      <Calendar
+                        mode="single"
+                        selected={performanceCustomRange.to}
+                        onSelect={(date) =>
+                          setPerformanceCustomRange((prev) => ({
+                            ...prev,
+                            to: date,
+                          }))
+                        }
+                      />
+                    </div>
+                    <Button
+                      size="sm"
+                      className="w-full bg-[#00B7E8] hover:bg-[#029ec9] text-white"
+                      disabled={
+                        !performanceCustomRange.from ||
+                        !performanceCustomRange.to
+                      }
+                      onClick={() => setPerformancePeriod("custom")}
+                    >
+                      Apply
+                    </Button>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
           </div>
 
           {isLeadsLoading ? (
@@ -825,68 +928,73 @@ const SuperAdminHomePageTemplate = () => {
             </Card>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {officerReports.map(({ officer, stats, total }) => (
-                <Card
-                  key={officer._id}
-                  className="bg-white border border-slate-200 shadow-sm hover:shadow-md transition-shadow"
-                >
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between mb-3">
-                      <CardTitle className="text-base font-semibold text-slate-900">
-                        {officer.full_name}
-                      </CardTitle>
-                      <span className="text-xs font-bold text-[#00B7E8] bg-blue-50 px-2 py-1 rounded-full">
-                        {total} leads
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-500 mb-4">
-                      {officer.email}
-                    </p>
+              {officerReports.map((so) => {
+                const { leadCounts } = so;
+                const completionRate =
+                  leadCounts.total > 0
+                    ? Math.round(
+                        (leadCounts.completed / leadCounts.total) * 100,
+                      )
+                    : 0;
 
-                    <div className="space-y-2">
-                      <StatusRow
-                        label="Pending"
-                        count={stats.pending}
-                        total={total}
-                        color="bg-yellow-100 text-yellow-800"
-                      />
-                      <StatusRow
-                        label="In Progress"
-                        count={stats.in_progress}
-                        total={total}
-                        color="bg-blue-100 text-blue-800"
-                      />
-                      <StatusRow
-                        label="Completed"
-                        count={stats.completed}
-                        total={total}
-                        color="bg-green-100 text-green-800"
-                      />
-                    </div>
-
-                    {/* Progress Bar */}
-                    <div className="mt-4 pt-4 border-t border-slate-100">
-                      <div className="flex justify-between text-xs mb-1">
-                        <span className="text-slate-500">Completion Rate</span>
-                        <span className="font-semibold text-slate-700">
-                          {total > 0
-                            ? Math.round((stats.completed / total) * 100)
-                            : 0}
-                          %
+                return (
+                  <Card
+                    key={so.salesOfficerId}
+                    className="bg-white border border-slate-200 shadow-sm hover:shadow-md transition-shadow"
+                  >
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between mb-3">
+                        <CardTitle className="text-base font-semibold text-slate-900">
+                          {so.full_name}
+                        </CardTitle>
+                        <span className="text-xs font-bold text-[#00B7E8] bg-blue-50 px-2 py-1 rounded-full">
+                          {leadCounts.total} leads
                         </span>
                       </div>
-                      <div className="w-full bg-slate-100 rounded-full h-2">
-                        <div
-                          className="bg-gradient-to-r from-green-400 to-green-600 h-2 rounded-full transition-all"
-                          style={{
-                            width: `${total > 0 ? (stats.completed / total) * 100 : 0}%`,
-                          }}
+                      <p className="text-xs text-slate-500 mb-4">{so.email}</p>
+
+                      <div className="space-y-2">
+                        <StatusRow
+                          label="Pending"
+                          count={leadCounts.pending}
+                          total={leadCounts.total}
+                          color="bg-yellow-100 text-yellow-800"
+                        />
+                        <StatusRow
+                          label="In Progress"
+                          count={leadCounts.in_progress}
+                          total={leadCounts.total}
+                          color="bg-blue-100 text-blue-800"
+                        />
+                        <StatusRow
+                          label="Completed"
+                          count={leadCounts.completed}
+                          total={leadCounts.total}
+                          color="bg-green-100 text-green-800"
                         />
                       </div>
-                    </div>
-                  </CardHeader>
-                </Card>
-              ))}
+
+                      {/* Progress Bar */}
+                      <div className="mt-4 pt-4 border-t border-slate-100">
+                        <div className="flex justify-between text-xs mb-1">
+                          <span className="text-slate-500">
+                            Completion Rate
+                          </span>
+                          <span className="font-semibold text-slate-700">
+                            {completionRate}%
+                          </span>
+                        </div>
+                        <div className="w-full bg-slate-100 rounded-full h-2">
+                          <div
+                            className="bg-gradient-to-r from-green-400 to-green-600 h-2 rounded-full transition-all"
+                            style={{ width: `${completionRate}%` }}
+                          />
+                        </div>
+                      </div>
+                    </CardHeader>
+                  </Card>
+                );
+              })}
             </div>
           )}
         </section>
@@ -1200,46 +1308,5 @@ const InvoiceMetric = ({
     <p className="text-xs text-slate-500 font-medium">{label}</p>
   </div>
 );
-
-interface ActivityItemProps {
-  activity: RecentActivity;
-}
-
-const ActivityItem = ({ activity }: ActivityItemProps) => (
-  <div className="flex items-start gap-3 p-3 rounded-lg hover:bg-slate-50 transition-colors">
-    <div className={cn("p-2 rounded-lg", activity.color)}>{activity.icon}</div>
-    <div className="flex-1 min-w-0">
-      <p className="text-sm font-semibold text-slate-900 truncate">
-        {activity.title}
-      </p>
-      <p className="text-xs text-slate-500 truncate">{activity.subtitle}</p>
-      <p className="text-xs text-slate-400 mt-1">{activity.time}</p>
-    </div>
-  </div>
-);
-
-interface QuickStatProps {
-  label: string;
-  value: string | number;
-  icon: React.ReactNode;
-  color: string;
-  bgColor: string;
-}
-
-// const QuickStat = ({ label, value, icon, color, bgColor }: QuickStatProps) => (
-//   <Card className="bg-white border border-slate-200 shadow-sm">
-//     <CardContent className="p-4">
-//       <div className="flex items-center justify-between">
-//         <div>
-//           <p className="text-xs text-slate-500 font-medium mb-1">{label}</p>
-//           <p className={cn("text-lg font-bold", color)}>{value}</p>
-//         </div>
-//         <div className={cn("p-2 rounded-lg", bgColor)}>
-//           <div className={color}>{icon}</div>
-//         </div>
-//       </div>
-//     </CardContent>
-//   </Card>
-// );
 
 export default SuperAdminHomePageTemplate;

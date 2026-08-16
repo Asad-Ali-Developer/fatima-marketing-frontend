@@ -71,6 +71,23 @@ class AdminService {
     });
     return response.data;
   }
+
+  // 👇 New: Sales officers lead-status performance, filterable by period
+  async getSalesOfficersPerformance(filters: {
+    period: "daily" | "weekly" | "monthly" | "custom";
+    from?: string; // yyyy-MM-dd, required when period === "custom"
+    to?: string; // yyyy-MM-dd, required when period === "custom"
+  }) {
+    const params: Record<string, string> = { period: filters.period };
+    if (filters.period === "custom") {
+      if (filters.from) params.from = filters.from;
+      if (filters.to) params.to = filters.to;
+    }
+    const response = await apiClient.get("/admin/sales-officers/performance", {
+      params,
+    });
+    return response.data;
+  }
 }
 
 export default AdminService; // Singleton instance
