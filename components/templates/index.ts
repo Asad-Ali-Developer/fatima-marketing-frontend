@@ -15,7 +15,8 @@ import SuperAdminHomePageTemplete from "./SuperAdminHomePageTemplate/SuperAdminH
 import ProfilePageTemplate from "./ProfilePageTemplate/ProfilePageTemplate";
 import SalesOfficerLeadCreationPageTemplate from "./SalesOfficerLeadCreationPageTemplate/SalesOfficerLeadCreationPageTemplate";
 import SalesOfficerHomePageTemplate from "./SalesOfficerHomePageTemplate/SalesOfficerHomePageTemplate";
-import AdminLeadsCreatedBySOPageTemplate from "./AdminLeadsCreatedBySOPageTemplate/AdminLeadsCreatedBySOPageTemplate"
+import AdminLeadsCreatedBySOPageTemplate from "./AdminLeadsCreatedBySOPageTemplate/AdminLeadsCreatedBySOPageTemplate";
+import SystemHealthPageTemplate from "./SystemHealthPageTemplate/SystemHealthPageTemplate";
 
 export {
   SignInPageTemplate,
@@ -36,4 +37,5 @@ export {
   SalesOfficerLeadCreationPageTemplate,
   SalesOfficerHomePageTemplate,
   AdminLeadsCreatedBySOPageTemplate,
+  SystemHealthPageTemplate,
 };
