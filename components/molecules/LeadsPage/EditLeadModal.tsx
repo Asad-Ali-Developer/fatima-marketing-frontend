@@ -1,3 +1,5 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
@@ -14,15 +16,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { RootState } from "@/store";
 import { User } from "@/types";
-import { CreatedBy, LeadAssignedTo, LeadFormData } from "@/types/Leads";
+import { LeadFormData } from "@/types/Leads";
 import { format } from "date-fns";
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { ChangeEvent, FC, SetStateAction } from "react";
 import { FiFileText } from "react-icons/fi";
 import { IoClose } from "react-icons/io5";
-import { useSelector } from "react-redux";
 
 interface EditLeadModalProps {
   setIsEditModalOpen: (value: SetStateAction<boolean>) => void;
@@ -43,33 +43,12 @@ const EditLeadModal: FC<EditLeadModalProps> = ({
   formData,
   handleInputChange,
   handleDateChange,
+  handleAssignedToChange,
   handleUpdateLead,
   isUpdating,
   setFormData,
   salesOfficers,
 }) => {
-  // ✅ Handle assignment by ID → map to full LeadAssignedTo object
-  const handleAssignedToChange = (officerId: string) => {
-    const user = useSelector(
-      (state: RootState) => state.auth.user,
-    ) as User | null;
-
-    const officer = salesOfficers.find((so) => so._id === officerId);
-    if (officer) {
-      const assignedTo: LeadAssignedTo = {
-        id: officer._id,
-        email: officer.email,
-        full_name: officer.full_name,
-      };
-      const createdBy: CreatedBy = {
-        id: user?._id || "",
-        email: user?.email || "",
-        full_name: user?.full_name || "",
-      };
-      setFormData((prev) => ({ ...prev, assignedTo, createdBy }));
-    }
-  };
-
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
@@ -186,8 +165,8 @@ const EditLeadModal: FC<EditLeadModalProps> = ({
               Assign To <span className="text-red-600">*</span>
             </label>
             <Select
-              value={formData?.assignedTo?.id} // ✅ Now a string (ID)
-              onValueChange={handleAssignedToChange} // ✅ Maps ID → full object
+              value={formData?.assignedTo?.id}
+              onValueChange={handleAssignedToChange}
             >
               <SelectTrigger className="w-full border-slate-300 focus:ring-[#00B7E8] focus:border-[#00B7E8] px-5 py-6">
                 <SelectValue placeholder="Select sales officer" />

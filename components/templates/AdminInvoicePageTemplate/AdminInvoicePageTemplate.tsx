@@ -1,6 +1,11 @@
 "use client";
 import { InvoiceNumberCell } from "@/components/atoms";
-import { AdminViewInvoice } from "@/components/molecules";
+import {
+  AdminViewInvoice,
+  CreatInvoiceModal,
+  DeleteInvoiceConfirmationModal,
+  EditInvoice,
+} from "@/components/molecules";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
@@ -19,13 +24,28 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { InvoiceService } from "@/services";
-import { adminInvoiceApprovalStatusOptions, Invoice } from "@/types";
-import { getPageNumbers } from "@/utils";
+import {
+  adminInvoiceApprovalStatusOptions,
+  AdminInvoiceApprovalStatus,
+  Invoice,
+  InvoiceFormData,
+  InvoiceStatus,
+} from "@/types";
+import { generateInvoiceNumber, getPageNumbers } from "@/utils";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { FiEye, FiFileText, FiSearch, FiX } from "react-icons/fi";
+import {
+  FiEdit2,
+  FiEye,
+  FiFileText,
+  FiPlus,
+  FiSearch,
+  FiTrash2,
+  FiX,
+} from "react-icons/fi";
 import { LuRefreshCcw } from "react-icons/lu";
+import { toast } from "react-toastify";
 
 const statusOptions = [
   {
@@ -82,13 +102,39 @@ const AdminInvoicePageTemplate = () => {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
 
-  // Confirmation modal for approval status
+  const [isCreating, setIsCreating] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isChangingStatus, setIsChangingStatus] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Form states (Extended with description)
+  const [formData, setFormData] = useState<
+    InvoiceFormData & { description?: string }
+  >({
+    customerName: "",
+    phoneNumber: "",
+    location: "",
+    amount: "",
+    date: new Date(),
+    status: "pending" as InvoiceStatus,
+    quantity: "",
+    property_type: "",
+    description: "",
+  });
+
+  // Confirmation modal state (Fixed: made 'type' optional and typed 'newApprovalStatus')
   const [showConfirmModal, setShowConfirmModal] = useState<{
     isOpen: boolean;
+    type?: "delete" | "status" | "newApprovalStatus";
     invoiceId?: string;
-    newApprovalStatus?: "pending" | "approved" | "rejected";
+    newStatus?: string;
+    newApprovalStatus?: AdminInvoiceApprovalStatus;
   }>({
     isOpen: false,
+    type: "delete",
   });
 
   // Table states
@@ -145,13 +191,14 @@ const AdminInvoicePageTemplate = () => {
     return () => clearTimeout(handler);
   }, [searchTerm, statusFilter, dateFilter, searchPhone, searchInvoice]);
 
-  // Handle approval status change
+  // Handle approval status change (Fixed: typed newStatus)
   const handleApprovalStatusChange = (
     invoiceId: string,
-    newStatus: "pending" | "approved" | "rejected",
+    newStatus: AdminInvoiceApprovalStatus,
   ) => {
     setShowConfirmModal({
       isOpen: true,
+      type: "newApprovalStatus",
       invoiceId,
       newApprovalStatus: newStatus,
     });
@@ -170,13 +217,14 @@ const AdminInvoicePageTemplate = () => {
       return;
     }
 
-    const updatedInvoice = {
+    // Fixed: Explicitly typed as Invoice to satisfy strict nested object checking
+    const updatedInvoice: Invoice = {
       ...invoiceToUpdate,
       reported_to: {
-        ...invoiceToUpdate.reported_to,
+        ...(invoiceToUpdate.reported_to || {}),
         admin_approval_status: showConfirmModal.newApprovalStatus,
       },
-    };
+    } as Invoice;
 
     // Optimistic update
     setInvoices((prev) =>
@@ -187,10 +235,9 @@ const AdminInvoicePageTemplate = () => {
 
     setIsUpdatingApproval(true);
     try {
-      // Replace the confirmApprovalUpdate function's API call with:
       await invoiceService.updateInvoiceApprovalStatus(
         showConfirmModal.invoiceId!,
-        { admin_approval_status: showConfirmModal.newApprovalStatus! },
+        { admin_approval_status: showConfirmModal.newApprovalStatus },
       );
     } catch (error) {
       console.error("Failed to update approval status:", error);
@@ -200,7 +247,7 @@ const AdminInvoicePageTemplate = () => {
           inv._id === showConfirmModal.invoiceId ? invoiceToUpdate : inv,
         ),
       );
-      alert("Failed to update approval status.");
+      toast.error("Failed to update approval status.");
     } finally {
       setShowConfirmModal({ isOpen: false });
       setIsUpdatingApproval(false);
@@ -219,9 +266,224 @@ const AdminInvoicePageTemplate = () => {
   const paginatedInvoices = invoices;
   const filteredInvoicesLength = totalInvoices;
 
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleDateChange = (date: Date | undefined) => {
+    if (date) {
+      setFormData((prev) => ({ ...prev, date: date || new Date() }));
+    }
+  };
+
+  const handleCreateInvoice = async () => {
+    if (
+      !formData.customerName.trim() ||
+      !formData.phoneNumber.trim() ||
+      !formData.amount
+    ) {
+      toast.info("Please fill in all required fields");
+      return;
+    }
+
+    const invoiceNumber = generateInvoiceNumber();
+
+    setIsCreating(true);
+
+    // Fixed: Cast to unknown as Invoice to prevent missing field errors (e.g., 'remarks')
+    const newInvoice = {
+      _id: `optimistic-${Date.now()}`,
+      customerName: formData.customerName.trim(),
+      phoneNumber: formData.phoneNumber.trim(),
+      location: formData.location?.trim() || "",
+      amount: parseFloat(formData.amount),
+      date: format(formData.date, "yyyy-MM-dd"),
+      status: formData.status,
+      createdAt: new Date().toISOString(),
+      invoice_number: invoiceNumber,
+      quantity: formData.quantity || "",
+      property_type: formData.property_type || "",
+      description: formData.description?.trim() || "",
+    } as unknown as Invoice;
+
+    const wasOnPage1 = currentPage === 1;
+    if (wasOnPage1) {
+      setInvoices((prev) => [newInvoice, ...prev]);
+      setTotalInvoices((prev) => prev + 1);
+      if (totalInvoices >= itemsPerPage) {
+        setTotalPages(Math.ceil((totalInvoices + 1) / itemsPerPage));
+      }
+    }
+
+    try {
+      const payload = {
+        customerName: formData.customerName.trim(),
+        phoneNumber: formData.phoneNumber.trim(),
+        location: formData.location?.trim() || "",
+        amount: formData.amount,
+        date: format(formData.date, "yyyy-MM-dd"),
+        status: formData.status,
+        invoice_number: invoiceNumber,
+        quantity: formData.quantity || "",
+        property_type: formData.property_type || "",
+        description: formData.description?.trim() || "",
+      };
+
+      const response = await invoiceService.createInvoice(payload);
+
+      if (wasOnPage1) {
+        setInvoices((prev) =>
+          prev.map((inv) =>
+            inv._id === newInvoice._id
+              ? { ...response.data, _id: response.data._id }
+              : inv,
+          ),
+        );
+      }
+
+      setIsCreateModalOpen(false);
+      setFormData({
+        customerName: "",
+        phoneNumber: "",
+        location: "",
+        amount: "",
+        date: new Date(),
+        status: "pending" as InvoiceStatus,
+        quantity: "",
+        property_type: "",
+        description: "",
+      });
+    } catch (error) {
+      console.error("Failed to create invoice:", error);
+      if (wasOnPage1) {
+        setInvoices((prev) => prev.filter((inv) => inv._id !== newInvoice._id));
+        setTotalInvoices((prev) => Math.max(0, prev - 1));
+      }
+      toast.error("Failed to create invoice. Please try again.");
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  const handleEditInvoice = (invoice: Invoice) => {
+    setEditingInvoice(invoice);
+    setFormData({
+      customerName: invoice.customerName,
+      phoneNumber: invoice.phoneNumber,
+      location: invoice.location || "",
+      amount: invoice.amount.toString(),
+      date: new Date(invoice.date),
+      status: invoice.status,
+      quantity: invoice.quantity || "",
+      property_type: invoice.property_type || "",
+      description: (invoice as any).description || "",
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdateInvoice = async () => {
+    if (!editingInvoice) return;
+
+    setIsUpdating(true);
+
+    // Fixed: Cast to Invoice to satisfy strict nested object checking
+    const updatedInvoice = {
+      ...editingInvoice,
+      customerName: formData.customerName.trim(),
+      phoneNumber: formData.phoneNumber.trim(),
+      location: formData.location?.trim() || "",
+      amount: parseFloat(formData.amount),
+      date: format(formData.date, "yyyy-MM-dd"),
+      status: formData.status,
+      quantity: formData.quantity || "",
+      property_type: formData.property_type || "",
+      description: formData.description?.trim() || "",
+    } as Invoice;
+
+    setInvoices((prev) =>
+      prev.map((inv) =>
+        inv._id === editingInvoice._id ? updatedInvoice : inv,
+      ),
+    );
+
+    try {
+      const payload = {
+        customerName: formData.customerName.trim(),
+        phoneNumber: formData.phoneNumber.trim(),
+        location: formData.location?.trim() || "",
+        amount: parseFloat(formData.amount),
+        date: format(formData.date, "yyyy-MM-dd"),
+        status: formData.status,
+        quantity: formData.quantity || "",
+        property_type: formData.property_type || "",
+        description: formData.description?.trim() || "",
+      };
+      await invoiceService.updateInvoice(editingInvoice._id, payload);
+      setIsEditModalOpen(false);
+      setEditingInvoice(null);
+    } catch (error) {
+      console.error("Failed to update invoice:", error);
+      setInvoices((prev) =>
+        prev.map((inv) =>
+          inv._id === editingInvoice._id ? editingInvoice : inv,
+        ),
+      );
+      toast.error("Failed to update invoice. Please try again.");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const confirmAction = async () => {
+    if (showConfirmModal.type === "delete" && showConfirmModal.invoiceId) {
+      setIsDeleting(true);
+      const invoiceToDelete = invoices.find(
+        (inv) => inv._id === showConfirmModal.invoiceId,
+      );
+      if (!invoiceToDelete) {
+        setShowConfirmModal({ isOpen: false, type: "delete" });
+        setIsDeleting(false);
+        return;
+      }
+
+      const prevInvoices = [...invoices];
+      setInvoices((prev) =>
+        prev.filter((inv) => inv._id !== showConfirmModal.invoiceId),
+      );
+      setTotalInvoices((prev) => Math.max(0, prev - 1));
+
+      try {
+        await invoiceService.deleteInvoice(showConfirmModal.invoiceId);
+      } catch (error) {
+        console.error("Failed to delete invoice:", error);
+        setInvoices(prevInvoices);
+        setTotalInvoices((prev) => prev + 1);
+        toast.error("Failed to delete invoice.");
+      } finally {
+        setShowConfirmModal({ isOpen: false, type: "delete" });
+        setIsDeleting(false);
+      }
+    }
+  };
+
+  const cancelAction = () => {
+    setShowConfirmModal({ isOpen: false, type: "delete" });
+  };
+
+  const handleDeleteInvoice = async (invoiceId: string) => {
+    setShowConfirmModal({
+      isOpen: true,
+      type: "delete",
+      invoiceId,
+    });
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 text-slate-900 font-sans">
-      <main className="px-3 lg:px-6 py-10">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100 text-slate-900 font-sans">
+      <main className="max-w-[95%] mx-auto px-1 lg:px-6 py-10">
         {/* Page Heading */}
         <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="space-y-1">
@@ -236,14 +498,30 @@ const AdminInvoicePageTemplate = () => {
               Review and approve invoices submitted by sales officers.
             </p>
           </div>
-          {/* ❌ Removed Create Invoice button for admin */}
+          <Button
+            onClick={() => setIsCreateModalOpen(true)}
+            disabled={isCreating}
+            className="flex items-center gap-2 text-white bg-[#00B7E8] hover:bg-[#029ec9] transition-colors font-medium duration-150 cursor-pointer shadow-none rounded"
+          >
+            {isCreating ? (
+              <>
+                <Loader2 className="animate-spin text-lg" />
+                Creating...
+              </>
+            ) : (
+              <>
+                <FiPlus className="text-lg" />
+                Create Invoice
+              </>
+            )}
+          </Button>
         </div>
 
         {/* Filters Section */}
         <section className="bg-white rounded-xl border border-slate-200 overflow-hidden mb-8 shadow-sm">
           <div className="p-3 lg:p-6">
             <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-              {/* Name Filter */}
+              {/* Invoice Filter */}
               <div className="relative">
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1 ml-1">
                   Invoice
@@ -350,7 +628,7 @@ const AdminInvoicePageTemplate = () => {
                     setStatusFilter("all");
                     setDateFilter(undefined);
                   }}
-                  className="w-full border-slate-300 bg-[#00B7E8] hover:bg-[#01afdf] rounded-lg  text-white font-medium"
+                  className="w-full border-slate-300 bg-[#00B7E8] hover:bg-[#01afdf] rounded-lg text-white font-medium"
                 >
                   Clear Filters
                 </Button>
@@ -403,7 +681,7 @@ const AdminInvoicePageTemplate = () => {
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
                       Phone
                     </th>
-                    <th className="px-6 py-4 truncate max-w-[180px] text-xs font-bold uppercase tracking-wider text-slate-600">
+                    <th className="px-6 py-4 truncate max-w-45 text-xs font-bold uppercase tracking-wider text-slate-600">
                       Sales Officer (SO)
                     </th>
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
@@ -412,19 +690,16 @@ const AdminInvoicePageTemplate = () => {
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
                       Quantity
                     </th>
-                    <th className="px-6 py-4 text-xs truncate max-w-[150px] font-bold uppercase tracking-wider text-slate-600">
+                    <th className="px-6 py-4 text-xs truncate max-w-37.5 font-bold uppercase tracking-wider text-slate-600">
                       Property Type
                     </th>
-                    <th className="px-6 py-4 text-xs font-bold truncate max-w-[150px] uppercase tracking-wider text-slate-600">
+                    <th className="px-6 py-4 text-xs font-bold truncate max-w-37.5 uppercase tracking-wider text-slate-600">
                       Amount
                     </th>
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
                       Date
                     </th>
-                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
-                      Invoice Status
-                    </th>
-                    <th className="px-6 py-4 truncate max-w-[170px] text-xs font-bold uppercase tracking-wider text-slate-600">
+                    <th className="px-6 py-4 truncate max-w-45 text-xs font-bold uppercase tracking-wider text-slate-600">
                       Approval Status
                     </th>
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600 text-right">
@@ -440,66 +715,47 @@ const AdminInvoicePageTemplate = () => {
                     >
                       <InvoiceNumberCell
                         invoice_number={invoice.invoice_number}
-                        // paddingX="px-3"
                       />
                       <td className="px-6 py-4">
-                        <span className="font-semibold text-slate-900 truncate max-w-[200px]">
+                        <span className="font-semibold text-slate-900 truncate max-w-50">
                           {invoice.customerName}
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="text-sm text-slate-600 truncate max-w-[120px]">
+                        <span className="text-sm text-slate-600 truncate max-w-30">
                           {invoice.phoneNumber}
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="text-sm text-slate-600 truncate max-w-[150px]">
+                        <span className="text-sm text-slate-600 truncate max-w-37.5">
                           {invoice.created_by?.name || "N/A"}
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="text-sm text-slate-600 truncate max-w-[130px]">
-                          {invoice.location || "-"}
+                        <span className="text-sm text-slate-600 truncate max-w-32.5">
+                          {invoice.location || "N/A"}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-center">
                         <span className="text-sm text-slate-600">
-                          {invoice.quantity || "-"}
+                          {invoice.quantity || "N/A"}
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="text-sm text-slate-600 truncate max-w-[200px]">
-                          {invoice.property_type || "-"}
+                        <span className="text-sm text-slate-600 truncate max-w-50">
+                          {invoice.property_type || "N/A"}
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="font-semibold truncate block max-w-[150px] text-slate-900">
+                        <span className="font-semibold truncate block max-w-50 text-slate-900">
                           Rs. {invoice.amount.toLocaleString()}
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="text-sm text-slate-600 block truncate max-w-[200px]">
+                        <span className="text-sm text-slate-600 block truncate max-w-50">
                           {format(new Date(invoice.date), "dd MMM yyyy")}
                         </span>
                       </td>
-                      {/* ✅ Invoice Status: Read-only */}
-                      <td className="px-6 py-3">
-                        <span
-                          className={cn(
-                            "px-6 py-3 rounded-full text-xs font-semibold truncate max-w-[200px] block",
-                            statusOptions.find(
-                              (opt) => opt.value === invoice.status,
-                            )?.color || "bg-slate-100 text-slate-700",
-                          )}
-                        >
-                          {
-                            statusOptions.find(
-                              (opt) => opt.value === invoice.status,
-                            )?.label
-                          }
-                        </span>
-                      </td>
-                      {/* ✅ Approval Status: Editable by admin */}
                       <td className="px-6 py-4">
                         <Select
                           value={
@@ -509,14 +765,14 @@ const AdminInvoicePageTemplate = () => {
                           onValueChange={(value) =>
                             handleApprovalStatusChange(
                               invoice._id,
-                              value as any,
+                              value as AdminInvoiceApprovalStatus,
                             )
                           }
                           disabled={isUpdatingApproval}
                         >
                           <SelectTrigger
                             className={cn(
-                              "w-[100px] px-3 py-1 rounded-full text-xs font-semibold border-none",
+                              "w-25 px-3 py-1 rounded-full text-xs font-semibold border-none",
                               adminInvoiceApprovalStatusOptions.find(
                                 (opt) =>
                                   opt.value ===
@@ -552,6 +808,22 @@ const AdminInvoicePageTemplate = () => {
                             title="View"
                           >
                             <FiEye className="text-base" />
+                          </button>
+                          <button
+                            onClick={() => handleEditInvoice(invoice)}
+                            className="p-1.5 hover:bg-blue-50 rounded-lg text-slate-600 hover:text-blue-600 transition-colors"
+                            title="Edit"
+                            disabled={isUpdating}
+                          >
+                            <FiEdit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteInvoice(invoice._id)}
+                            className="p-1.5 hover:bg-red-50 rounded-lg text-slate-600 hover:text-red-600 transition-colors"
+                            title="Delete"
+                            disabled={isDeleting}
+                          >
+                            <FiTrash2 className="w-4 h-4" />
                           </button>
                         </div>
                       </td>
@@ -613,68 +885,118 @@ const AdminInvoicePageTemplate = () => {
         </section>
       </main>
 
+      {/* Create Invoice Modal */}
+      {isCreateModalOpen && (
+        <CreatInvoiceModal
+          setIsCreateModalOpen={setIsCreateModalOpen}
+          formData={{
+            ...formData,
+            date: formData.date instanceof Date ? formData.date : new Date(),
+          }}
+          handleInputChange={handleInputChange}
+          handleDateChange={handleDateChange}
+          handleCreateInvoice={handleCreateInvoice}
+          isCreating={isCreating}
+          setFormData={setFormData}
+        />
+      )}
+
       {/* View Invoice Modal */}
       {isViewModalOpen && selectedInvoice && (
         <AdminViewInvoice
           selectedInvoice={selectedInvoice}
           setIsViewModalOpen={setIsViewModalOpen}
           statusOptions={statusOptions}
+          enableDownloadBtn={true}
         />
       )}
 
-      {/* Confirmation Modal for Approval */}
-      {showConfirmModal.isOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
-            <div className="p-3 lg:p-6 border-b border-slate-200 flex items-center justify-between">
-              <h3 className="text-lg lg:text-xl font-semibold">
-                Confirm Approval Change
-              </h3>
-              <button
-                onClick={cancelApprovalUpdate}
-                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-              >
-                <FiX className="text-xl" />
-              </button>
-            </div>
-            <div className="p-3 lg:p-6 space-y-4">
-              <p className="text-slate-700">
-                Are you sure you want to change the approval status to{" "}
-                <strong>
-                  {
-                    adminInvoiceApprovalStatusOptions.find(
-                      (opt) => opt.value === showConfirmModal.newApprovalStatus,
-                    )?.label
-                  }
-                </strong>
-                ?
-              </p>
-              <div className="flex gap-3 pt-4">
-                <Button
-                  variant="outline"
+      {/* Confirmation Modal for Approval (Fixed: Conditional Rendering) */}
+      {showConfirmModal.isOpen &&
+        showConfirmModal.type === "newApprovalStatus" && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
+              <div className="p-4 border-b border-slate-200 flex items-center justify-between">
+                <h3 className="text-lg lg:text-xl font-semibold">
+                  Confirm Approval Change
+                </h3>
+                <button
                   onClick={cancelApprovalUpdate}
-                  className="flex-1 font-medium shadow-none"
+                  className="p-2 hover:bg-slate-100 cursor-pointer rounded-lg transition-colors"
                 >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={confirmApprovalUpdate}
-                  disabled={isUpdatingApproval}
-                  className={`flex-1 font-medium shadow-none text-white rounded bg-[#00B7E8] hover:bg-[#029ec9]`}
-                >
-                  {isUpdatingApproval ? (
-                    <>
-                      <Loader2 className="animate-spin mr-2" />
-                      Updating...
-                    </>
-                  ) : (
-                    "Confirm"
-                  )}
-                </Button>
+                  <FiX className="text-xl" />
+                </button>
+              </div>
+              <div className="p-4 space-y-4">
+                <p className="text-slate-700">
+                  Are you sure you want to change the approval status to{" "}
+                  <strong>
+                    {
+                      adminInvoiceApprovalStatusOptions.find(
+                        (opt) =>
+                          opt.value === showConfirmModal.newApprovalStatus,
+                      )?.label
+                    }
+                  </strong>
+                  ?
+                </p>
+                <div className="flex gap-3 pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={cancelApprovalUpdate}
+                    className="flex-1 font-medium shadow-none"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={confirmApprovalUpdate}
+                    disabled={isUpdatingApproval}
+                    className="flex-1 font-medium shadow-none text-white rounded bg-[#00B7E8] hover:bg-[#029ec9]"
+                  >
+                    {isUpdatingApproval ? (
+                      <>
+                        <Loader2 className="animate-spin mr-2" />
+                        Updating...
+                      </>
+                    ) : (
+                      "Confirm"
+                    )}
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
+
+      {/* Confirmation Modal for Delete/Status (Fixed: Type compatibility) */}
+      {showConfirmModal.isOpen &&
+        showConfirmModal.type !== "newApprovalStatus" && (
+          <DeleteInvoiceConfirmationModal
+            showConfirmModal={{
+              isOpen: showConfirmModal.isOpen,
+              // Safely fallback to "delete" and assert the exact union type expected by the child component
+              type: (showConfirmModal.type ?? "delete") as "delete" | "status",
+              invoiceId: showConfirmModal.invoiceId,
+              newStatus: showConfirmModal.newStatus,
+            }}
+            cancelAction={cancelAction}
+            confirmAction={confirmAction}
+            isDeleting={isDeleting}
+            isChangingStatus={isChangingStatus}
+          />
+        )}
+
+      {/* Edit Invoice Modal */}
+      {isEditModalOpen && editingInvoice && (
+        <EditInvoice
+          setIsEditModalOpen={setIsEditModalOpen}
+          formData={formData}
+          handleInputChange={handleInputChange}
+          handleDateChange={handleDateChange}
+          handleUpdateInvoice={handleUpdateInvoice}
+          isUpdating={isUpdating}
+          setFormData={setFormData}
+        />
       )}
     </div>
   );

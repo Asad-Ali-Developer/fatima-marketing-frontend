@@ -17,6 +17,7 @@ const ViewLeadModal: FC<ViewLeadModalProps> = ({
   setIsViewModalOpen,
   statusOptions,
 }) => {
+  console.log("selectedLead", selectedLead);
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
@@ -60,7 +61,7 @@ const ViewLeadModal: FC<ViewLeadModalProps> = ({
               <label className="text-xs font-bold uppercase tracking-wider text-slate-500">
                 Assigned To
               </label>
-              <p>{selectedLead?.assignedTo?.full_name}</p>
+              <p>{selectedLead?.assignedTo?.full_name ? selectedLead?.assignedTo?.full_name : "Me"}</p>
             </div>
             <div>
               <label className="text-xs font-bold uppercase tracking-wider text-slate-500">

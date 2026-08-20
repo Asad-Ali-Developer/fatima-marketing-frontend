@@ -458,7 +458,7 @@ export default function SalesOfficerCreationPageTemplate() {
 
   return (
     <div className="min-h-screen bg-gray-50 text-slate-900 font-sans">
-      <main className="max-w-[95%] lg:max-w-[90%] mx-auto px-2 py-8">
+      <main className="max-w-[95%] mx-auto px-1 lg:px-6 py-10">
         {/* Page Header */}
         <div className="mb-8">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">

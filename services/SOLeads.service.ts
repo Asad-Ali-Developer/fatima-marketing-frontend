@@ -101,6 +101,25 @@ class SOLeadsService {
     }
   }
 
+  // In your frontend service
+  async getLeadsReportedToAdmin(
+    page: number = 1,
+    limit: number = 10,
+    filters: {
+      searchTerm?: string;
+      status?: string;
+      date?: string;
+      dateFrom?: string;
+      dateTo?: string;
+    } = {},
+  ) {
+    const params: any = { page, limit, ...filters };
+    const response = await apiClient.get("/so-leads/so-leads-reported-to-me", {
+      params,
+    });
+    return response.data;
+  }
+
   async updateLead(id: string, data: Partial<LeadFormData>) {
     try {
       const response = await apiClient.put(`/so-leads/${id}`, data);

@@ -26,6 +26,7 @@ export interface Invoice {
   generatedByLead?: Lead;
   quantity?: string;
   property_type?: string;
+  description?: string;
 }
 
 export interface InvoiceFormData {

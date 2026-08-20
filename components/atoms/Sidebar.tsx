@@ -103,6 +103,11 @@ const Sidebar = () => {
           icon: HiClipboardDocumentList,
         },
         {
+          label: "Reported Leads",
+          href: "/leads-created-by-so",
+          icon: HiClipboardDocumentList,
+        },
+        {
           label: "Invoices",
           href: "/admin-invoices",
           icon: HiReceiptPercent,
@@ -255,7 +260,7 @@ const Sidebar = () => {
           onClick={() => router.push("/")}
         >
           <Image
-            src={FatimaMarketingLogo}
+            src={'/logo.webp'}
             alt="Fatima Marketing Logo"
             width={72}
             height={36}
@@ -271,10 +276,10 @@ const Sidebar = () => {
           onClick={() => router.push("/")}
         >
           <Image
-            src={FatimaMarketingLogo}
+            src={"/logo.webp"}
             alt="Fatima Marketing Logo"
-            width={80}
-            height={40}
+            width={100}
+            height={50}
             priority
           />
         </div>
@@ -299,7 +304,7 @@ const Sidebar = () => {
       >
         <div className="flex items-center justify-between h-14 px-4 border-b border-slate-100 shrink-0">
           <Image
-            src={FatimaMarketingLogo}
+            src={'/logo.webp'}
             alt="Fatima Marketing Logo"
             width={72}
             height={36}

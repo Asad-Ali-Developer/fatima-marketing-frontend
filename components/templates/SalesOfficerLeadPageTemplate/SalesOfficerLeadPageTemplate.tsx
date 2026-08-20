@@ -236,20 +236,20 @@ const SalesOfficerLeadPageTemplate = () => {
     }
   };
 
-  const handleCreateInvoiceFromLead = (lead: Lead) => {
-    if (lead.status !== "completed") {
-      toast.warn(
-        "Only the Invoice will be created when the lead status will be completed",
-      );
-      return;
-    }
+  // const handleCreateInvoiceFromLead = (lead: Lead) => {
+  //   if (lead.status !== "completed") {
+  //     toast.warn(
+  //       "Only the Invoice will be created when the lead status will be completed",
+  //     );
+  //     return;
+  //   }
 
-    // Open custom modal instead of confirm()
-    setInvoiceConfirmModal({
-      isOpen: true,
-      lead,
-    });
-  };
+  //   // Open custom modal instead of confirm()
+  //   setInvoiceConfirmModal({
+  //     isOpen: true,
+  //     lead,
+  //   });
+  // };
 
   const handleConfirmCreateInvoice = async () => {
     const lead = invoiceConfirmModal.lead;
@@ -284,7 +284,7 @@ const SalesOfficerLeadPageTemplate = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 text-slate-900 font-sans">
-      <main className="max-w-[95%] lg:max-w-[90%] mx-auto px-2 lg:px-6 py-10">
+      <main className="max-w-[95%] mx-auto px-2 lg:px-6 py-10">
         {/* Page Heading */}
         <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="space-y-1">
@@ -461,7 +461,7 @@ const SalesOfficerLeadPageTemplate = () => {
                       key={lead._id}
                       className="hover:bg-slate-50/50 transition-colors"
                     >
-                      <td className="px-6 truncate max-w-[170px] py-4 font-semibold">
+                      <td className="px-6 truncate capitalize max-w-[200px] py-4 font-semibold">
                         {lead.userName}
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-600">
@@ -527,20 +527,6 @@ const SalesOfficerLeadPageTemplate = () => {
                             title="View"
                           >
                             <FiEye className="text-base" />
-                          </button>
-
-                          {/* 👇 INVOICE BUTTON */}
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleCreateInvoiceFromLead(lead);
-                            }}
-                            disabled={isCreatingInvoice}
-                            className="p-2 hover:bg-green-50 rounded-lg text-slate-600 hover:text-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            title="Create Invoice"
-                          >
-                            <FiFileText className="text-base" />
                           </button>
                         </div>
                       </td>

@@ -74,17 +74,43 @@ class ExpenseService {
     filters: ExpenseFilters = {},
   ) {
     try {
-      const params: Record<string, string | number> = {
+      const params: Record<string, any> = {
         page,
         limit,
-        ...(filters.searchTerm && { searchTerm: filters.searchTerm }),
-        ...(filters.dateFilter && { dateFilter: filters.dateFilter }),
       };
+
+      if (filters.searchTerm) {
+        params.searchTerm = filters.searchTerm;
+      }
+
+      if (filters.dateFilter) {
+        params.dateFilter = filters.dateFilter;
+      }
+
+      // 👇 ADD THIS: Handle customDateRange properly
+      if (filters.customDateRange?.from && filters.customDateRange?.to) {
+        params.customDateFrom = filters.customDateRange.from
+          .toISOString()
+          .split("T")[0];
+        params.customDateTo = filters.customDateRange.to
+          .toISOString()
+          .split("T")[0];
+      }
 
       const response = await apiClient.get("/expenses", { params });
       return response.data;
     } catch (error) {
       console.error("Error fetching expenses:", error);
+      throw error;
+    }
+  }
+
+  async getExpensesStats() {
+    try {
+      const response = await apiClient.get("/expenses/stats");
+      return response.data.data;
+    } catch (error) {
+      console.error("Error fetching expenses stats:", error);
       throw error;
     }
   }

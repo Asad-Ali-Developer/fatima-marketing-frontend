@@ -3,6 +3,7 @@ export * from "./createRandomPassword";
 export * from "./formatDateTime";
 export * from "./ColorScheme";
 export * from "./compressImage";
-export * from "./InvoiceGenerator";
+export * from "./PaymentReceipt";
 export * from "./generateInvoiceNumber";
 export * from "./getPageNumbers";
+export * from "./useInvoicePrinter"

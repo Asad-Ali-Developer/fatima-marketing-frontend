@@ -10,6 +10,12 @@ export interface CreatedBy {
   full_name: string;
 }
 
+export interface ReportedTo {
+  id: string;
+  email: string;
+  full_name: string;
+}
+
 export type LeadStatus = "pending" | "in_progress" | "completed";
 
 export interface Lead {
@@ -23,6 +29,8 @@ export interface Lead {
   remarks?: string;
   createdAt: string;
   createdBy?: CreatedBy;
+  invoice_id?: string; // Optional invoice ID
+  reportedTo?: ReportedTo
 }
 
 export interface LeadFormData {
@@ -33,9 +41,16 @@ export interface LeadFormData {
   status: "pending" | "in_progress" | "completed";
   assignedTo?: LeadAssignedTo;
   createdBy?: CreatedBy;
+  reportedTo?: ReportedTo;
 }
 
-export const leadsStatusOptions = [
+export type LeadStatusOption = {
+  value: "pending" | "in_progress" | "completed";
+  label: string;
+  color: string;
+};
+
+export const leadsStatusOptions: LeadStatusOption[] = [
   {
     value: "pending",
     label: "Pending",

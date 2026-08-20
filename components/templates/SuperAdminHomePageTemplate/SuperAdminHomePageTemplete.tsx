@@ -63,7 +63,6 @@ interface DashboardStats {
   todayExpenses: number;
 }
 
-// Replace this interface with the shape the new API returns
 interface OfficerPerformance {
   salesOfficerId: string;
   full_name: string;
@@ -130,7 +129,6 @@ const SuperAdminHomePageTemplate = () => {
     [],
   );
 
-  // New: period filter state for the performance section
   const [performancePeriod, setPerformancePeriod] =
     useState<PerformancePeriod>("monthly");
   const [performanceCustomRange, setPerformanceCustomRange] = useState<{
@@ -163,13 +161,11 @@ const SuperAdminHomePageTemplate = () => {
   });
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // Fetch sales officers performance (lead status breakdown), scoped to this admin,
-  // filtered by daily/weekly/monthly/custom period
+  // Fetch sales officers performance
   const fetchOfficerPerformance = async (
     period: PerformancePeriod,
     customRange?: { from: Date | undefined; to: Date | undefined },
   ) => {
-    // Guard: custom period needs both dates before we call the API
     if (period === "custom" && (!customRange?.from || !customRange?.to)) {
       return;
     }
@@ -198,7 +194,6 @@ const SuperAdminHomePageTemplate = () => {
   // DATA FETCHING FUNCTIONS
   // ============================
 
-  // Fetch all dashboard statistics
   const fetchDashboardStats = async () => {
     setIsLoading(true);
     try {
@@ -247,107 +242,59 @@ const SuperAdminHomePageTemplate = () => {
     }
   };
 
-  // Fetch expense summary with trends
   const fetchExpenseSummary = async () => {
     setIsExpensesLoading(true);
     try {
-      const today = new Date();
-      const yesterday = subDays(today, 1);
-      const weekStart = startOfWeek(today, { weekStartsOn: 1 });
-      const weekEnd = endOfWeek(today, { weekStartsOn: 1 });
-      const monthStart = startOfMonth(today);
-      const monthEnd = endOfMonth(today);
-
-      // Previous period for comparison
-      const prevWeekStart = subDays(weekStart, 7);
-      const prevWeekEnd = subDays(weekEnd, 7);
-
-      const [todayRes, yesterdayRes, weekRes, monthRes, prevWeekRes] =
-        await Promise.all([
-          expenseService.getExpenses(1, 1000, { dateFilter: "today" }),
-          expenseService.getExpenses(1, 1000, { dateFilter: "yesterday" }),
-          expenseService.getExpenses(1, 1000, {
-            dateFilter: undefined,
-            customDateRange: { from: weekStart, to: weekEnd },
-          }),
-          expenseService.getExpenses(1, 1000, {
-            dateFilter: undefined,
-            customDateRange: { from: monthStart, to: monthEnd },
-          }),
-          expenseService.getExpenses(1, 1000, {
-            dateFilter: undefined,
-            customDateRange: { from: prevWeekStart, to: prevWeekEnd },
-          }),
-        ]);
-
-      const sum = (items: any[]) =>
-        items.reduce((sum, item) => sum + (item.amount || 0), 0);
-
-      const todayTotal = sum(todayRes.data);
-      const yesterdayTotal = sum(yesterdayRes.data);
-      const weekTotal = sum(weekRes.data);
-      const monthTotal = sum(monthRes.data);
-      const prevWeekTotal = sum(prevWeekRes.data);
+      // Use the new simplified Stats API
+      const stats = await expenseService.getExpensesStats();
 
       setExpenseSummary({
-        today: todayTotal,
-        yesterday: yesterdayTotal,
-        last7: weekTotal,
-        last30: monthTotal,
+        today: stats.today || 0,
+        yesterday: stats.yesterday || 0,
+        last7: stats.last7Days || 0,
+        last30: stats.last30Days || 0,
       });
 
-      // Calculate trend
+      // Calculate trend for last 7 days (optional - if you want to keep the trend feature)
+      // This requires an additional API call to get previous week data
+      const today = new Date();
+      const weekStart = startOfWeek(today, { weekStartsOn: 1 });
+      const prevWeekStart = subDays(weekStart, 7);
+      const prevWeekEnd = subDays(weekStart, 1);
+
+      const prevWeekRes = await expenseService.getExpenses(1, 1000, {
+        customDateRange: { from: prevWeekStart, to: prevWeekEnd },
+      });
+
+      const prevWeekTotal = prevWeekRes.data.reduce(
+        (sum: number, item: any) => sum + (item.amount || 0),
+        0,
+      );
+
       const percentageChange =
         prevWeekTotal > 0
-          ? ((weekTotal - prevWeekTotal) / prevWeekTotal) * 100
+          ? ((stats.last7Days - prevWeekTotal) / prevWeekTotal) * 100
           : 0;
 
       setExpenseTrends({
-        current: weekTotal,
+        current: stats.last7Days || 0,
         previous: prevWeekTotal,
         percentage: Math.abs(percentageChange),
-        isPositive: percentageChange < 0, // Lower expenses = positive trend
+        isPositive: percentageChange >= 0,
       });
     } catch (err) {
       console.error("Failed to fetch expense summary", err);
+      setExpenseSummary({
+        today: 0,
+        yesterday: 0,
+        last7: 0,
+        last30: 0,
+      });
     } finally {
       setIsExpensesLoading(false);
     }
   };
 
-  // Fetch lead reports per sales officer
-  const fetchLeadReports = async () => {
-    setIsLeadsLoading(true);
-    try {
-      const officersRes = await leadService.getSalesOfficers();
-      const officers = officersRes.data;
-
-      const reports = await Promise.all(
-        officers.map(async (officer: User) => {
-          const allLeads = await leadService.getLeadsByOfficer(officer._id);
-          const stats = allLeads.reduce(
-            (acc: any, lead: any) => {
-              acc[lead.status] = (acc[lead.status] || 0) + 1;
-              return acc;
-            },
-            { pending: 0, in_progress: 0, completed: 0 },
-          );
-          const total = allLeads.length;
-          return { officer, stats, total };
-        }),
-      );
-
-      // Sort by total leads (descending)
-      reports.sort((a, b) => b.total - a.total);
-      setOfficerReports(reports);
-    } catch (err) {
-      console.error("Failed to fetch lead reports", err);
-    } finally {
-      setIsLeadsLoading(false);
-    }
-  };
-
-  // Fetch invoice statistics
   const fetchInvoiceStats = async () => {
     try {
       const invoicesRes = await invoiceService.getInvoicesReportedToMe(
@@ -381,7 +328,7 @@ const SuperAdminHomePageTemplate = () => {
     if (user?.role.role_type === "super_admin") {
       fetchDashboardStats();
       fetchExpenseSummary();
-      fetchOfficerPerformance(performancePeriod); // 👈 was fetchLeadReports()
+      fetchOfficerPerformance(performancePeriod);
       fetchInvoiceStats();
     }
   }, [user]);
@@ -395,7 +342,6 @@ const SuperAdminHomePageTemplate = () => {
     }
   }, [performancePeriod, user]);
 
-  // Explicit handler for the custom-range "Apply" button
   const [isCustomPopoverOpen, setIsCustomPopoverOpen] = useState(false);
 
   const handleApplyCustomRange = () => {
@@ -404,9 +350,7 @@ const SuperAdminHomePageTemplate = () => {
     fetchOfficerPerformance("custom", performanceCustomRange);
     setIsCustomPopoverOpen(false);
   };
-  // ============================
-  // REPORT GENERATION
-  // ============================
+
   const generatePdfReport = async () => {
     setIsGenerating(true);
     try {
@@ -416,38 +360,82 @@ const SuperAdminHomePageTemplate = () => {
       const now = new Date();
       switch (reportRange) {
         case "today":
-          fromDate = toDate = now;
+          fromDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          toDate = new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            now.getDate(),
+            23,
+            59,
+            59,
+            999,
+          );
           break;
         case "yesterday":
-          fromDate = toDate = subDays(now, 1);
+          fromDate = new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            now.getDate() - 1,
+          );
+          toDate = new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            now.getDate() - 1,
+            23,
+            59,
+            59,
+            999,
+          );
           break;
         case "last7":
           fromDate = subDays(now, 6);
-          toDate = now;
+          fromDate.setHours(0, 0, 0, 0);
+          toDate = new Date(now);
+          toDate.setHours(23, 59, 59, 999);
           break;
         case "last30":
           fromDate = subDays(now, 29);
-          toDate = now;
+          fromDate.setHours(0, 0, 0, 0);
+          toDate = new Date(now);
+          toDate.setHours(23, 59, 59, 999);
           break;
         case "custom":
-          fromDate = customDateRange.from;
-          toDate = customDateRange.to;
+          if (!customDateRange.from || !customDateRange.to) {
+            alert("Please select both From and To dates for custom range.");
+            setIsGenerating(false);
+            return;
+          }
+          fromDate = new Date(customDateRange.from);
+          fromDate.setHours(0, 0, 0, 0);
+          toDate = new Date(customDateRange.to);
+          toDate.setHours(23, 59, 59, 999);
           break;
         default:
           throw new Error("Invalid report range");
       }
 
-      // 🔒 Critical: Ensure both dates are defined
       if (!fromDate || !toDate) {
         alert("Please select a valid date range.");
+        setIsGenerating(false);
         return;
       }
 
+      console.log("Fetching expenses with filters:", {
+        customDateFrom: fromDate.toISOString().split("T")[0],
+        customDateTo: toDate.toISOString().split("T")[0],
+      });
+
+      // 👇 Call the API with the customDateRange filter
       const expenses = await expenseService.getExpenses(1, 10000, {
         customDateRange: { from: fromDate, to: toDate },
       });
 
-      // Now safe to use fromDate/toDate without !
+      if (!expenses.data || expenses.data.length === 0) {
+        alert("No expenses found for the selected period.");
+        setIsGenerating(false);
+        return;
+      }
+
       const doc = new jsPDF();
       doc.setFontSize(18);
       doc.setTextColor(20, 44, 75);
@@ -520,41 +508,61 @@ const SuperAdminHomePageTemplate = () => {
   // SKELETON LOADERS
   // ============================
   const StatCardSkeleton = () => (
-    <Card className="bg-white border border-slate-200 shadow-sm">
+    <Card className="bg-white border border-gray-200 shadow-sm">
       <CardContent className="p-6">
         <div className="flex items-center justify-between mb-4">
-          <div className="h-10 w-10 bg-slate-200 rounded-lg animate-pulse" />
-          <div className="h-6 w-16 bg-slate-200 rounded animate-pulse" />
+          <div className="h-12 w-12 bg-gray-200 rounded-xl animate-pulse" />
+          <div className="h-6 w-16 bg-gray-200 rounded-full animate-pulse" />
         </div>
-        <div className="h-8 bg-slate-200 rounded animate-pulse w-1/2 mb-2" />
-        <div className="h-4 bg-slate-200 rounded animate-pulse w-3/4" />
+        <div className="h-8 bg-gray-200 rounded animate-pulse w-1/2 mb-2" />
+        <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4" />
+        <div className="h-3 bg-gray-200 rounded animate-pulse w-1/2 mt-1" />
       </CardContent>
     </Card>
   );
 
   const ExpenseCardSkeleton = () => (
-    <Card className="bg-white border border-slate-200 shadow-sm">
+    <Card className="bg-white border border-gray-200 shadow-sm">
       <CardHeader className="pb-2">
-        <div className="h-4 bg-slate-200 rounded animate-pulse w-1/3" />
+        <div className="flex justify-between">
+          <div className="h-4 bg-gray-200 rounded animate-pulse w-1/3" />
+          <div className="h-5 w-5 bg-gray-200 rounded animate-pulse" />
+        </div>
       </CardHeader>
       <CardContent>
-        <div className="h-8 bg-slate-200 rounded animate-pulse w-1/2 mb-2" />
-        <div className="h-3 bg-slate-200 rounded animate-pulse w-2/3" />
+        <div className="h-8 bg-gray-200 rounded animate-pulse w-1/2 mb-2" />
+        <div className="h-3 bg-gray-200 rounded animate-pulse w-2/3" />
       </CardContent>
     </Card>
   );
 
   const OfficerCardSkeleton = () => (
-    <Card className="bg-white border border-slate-200 shadow-sm">
+    <Card className="bg-white border border-gray-200 shadow-sm">
       <CardHeader className="pb-3">
-        <div className="h-5 bg-slate-200 rounded animate-pulse w-1/2 mb-4" />
+        <div className="flex items-center justify-between mb-3">
+          <div className="h-5 bg-gray-200 rounded animate-pulse w-1/2" />
+          <div className="h-6 w-16 bg-gray-200 rounded-full animate-pulse" />
+        </div>
+        <div className="h-3 bg-gray-200 rounded animate-pulse w-2/3 mb-4" />
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
             <div key={i} className="flex justify-between items-center">
-              <div className="h-4 bg-slate-200 rounded animate-pulse w-1/4" />
-              <div className="h-6 w-12 bg-slate-200 rounded-full animate-pulse" />
+              <div className="h-4 bg-gray-200 rounded animate-pulse w-1/4" />
+              <div className="flex items-center gap-2">
+                <div className="h-3 w-8 bg-gray-200 rounded animate-pulse" />
+                <div className="h-6 w-10 bg-gray-200 rounded-full animate-pulse" />
+              </div>
             </div>
           ))}
+        </div>
+        <div className="mt-4 pt-4 border-t border-gray-100">
+          <div className="flex justify-between mb-1">
+            <div className="h-3 bg-gray-200 rounded animate-pulse w-1/3" />
+            <div className="h-3 bg-gray-200 rounded animate-pulse w-1/6" />
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="bg-gray-300 h-2 rounded-full w-1/2" />
+          </div>
         </div>
       </CardHeader>
     </Card>
@@ -564,39 +572,42 @@ const SuperAdminHomePageTemplate = () => {
   // RENDER
   // ============================
   return (
-    <div className="bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100 text-slate-900 font-sans">
-      <main className="max-w-[95%] lg:max-w-[90%] mx-auto px-1 sm:px-6 py-8">
+    <div className="bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100 min-h-screen">
+      <main className="max-w-[95%] mx-auto px-1 sm:px-6 py-8">
         {/* ===== HEADER ===== */}
         <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-gradient-to-br from-[#00B7E8] to-[#0095c7] rounded-lg">
-              <FiShield className="text-white text-xl" />
-            </div>
-            <div>
-              <h1 className="text-lg lg:text-3xl font-bold tracking-tight text-[#142C4B]">
-                Super Admin Dashboard
-              </h1>
-              <p className="text-sm text-slate-500">
-                Welcome back,{" "}
-                <span className="font-medium">
-                  {user?.full_name || "Admin"}
-                </span>
-              </p>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-2">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-[#00B7E8] to-[#0095c4] shadow-lg shadow-[#00B7E8]/20">
+                <FiShield className="text-white text-2xl" />
+              </div>
+              <div>
+                <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-[#142C4B]">
+                  Super Admin Dashboard
+                </h1>
+                <p className="text-sm text-slate-500">
+                  Welcome back,{" "}
+                  <span className="font-medium text-slate-700">
+                    {user?.full_name || "Admin"}
+                  </span>
+                </p>
+              </div>
             </div>
           </div>
-          <p className="text-sm lg:text-base text-slate-600 ml-12">
+          {/* <p className="text-sm lg:text-base text-slate-600 ml-[52px]">
             Comprehensive overview of your business operations and team
             performance
-          </p>
+          </p> */}
+          <hr className="border-slate-200 mt-5" />
         </div>
 
         {/* ===== KEY METRICS GRID ===== */}
         <section className="mb-8">
-          <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+          <h2 className="text-lg font-bold mb-4 flex items-center gap-2 text-[#142C4B]">
             <FiActivity className="text-[#00B7E8]" />
             Key Metrics
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
             {isLoading ? (
               <>
                 <StatCardSkeleton />
@@ -611,7 +622,7 @@ const SuperAdminHomePageTemplate = () => {
                   value={dashboardStats.totalSalesOfficers}
                   subtitle={`${dashboardStats.activeSalesOfficers} active`}
                   icon={<FiUsers className="text-2xl" />}
-                  iconBg="bg-blue-100"
+                  iconBg="bg-blue-50"
                   iconColor="text-blue-600"
                   trend={
                     dashboardStats.activeSalesOfficers > 0
@@ -631,7 +642,7 @@ const SuperAdminHomePageTemplate = () => {
                   value={dashboardStats.totalLeads}
                   subtitle={`${dashboardStats.completedLeads} completed`}
                   icon={<FiFileText className="text-2xl" />}
-                  iconBg="bg-green-100"
+                  iconBg="bg-green-50"
                   iconColor="text-green-600"
                   trend={
                     dashboardStats.completedLeads > 0
@@ -651,7 +662,7 @@ const SuperAdminHomePageTemplate = () => {
                   value={dashboardStats.totalInvoices}
                   subtitle={`${dashboardStats.pendingInvoices} pending`}
                   icon={<FiDollarSign className="text-2xl" />}
-                  iconBg="bg-purple-100"
+                  iconBg="bg-purple-50"
                   iconColor="text-purple-600"
                   trend={
                     dashboardStats.pendingInvoices > 0
@@ -667,7 +678,7 @@ const SuperAdminHomePageTemplate = () => {
                   value={dashboardStats.totalInventory}
                   subtitle="Total properties"
                   icon={<FiPackage className="text-2xl" />}
-                  iconBg="bg-orange-100"
+                  iconBg="bg-orange-50"
                   iconColor="text-orange-600"
                 />
               </>
@@ -676,14 +687,14 @@ const SuperAdminHomePageTemplate = () => {
         </section>
 
         {/* ===== TWO COLUMN LAYOUT ===== */}
-        <div className="grid gap-3 lg:gap-6 mb-8">
+        <div className="grid gap-6 mb-8">
           {/* LEFT COLUMN - Expenses */}
           <div className="lg:col-span-2 space-y-6">
             {/* Expense Summary */}
             <section>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
                 <div>
-                  <h2 className="text-lg font-bold flex items-center gap-2">
+                  <h2 className="text-lg font-bold flex items-center gap-2 text-[#142C4B]">
                     <FiDollarSign className="text-[#00B7E8]" />
                     Expense Summary
                   </h2>
@@ -694,14 +705,14 @@ const SuperAdminHomePageTemplate = () => {
                 <Button
                   onClick={() => setIsReportModalOpen(true)}
                   size="sm"
-                  className="flex items-center gap-2 bg-[#00B7E8] hover:bg-[#029ec9] text-white shadow-sm"
+                  className="flex items-center gap-2 h-11 px-5 rounded-lg bg-gradient-to-r from-[#00B7E8] to-[#0095c4] hover:from-[#0095c4] hover:to-[#0080a8] text-white font-medium shadow-sm shadow-[#00B7E8]/20 hover:shadow-lg hover:shadow-[#00B7E8]/30 transition-all duration-200"
                 >
                   <FiDownload className="text-base" />
                   Generate Report
                 </Button>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {isExpensesLoading ? (
                   <>
                     <ExpenseCardSkeleton />
@@ -714,23 +725,23 @@ const SuperAdminHomePageTemplate = () => {
                     <ExpenseSummaryCard
                       title="Today"
                       amount={expenseSummary.today}
-                      icon={<FiClock />}
+                      icon={<FiClock className="text-base" />}
                     />
                     <ExpenseSummaryCard
                       title="Yesterday"
                       amount={expenseSummary.yesterday}
-                      icon={<FiClock />}
+                      icon={<FiClock className="text-base" />}
                     />
                     <ExpenseSummaryCard
                       title="Last 7 Days"
                       amount={expenseSummary.last7}
-                      icon={<FiTrendingUp />}
+                      icon={<FiTrendingUp className="text-base" />}
                       trend={expenseTrends}
                     />
                     <ExpenseSummaryCard
                       title="Last 30 Days"
                       amount={expenseSummary.last30}
-                      icon={<FiActivity />}
+                      icon={<FiActivity className="text-base" />}
                     />
                   </>
                 )}
@@ -739,40 +750,40 @@ const SuperAdminHomePageTemplate = () => {
 
             {/* Invoice Overview */}
             <section>
-              <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+              <h2 className="text-lg font-bold mb-4 flex items-center gap-2 text-[#142C4B]">
                 <FiFileText className="text-[#00B7E8]" />
                 Invoice Overview
               </h2>
-              <Card className="bg-white border border-slate-200 shadow-sm">
-                <CardContent className="p-1 lg:p-6">
+              <Card className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-all rounded-2xl">
+                <CardContent className="p-6">
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                     <InvoiceMetric
                       label="Pending"
                       value={invoiceStats.pending}
-                      icon={<MdPending className="text-yellow-600" />}
+                      icon={<MdPending className="text-2xl" />}
                       color="text-yellow-600"
-                      bgColor="bg-yellow-100"
+                      bgColor="bg-yellow-50"
                     />
                     <InvoiceMetric
                       label="Received"
                       value={invoiceStats.received}
-                      icon={<MdCheckCircle className="text-green-600" />}
+                      icon={<MdCheckCircle className="text-2xl" />}
                       color="text-green-600"
-                      bgColor="bg-green-100"
+                      bgColor="bg-green-50"
                     />
                     <InvoiceMetric
                       label="Cancelled"
                       value={invoiceStats.cancelled}
-                      icon={<FiX className="text-red-600" />}
+                      icon={<FiX className="text-2xl" />}
                       color="text-red-600"
-                      bgColor="bg-red-100"
+                      bgColor="bg-red-50"
                     />
                     <InvoiceMetric
                       label="Total Amount"
                       value={`${(invoiceStats.totalAmount / 1000).toFixed(0)}K`}
-                      icon={<FiDollarSign className="text-blue-600" />}
+                      icon={<FiDollarSign className="text-2xl" />}
                       color="text-blue-600"
-                      bgColor="bg-blue-100"
+                      bgColor="bg-blue-50"
                       isAmount
                     />
                   </div>
@@ -780,38 +791,13 @@ const SuperAdminHomePageTemplate = () => {
               </Card>
             </section>
           </div>
-
-          {/* RIGHT COLUMN - Recent Activity */}
-          {/* <div>
-            <section>
-              <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-                <FiClock className="text-[#00B7E8]" />
-                Recent Activity
-              </h2>
-              <Card className="bg-white border border-slate-200 shadow-sm">
-                <CardContent className="p-4">
-                  <div className="space-y-3">
-                    {recentActivities.length === 0 ? (
-                      <p className="text-sm text-slate-500 text-center py-4">
-                        No recent activities
-                      </p>
-                    ) : (
-                      recentActivities.map((activity) => (
-                        <ActivityItem key={activity.id} activity={activity} />
-                      ))
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </section>
-          </div> */}
         </div>
 
         {/* ===== SALES OFFICERS PERFORMANCE ===== */}
         <section>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div>
-              <h2 className="text-lg font-bold flex items-center gap-2">
+              <h2 className="text-lg font-bold flex items-center gap-2 text-[#142C4B]">
                 <FiUsers className="text-[#00B7E8]" />
                 Sales Officers Performance
               </h2>
@@ -820,7 +806,6 @@ const SuperAdminHomePageTemplate = () => {
               </p>
             </div>
 
-            {/* Period selector */}
             <div className="flex flex-wrap items-center gap-2">
               {(["daily", "weekly", "monthly"] as const).map((p) => (
                 <Button
@@ -829,17 +814,20 @@ const SuperAdminHomePageTemplate = () => {
                   variant={performancePeriod === p ? "default" : "outline"}
                   onClick={() => setPerformancePeriod(p)}
                   className={cn(
-                    "font-medium capitalize",
+                    "h-9 px-4 rounded-lg font-medium capitalize transition-all duration-200",
                     performancePeriod === p
-                      ? "bg-[#00B7E8] hover:bg-[#029ec9] text-white"
-                      : "hover:bg-slate-50",
+                      ? "bg-gradient-to-r from-[#00B7E8] to-[#0095c4] hover:from-[#0095c4] hover:to-[#0080a8] text-white shadow-sm shadow-[#00B7E8]/20"
+                      : "border-gray-200 hover:bg-gray-50 hover:border-gray-300",
                   )}
                 >
                   {p}
                 </Button>
               ))}
 
-              <Popover>
+              <Popover
+                open={isCustomPopoverOpen}
+                onOpenChange={setIsCustomPopoverOpen}
+              >
                 <PopoverTrigger asChild>
                   <Button
                     size="sm"
@@ -847,10 +835,10 @@ const SuperAdminHomePageTemplate = () => {
                       performancePeriod === "custom" ? "default" : "outline"
                     }
                     className={cn(
-                      "font-medium flex items-center gap-1.5",
+                      "h-9 px-4 rounded-lg font-medium flex items-center gap-1.5 transition-all duration-200",
                       performancePeriod === "custom"
-                        ? "bg-[#00B7E8] hover:bg-[#029ec9] text-white"
-                        : "hover:bg-slate-50",
+                        ? "bg-gradient-to-r from-[#00B7E8] to-[#0095c4] hover:from-[#0095c4] hover:to-[#0080a8] text-white shadow-sm shadow-[#00B7E8]/20"
+                        : "border-gray-200 hover:bg-gray-50 hover:border-gray-300",
                     )}
                   >
                     <LuCalendarRange className="text-sm" />
@@ -861,10 +849,13 @@ const SuperAdminHomePageTemplate = () => {
                       : "Custom"}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-3" align="end">
-                  <div className="space-y-3">
+                <PopoverContent
+                  className="w-auto p-4 rounded-2xl border-gray-200 shadow-xl"
+                  align="end"
+                >
+                  <div className="space-y-4">
                     <div>
-                      <p className="text-xs font-semibold text-slate-500 mb-1">
+                      <p className="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wider">
                         From
                       </p>
                       <Calendar
@@ -877,10 +868,16 @@ const SuperAdminHomePageTemplate = () => {
                           }))
                         }
                         initialFocus
+                        classNames={{
+                          day_selected:
+                            "bg-[#00B7E8] text-white hover:bg-[#0095c4] rounded-lg",
+                          day_today: "bg-gray-100 text-gray-900 rounded-lg",
+                          day: "hover:bg-gray-50 rounded-lg",
+                        }}
                       />
                     </div>
                     <div>
-                      <p className="text-xs font-semibold text-slate-500 mb-1">
+                      <p className="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wider">
                         To
                       </p>
                       <Calendar
@@ -892,18 +889,24 @@ const SuperAdminHomePageTemplate = () => {
                             to: date,
                           }))
                         }
+                        classNames={{
+                          day_selected:
+                            "bg-[#00B7E8] text-white hover:bg-[#0095c4] rounded-lg",
+                          day_today: "bg-gray-100 text-gray-900 rounded-lg",
+                          day: "hover:bg-gray-50 rounded-lg",
+                        }}
                       />
                     </div>
                     <Button
                       size="sm"
-                      className="w-full bg-[#00B7E8] hover:bg-[#029ec9] text-white"
+                      className="w-full h-10 rounded-lg bg-gradient-to-r from-[#00B7E8] to-[#0095c4] hover:from-[#0095c4] hover:to-[#0080a8] text-white font-medium shadow-sm shadow-[#00B7E8]/20"
                       disabled={
                         !performanceCustomRange.from ||
                         !performanceCustomRange.to
                       }
-                      onClick={() => setPerformancePeriod("custom")}
+                      onClick={handleApplyCustomRange}
                     >
-                      Apply
+                      Apply Range
                     </Button>
                   </div>
                 </PopoverContent>
@@ -918,11 +921,14 @@ const SuperAdminHomePageTemplate = () => {
               <OfficerCardSkeleton />
             </div>
           ) : officerReports.length === 0 ? (
-            <Card className="bg-white border border-slate-200 shadow-sm">
-              <CardContent className="p-8 text-center">
-                <FiUsers className="text-4xl text-slate-300 mx-auto mb-3" />
-                <p className="text-slate-500">
+            <Card className="bg-white border border-gray-200 shadow-sm rounded-2xl">
+              <CardContent className="p-12 text-center">
+                <FiUsers className="text-5xl text-gray-300 mx-auto mb-4" />
+                <p className="text-slate-500 font-medium">
                   No sales officers available yet
+                </p>
+                <p className="text-sm text-slate-400 mt-1">
+                  Sales officers will appear here once assigned
                 </p>
               </CardContent>
             </Card>
@@ -940,53 +946,52 @@ const SuperAdminHomePageTemplate = () => {
                 return (
                   <Card
                     key={so.salesOfficerId}
-                    className="bg-white border border-slate-200 shadow-sm hover:shadow-md transition-shadow"
+                    className="bg-white border border-gray-200 shadow-sm hover:shadow-lg transition-all duration-300 rounded-2xl overflow-hidden"
                   >
                     <CardHeader className="pb-3">
                       <div className="flex items-center justify-between mb-3">
                         <CardTitle className="text-base font-semibold text-slate-900">
                           {so.full_name}
                         </CardTitle>
-                        <span className="text-xs font-bold text-[#00B7E8] bg-blue-50 px-2 py-1 rounded-full">
+                        <span className="text-xs font-bold text-[#00B7E8] bg-blue-50 px-3 py-1.5 rounded-full border border-blue-100">
                           {leadCounts.total} leads
                         </span>
                       </div>
                       <p className="text-xs text-slate-500 mb-4">{so.email}</p>
 
-                      <div className="space-y-2">
+                      <div className="space-y-2.5">
                         <StatusRow
                           label="Pending"
                           count={leadCounts.pending}
                           total={leadCounts.total}
-                          color="bg-yellow-100 text-yellow-800"
+                          color="bg-yellow-50 text-yellow-700 border border-yellow-200"
                         />
                         <StatusRow
                           label="In Progress"
                           count={leadCounts.in_progress}
                           total={leadCounts.total}
-                          color="bg-blue-100 text-blue-800"
+                          color="bg-blue-50 text-blue-700 border border-blue-200"
                         />
                         <StatusRow
                           label="Completed"
                           count={leadCounts.completed}
                           total={leadCounts.total}
-                          color="bg-green-100 text-green-800"
+                          color="bg-green-50 text-green-700 border border-green-200"
                         />
                       </div>
 
-                      {/* Progress Bar */}
-                      <div className="mt-4 pt-4 border-t border-slate-100">
-                        <div className="flex justify-between text-xs mb-1">
-                          <span className="text-slate-500">
+                      <div className="mt-4 pt-4 border-t border-gray-100">
+                        <div className="flex justify-between text-xs mb-1.5">
+                          <span className="text-slate-500 font-medium">
                             Completion Rate
                           </span>
                           <span className="font-semibold text-slate-700">
                             {completionRate}%
                           </span>
                         </div>
-                        <div className="w-full bg-slate-100 rounded-full h-2">
+                        <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
                           <div
-                            className="bg-gradient-to-r from-green-400 to-green-600 h-2 rounded-full transition-all"
+                            className="bg-gradient-to-r from-green-400 to-green-600 h-2 rounded-full transition-all duration-500"
                             style={{ width: `${completionRate}%` }}
                           />
                         </div>
@@ -1002,27 +1007,34 @@ const SuperAdminHomePageTemplate = () => {
 
       {/* ===== GENERATE REPORT MODAL ===== */}
       {isReportModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full animate-in zoom-in-95 duration-200">
-            <div className="p-3 border-b border-slate-200 flex items-center justify-between">
-              <h3 className="text-xl font-bold flex items-center gap-3">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <LuCalendarRange className="text-[#00B7E8] text-lg" />
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-gradient-to-br from-[#00B7E8] to-[#0095c4] shadow-lg shadow-[#00B7E8]/20">
+                  <LuCalendarRange className="text-white text-lg" />
                 </div>
-                Generate Report
-              </h3>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Generate Report
+                  </h3>
+                  <p className="text-xs text-gray-500">
+                    Export expense data as PDF
+                  </p>
+                </div>
+              </div>
               <button
                 type="button"
                 onClick={() => setIsReportModalOpen(false)}
-                className="p-2 hover:bg-slate-100 rounded-lg cursor-pointer transition-colors"
+                className="w-8 h-8 rounded-lg hover:bg-gray-100 transition-all duration-200 flex items-center justify-center text-gray-400 hover:text-gray-600"
               >
-                <FiX className="text-xl text-slate-500" />
+                <FiX className="text-xl" />
               </button>
             </div>
 
-            <div className="p-6 space-y-5">
+            <div className="p-6 space-y-6">
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-3">
+                <label className="block text-sm font-semibold text-gray-700 mb-3">
                   Select Time Period
                 </label>
                 <div className="grid grid-cols-2 gap-3">
@@ -1033,10 +1045,10 @@ const SuperAdminHomePageTemplate = () => {
                         variant={reportRange === range ? "default" : "outline"}
                         onClick={() => setReportRange(range)}
                         className={cn(
-                          "h-auto py-3 font-medium",
+                          "h-11 rounded-lg font-medium transition-all duration-200",
                           reportRange === range
-                            ? "bg-[#00B7E8] hover:bg-[#029ec9] text-white shadow-md shadow-blue-200"
-                            : "hover:bg-slate-50",
+                            ? "bg-gradient-to-r from-[#00B7E8] to-[#0095c4] hover:from-[#0095c4] hover:to-[#0080a8] text-white shadow-sm shadow-[#00B7E8]/20"
+                            : "border-gray-200 hover:bg-gray-50 hover:border-gray-300",
                         )}
                       >
                         {range === "today"
@@ -1053,24 +1065,24 @@ const SuperAdminHomePageTemplate = () => {
               </div>
 
               <div className="pt-2">
-                <label className="block text-sm font-semibold text-slate-700 mb-3">
+                <label className="block text-sm font-semibold text-gray-700 mb-3">
                   Custom Date Range
                 </label>
-                <div className="flex gap-2">
+                <div className="flex gap-3">
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
-                        className="flex-1 justify-start text-left font-normal h-11"
+                        className="flex-1 justify-start text-left font-normal h-11 rounded-lg border-gray-200 hover:border-[#00B7E8]"
                       >
                         {customDateRange.from ? (
-                          format(customDateRange.from, "dd MMM")
+                          format(customDateRange.from, "dd MMM yyyy")
                         ) : (
-                          <span className="text-slate-400">From...</span>
+                          <span className="text-gray-400">From...</span>
                         )}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
+                    <PopoverContent className="w-auto p-0 rounded-xl border-gray-200 shadow-xl">
                       <Calendar
                         mode="single"
                         selected={customDateRange.from}
@@ -1082,6 +1094,12 @@ const SuperAdminHomePageTemplate = () => {
                           setReportRange("custom");
                         }}
                         initialFocus
+                        classNames={{
+                          day_selected:
+                            "bg-[#00B7E8] text-white hover:bg-[#0095c4] rounded-lg",
+                          day_today: "bg-gray-100 text-gray-900 rounded-lg",
+                          day: "hover:bg-gray-50 rounded-lg",
+                        }}
                       />
                     </PopoverContent>
                   </Popover>
@@ -1090,16 +1108,16 @@ const SuperAdminHomePageTemplate = () => {
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
-                        className="flex-1 justify-start text-left font-normal h-11"
+                        className="flex-1 justify-start text-left font-normal h-11 rounded-lg border-gray-200 hover:border-[#00B7E8]"
                       >
                         {customDateRange.to ? (
-                          format(customDateRange.to, "dd MMM")
+                          format(customDateRange.to, "dd MMM yyyy")
                         ) : (
-                          <span className="text-slate-400">To...</span>
+                          <span className="text-gray-400">To...</span>
                         )}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
+                    <PopoverContent className="w-auto p-0 rounded-xl border-gray-200 shadow-xl">
                       <Calendar
                         mode="single"
                         selected={customDateRange.to}
@@ -1108,24 +1126,30 @@ const SuperAdminHomePageTemplate = () => {
                           setReportRange("custom");
                         }}
                         initialFocus
+                        classNames={{
+                          day_selected:
+                            "bg-[#00B7E8] text-white hover:bg-[#0095c4] rounded-lg",
+                          day_today: "bg-gray-100 text-gray-900 rounded-lg",
+                          day: "hover:bg-gray-50 rounded-lg",
+                        }}
                       />
                     </PopoverContent>
                   </Popover>
                 </div>
               </div>
 
-              <div className="flex gap-3 pt-4">
+              <div className="flex gap-3 pt-2">
                 <Button
                   variant="outline"
                   onClick={() => setIsReportModalOpen(false)}
-                  className="flex-1 h-11 font-medium"
+                  className="flex-1 h-11 rounded-lg border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 font-medium"
                 >
                   Cancel
                 </Button>
                 <Button
                   onClick={generatePdfReport}
                   disabled={isGenerating}
-                  className="flex-1 h-11 font-medium bg-[#00B7E8] hover:bg-[#029ec9] text-white shadow-md shadow-blue-200"
+                  className="flex-1 h-11 rounded-lg font-medium bg-gradient-to-r from-[#00B7E8] to-[#0095c4] hover:from-[#0095c4] hover:to-[#0080a8] text-white shadow-sm shadow-[#00B7E8]/20 hover:shadow-lg hover:shadow-[#00B7E8]/30 transition-all duration-200 disabled:opacity-70"
                 >
                   {isGenerating ? (
                     <>
@@ -1174,8 +1198,8 @@ const StatCard = ({
   iconColor,
   trend,
 }: StatCardProps) => (
-  <Card className="bg-white border border-slate-200 shadow-sm hover:shadow-md transition-all">
-    <CardContent className="px-6">
+  <Card className="bg-white border border-gray-200 shadow-sm hover:shadow-lg transition-all duration-300 rounded-2xl">
+    <CardContent className="p-6">
       <div className="flex items-center justify-between mb-4">
         <div className={cn("p-3 rounded-xl", iconBg)}>
           <div className={iconColor}>{icon}</div>
@@ -1183,10 +1207,10 @@ const StatCard = ({
         {trend && (
           <div
             className={cn(
-              "flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold",
+              "flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-bold",
               trend.isPositive
-                ? "bg-green-100 text-green-700"
-                : "bg-red-100 text-red-700",
+                ? "bg-green-50 text-green-700 border border-green-200"
+                : "bg-red-50 text-red-700 border border-red-200",
             )}
           >
             {trend.isPositive ? (
@@ -1204,7 +1228,7 @@ const StatCard = ({
         )}
       </div>
       <h3 className="text-2xl font-bold text-slate-900 mb-1">{value}</h3>
-      <p className="text-sm text-slate-500">{title}</p>
+      <p className="text-sm font-medium text-slate-600">{title}</p>
       <p className="text-xs text-slate-400 mt-1">{subtitle}</p>
     </CardContent>
   </Card>
@@ -1223,33 +1247,36 @@ const ExpenseSummaryCard = ({
   icon,
   trend,
 }: ExpenseSummaryCardProps) => (
-  <Card className="bg-white border border-slate-200 shadow-sm hover:shadow-md transition-all">
-    <CardHeader>
+  <Card className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300 rounded-2xl">
+    <CardHeader className="pb-2">
       <div className="flex items-center justify-between">
         <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
           {title}
         </p>
-        <div className="text-slate-400">{icon}</div>
+        <div className="text-slate-400 bg-gray-50 p-1.5 rounded-lg">{icon}</div>
       </div>
     </CardHeader>
     <CardContent>
       <p className="text-xl font-bold text-[#00B7E8] mb-1">
         Rs. {amount.toLocaleString()}
       </p>
-      {/* {trend && (
-        <div className="flex items-center gap-1 text-xs">
+      {trend && (
+        <div className="flex items-center gap-1.5 text-xs">
           {trend.isPositive ? (
-            <FiTrendingDown className="text-green-600" />
+            <FiTrendingUp className="text-green-500" />
           ) : (
-            <FiTrendingUp className="text-red-600" />
+            <FiTrendingUp className="text-red-500" />
           )}
           <span
-            className={trend.isPositive ? "text-green-600" : "text-red-600"}
+            className={cn(
+              "font-medium",
+              trend.isPositive ? "text-green-600" : "text-red-600",
+            )}
           >
             {trend.percentage.toFixed(1)}% vs last week
           </span>
         </div>
-      )} */}
+      )}
     </CardContent>
   </Card>
 );
@@ -1266,12 +1293,14 @@ const StatusRow = ({ label, count, total, color }: StatusRowProps) => {
 
   return (
     <div className="flex justify-between items-center">
-      <span className="text-sm text-slate-600">{label}</span>
-      <div className="flex items-center gap-2">
-        <span className="text-xs text-slate-400">{percentage}%</span>
+      <span className="text-sm text-slate-600 font-medium">{label}</span>
+      <div className="flex items-center gap-2.5">
+        <span className="text-xs text-slate-400 font-medium">
+          {percentage}%
+        </span>
         <span
           className={cn(
-            "px-2.5 py-1 rounded-full text-xs font-bold min-w-[40px] text-center",
+            "px-3 py-1 rounded-full text-xs font-bold min-w-[40px] text-center",
             color,
           )}
         >
@@ -1300,12 +1329,16 @@ const InvoiceMetric = ({
   isAmount,
 }: InvoiceMetricProps) => (
   <div className="flex flex-col items-center text-center">
-    <div className={cn("p-3 rounded-xl mb-2", bgColor)}>{icon}</div>
+    <div className={cn("p-3 rounded-xl mb-2", bgColor)}>
+      <div className={color}>{icon}</div>
+    </div>
     <p className={cn("text-2xl font-bold mb-1", color)}>
       {isAmount && "Rs. "}
       {value}
     </p>
-    <p className="text-xs text-slate-500 font-medium">{label}</p>
+    <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">
+      {label}
+    </p>
   </div>
 );
 

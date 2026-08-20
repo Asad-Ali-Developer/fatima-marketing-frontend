@@ -1,5 +1,6 @@
 "use client";
 
+import { FetchAndViewInvoice } from "@/components/atoms";
 import {
   CreateLeadModalSelfCreated,
   DeleteLeadConfirmationModal,
@@ -88,6 +89,8 @@ const SalesOfficerLeadCreationPageTemplate = () => {
     (state: RootState) => state.auth.user,
   ) as User | null;
 
+  // console.log("User: ", user)
+
   // Modal states
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
@@ -117,6 +120,11 @@ const SalesOfficerLeadCreationPageTemplate = () => {
       email: user?.email as string,
       full_name: user?.full_name as string,
     },
+    reportedTo: {
+      id: user?.created_by?.id as string,
+      email: user?.created_by?.email as string,
+      full_name: user?.created_by?.name as string,
+    },
   });
 
   // Loading State for Creating Lead
@@ -144,6 +152,10 @@ const SalesOfficerLeadCreationPageTemplate = () => {
   const [remarksLead, setRemarksLead] = useState<Lead | null>(null);
   const [remarksInput, setRemarksInput] = useState("");
   const [updatingRemarks, setUpdatingRemarks] = useState(false);
+
+  // Invoice View Modal State
+  const [showInvoice, setShowInvoice] = useState<boolean>(false);
+  const [invoiceId, setInvoiceId] = useState<string>("");
 
   const fetchLeads = async (page = 1) => {
     setIsLoading(true);
@@ -214,6 +226,7 @@ const SalesOfficerLeadCreationPageTemplate = () => {
       remarks: undefined,
       createdAt: new Date().toISOString(),
       createdBy: formData.createdBy,
+      reportedTo: formData.assignedTo,
     };
 
     const wasOnPage1 = currentPage === 1;
@@ -233,6 +246,7 @@ const SalesOfficerLeadCreationPageTemplate = () => {
         time: formData.time,
         status: "pending" as LeadStatus,
         createdBy: formData.createdBy,
+        reportedTo: formData.reportedTo
       };
 
       const response = await soLeadService.createLead(payload);
@@ -259,7 +273,7 @@ const SalesOfficerLeadCreationPageTemplate = () => {
         setLeads((prev) => prev.filter((lead) => lead._id !== newLead._id));
         setTotalLeads((prev) => Math.max(0, prev - 1));
       }
-      alert("Failed to create lead. Please try again.");
+      toast.error("Failed to create lead. Please try again.");
     } finally {
       setIsCreating(false);
     }
@@ -296,9 +310,10 @@ const SalesOfficerLeadCreationPageTemplate = () => {
       setLeads((prev) =>
         prev.map((lead) => (lead._id === editingLead._id ? editingLead : lead)),
       );
-      alert("Failed to update lead. Please try again.");
+      toast.error("Failed to update lead. Please try again.");
     } finally {
       setIsUpdating(false);
+      toast.success("Lead successfully updated!")
     }
   };
 
@@ -477,7 +492,7 @@ const SalesOfficerLeadCreationPageTemplate = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 text-slate-900 font-sans">
-      <main className="max-w-[95%] lg:max-w-[90%] mx-auto px-1 lg:px-6 py-10">
+      <main className="max-w-[95%] mx-auto px-1 lg:px-6 py-10">
         {/* Page Heading */}
         <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="space-y-1">
@@ -668,7 +683,7 @@ const SalesOfficerLeadCreationPageTemplate = () => {
                       key={lead._id}
                       className="hover:bg-slate-50/50 transition-colors"
                     >
-                      <td className="px-6 py-4 font-semibold">
+                      <td className="px-6 py-4 capitalize font-semibold">
                         {lead.userName}
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-600">
@@ -705,22 +720,35 @@ const SalesOfficerLeadCreationPageTemplate = () => {
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
                           {/* 👇 INVOICE BUTTON */}
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleCreateInvoiceFromLead(lead);
-                            }}
-                            disabled={isCreatingInvoice}
-                            className="p-2 hover:bg-green-50 rounded-lg text-slate-600 hover:text-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            title="Create Invoice"
-                          >
-                            {isCreatingInvoice ? (
-                              <Loader2 className="animate-spin mr-2" />
-                            ) : (
+                          {/* {lead.invoice_id ? (
+                            <div
+                              className="px-2 py-1 text-sm flex gap-1 rounded bg-gray-200/60 cursor-pointer font-medium text-gray-500"
+                              onClick={() => {
+                                setShowInvoice(true);
+                                setInvoiceId(lead.invoice_id as string);
+                              }}
+                            >
                               <FiFileText className="text-base" />
-                            )}
-                          </button>
+                              <span>View Invoice</span>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleCreateInvoiceFromLead(lead);
+                              }}
+                              disabled={isCreatingInvoice}
+                              className="p-2 hover:bg-green-50 rounded-lg text-slate-600 hover:text-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              title="Create Invoice"
+                            >
+                              {isCreatingInvoice ? (
+                                <Loader2 className="animate-spin mr-2" />
+                              ) : (
+                                <FiFileText className="text-base" />
+                              )}
+                            </button>
+                          )} */}
                           <button
                             type="button"
                             onClick={() => handleViewLead(lead)}
@@ -882,6 +910,14 @@ const SalesOfficerLeadCreationPageTemplate = () => {
           setIsRemarksModalOpen={setIsRemarksModalOpen}
           handleSaveRemarks={handleSaveRemarks}
           updatingRemarks={updatingRemarks}
+        />
+      )}
+
+      {/* Invoice View Modal */}
+      {showInvoice && invoiceId && (
+        <FetchAndViewInvoice
+          invoiceId={invoiceId}
+          setIsViewModalOpen={setShowInvoice}
         />
       )}
     </div>

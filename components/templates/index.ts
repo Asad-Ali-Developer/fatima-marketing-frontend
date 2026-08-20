@@ -15,6 +15,7 @@ import SuperAdminHomePageTemplete from "./SuperAdminHomePageTemplate/SuperAdminH
 import ProfilePageTemplate from "./ProfilePageTemplate/ProfilePageTemplate";
 import SalesOfficerLeadCreationPageTemplate from "./SalesOfficerLeadCreationPageTemplate/SalesOfficerLeadCreationPageTemplate";
 import SalesOfficerHomePageTemplate from "./SalesOfficerHomePageTemplate/SalesOfficerHomePageTemplate";
+import AdminLeadsCreatedBySOPageTemplate from "./AdminLeadsCreatedBySOPageTemplate/AdminLeadsCreatedBySOPageTemplate"
 
 export {
   SignInPageTemplate,
@@ -34,4 +35,5 @@ export {
   ProfilePageTemplate,
   SalesOfficerLeadCreationPageTemplate,
   SalesOfficerHomePageTemplate,
+  AdminLeadsCreatedBySOPageTemplate,
 };

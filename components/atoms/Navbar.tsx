@@ -108,7 +108,7 @@ const Navbar = () => {
 
   return (
     <header className="border-b border-slate-200 bg-white sticky top-0 z-50">
-      <div className="mx-auto px-4 sm:px-6 h-14 flex items-center justify-between max-w-[1440px]">
+      <div className="mx-auto px-4 sm:px-6 h-14 flex items-center justify-between max-w-360">
         {/* Left Section: Hamburger (Mobile) + Logo */}
         <div className="flex items-center gap-3">
           <button
@@ -125,7 +125,7 @@ const Navbar = () => {
             onClick={() => router.push("/")}
           >
             <Image
-              src={FatimaMarketingLogo}
+              src={'/logo.webp'}
               alt="Fatima Marketing Logo"
               width={80}
               height={40}

@@ -26,7 +26,9 @@ const HomePageTemplate = () => {
     return <SalesOfficerHomePageTemplate />;
   }
 
-  return <div>HomePageTemplate</div>;
+  return <div className="w-full h-[90vh] relative flex items-center justify-center">
+    <img src="/logo.webp" alt="Logo" className=" w-48 h-48" />
+  </div>;
 };
 
 export default HomePageTemplate;

@@ -2,6 +2,12 @@ interface RoleType {
   role_type: "admin" | "sales_officer" | "super_admin";
 }
 
+interface CreatedBy {
+  id: string;
+  name: string;
+  email: string;
+}
+
 export interface User {
   _id: string;
   full_name: string;
@@ -12,9 +18,10 @@ export interface User {
   status?: "active" | "inactive";
   password?: string;
   showPassword?: string;
-  rokra?: string; 
-  profileImage?: string
-  commissionedBy?: number
-  gender?: string
+  rokra?: string;
+  profileImage?: string;
+  commissionedBy?: number;
+  gender?: string;
   refreshToken?: string;
+  created_by?: CreatedBy;
 }

@@ -7,6 +7,7 @@ import {
   LeadRemarksViewModal,
   ViewLeadModal,
 } from "@/components/molecules";
+import { FetchAndViewInvoice } from "@/components/atoms";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
@@ -24,7 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { InvoiceService, LeadsService } from "@/services";
+import { InvoiceService, LeadsService, SOLeadsService } from "@/services";
 import { RootState } from "@/store";
 import { InvoiceFormData, User } from "@/types";
 import {
@@ -34,31 +35,39 @@ import {
   LeadStatus,
 } from "@/types/Leads";
 import { generateInvoiceNumber, getPageNumbers } from "@/utils";
-import { format } from "date-fns";
-import { CalendarIcon, Loader2 } from "lucide-react";
+import { format, subDays } from "date-fns";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
+import { CalendarIcon, Loader2, FileSpreadsheet, FileText } from "lucide-react";
 import { useEffect, useState } from "react";
 import { BiSolidCommentDetail } from "react-icons/bi";
 import {
+  FiDownload,
   FiEdit2,
   FiEye,
   FiFileText,
   FiPlus,
   FiSearch,
   FiTrash2,
+  FiX,
 } from "react-icons/fi";
 import { LuRefreshCcw } from "react-icons/lu";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
-import { FetchAndViewInvoice } from "@/components/atoms";
+import * as XLSX from "xlsx";
+import Image from "next/image";
+import { MSExcelLogo, PDFLogo } from "@/assets";
 
-//  Shimmer Skeleton
+// Note: Ensure you have installed: npm install xlsx jspdf jspdf-autotable
+
+// ✨ Shimmer Skeleton
 const LeadTableSkeleton = () => {
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-left border-collapse">
         <thead>
           <tr className="bg-slate-50 border-b border-slate-200">
-            {Array.from({ length: 7 }).map((_, i) => (
+            {Array.from({ length: 8 }).map((_, i) => (
               <th key={i} className="px-6 py-2">
                 <div className="h-4 bg-slate-200 rounded animate-pulse"></div>
               </th>
@@ -66,9 +75,9 @@ const LeadTableSkeleton = () => {
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
-          {Array.from({ length: 2 }).map((_, rowIndex) => (
+          {Array.from({ length: 5 }).map((_, rowIndex) => (
             <tr key={rowIndex} className="hover:bg-slate-50/50">
-              {Array.from({ length: 7 }).map((_, cellIndex) => (
+              {Array.from({ length: 8 }).map((_, cellIndex) => (
                 <td key={cellIndex} className="px-6 py-4">
                   <div className="h-5 bg-slate-200 rounded animate-pulse w-4/5"></div>
                 </td>
@@ -81,9 +90,10 @@ const LeadTableSkeleton = () => {
   );
 };
 
-const AdminLeadCreationPageTemplate = () => {
+const AdminLeadsCreatedBySOPageTemplate = () => {
   const leadService = new LeadsService();
   const invoiceService = new InvoiceService();
+  const soLeadService = new SOLeadsService();
 
   const user = useSelector(
     (state: RootState) => state.auth.user,
@@ -113,16 +123,8 @@ const AdminLeadCreationPageTemplate = () => {
     phoneNumber: "",
     time: new Date(),
     status: "pending",
-    assignedTo: {
-      id: "",
-      email: "",
-      full_name: "",
-    },
-    createdBy: {
-      id: "",
-      email: "",
-      full_name: "",
-    },
+    assignedTo: { id: "", email: "", full_name: "" },
+    createdBy: { id: "", email: "", full_name: "" },
   });
 
   const [invoiceConfirmModal, setInvoiceConfirmModal] = useState<{
@@ -133,7 +135,7 @@ const AdminLeadCreationPageTemplate = () => {
     lead: null,
   });
 
-  // ✅ Track which lead is creating invoice (for row-specific loading)
+  // Track which lead is creating invoice (for row-specific loading)
   const [creatingInvoiceForLeadId, setCreatingInvoiceForLeadId] = useState<
     string | null
   >(null);
@@ -162,14 +164,31 @@ const AdminLeadCreationPageTemplate = () => {
   const [remarksInput, setRemarksInput] = useState("");
   const [updatingRemarks, setUpdatingRemarks] = useState(false);
 
+  // Download Modal States
+  const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
+  const [downloadRange, setDownloadRange] = useState<
+    "today" | "yesterday" | "last7" | "last30" | "custom"
+  >("last30");
+  const [customDownloadDateRange, setCustomDownloadDateRange] = useState<{
+    from: Date | undefined;
+    to: Date | undefined;
+  }>({ from: undefined, to: undefined });
+  const [downloadFormat, setDownloadFormat] = useState<"pdf" | "excel">("pdf");
+  const [isGeneratingDownload, setIsGeneratingDownload] = useState(false);
+
+  // ✅ Fetch leads reported to the current admin
   const fetchLeads = async (page = 1) => {
     setIsLoading(true);
     try {
-      const response = await leadService.getLeads(page, itemsPerPage, {
-        searchTerm,
-        status: statusFilter === "all" ? undefined : statusFilter,
-        date: dateFilter ? format(dateFilter, "yyyy-MM-dd") : undefined,
-      });
+      const response = await soLeadService.getLeadsReportedToAdmin(
+        page,
+        itemsPerPage,
+        {
+          searchTerm,
+          status: statusFilter === "all" ? undefined : statusFilter,
+          date: dateFilter ? format(dateFilter, "yyyy-MM-dd") : undefined,
+        },
+      );
       setLeads(response.data);
       setTotalLeads(response.pagination.total);
       setTotalPages(response.pagination.totalPages);
@@ -216,7 +235,6 @@ const AdminLeadCreationPageTemplate = () => {
     }
   };
 
-  // ✅ FIXED: Only updates assignedTo, preserves original createdBy during edits
   const handleAssignedToChange = (officerId: string) => {
     const officer = salesOfficers.find((so) => so._id === officerId);
     if (officer) {
@@ -270,7 +288,6 @@ const AdminLeadCreationPageTemplate = () => {
         time: safeDate,
         status: "pending" as "pending" | "in_progress" | "completed",
         assignedTo: formData?.assignedTo,
-        // ✅ FIXED: Explicitly set creator for new leads
         createdBy: {
           id: user?._id || "",
           email: user?.email || "",
@@ -295,16 +312,8 @@ const AdminLeadCreationPageTemplate = () => {
         phoneNumber: "",
         time: new Date(),
         status: "pending",
-        assignedTo: {
-          id: "",
-          email: "",
-          full_name: "",
-        },
-        createdBy: {
-          id: "",
-          email: "",
-          full_name: "",
-        },
+        assignedTo: { id: "", email: "", full_name: "" },
+        createdBy: { id: "", email: "", full_name: "" },
       });
     } catch (error) {
       console.error("Failed to create lead:", error);
@@ -351,23 +360,14 @@ const AdminLeadCreationPageTemplate = () => {
       await leadService.updateLead(editingLead._id, payload);
       setIsEditModalOpen(false);
       setEditingLead(null);
-
       setFormData({
         userName: "",
         location: "",
         phoneNumber: "",
         time: new Date(),
         status: "pending",
-        assignedTo: {
-          id: "",
-          email: "",
-          full_name: "",
-        },
-        createdBy: {
-          id: "",
-          email: "",
-          full_name: "",
-        },
+        assignedTo: { id: "", email: "", full_name: "" },
+        createdBy: { id: "", email: "", full_name: "" },
       });
     } catch (error) {
       console.error("Failed to update lead:", error);
@@ -455,11 +455,7 @@ const AdminLeadCreationPageTemplate = () => {
   };
 
   const handleDeleteLead = (leadId: string) => {
-    setShowConfirmModal({
-      isOpen: true,
-      type: "delete",
-      leadId,
-    });
+    setShowConfirmModal({ isOpen: true, type: "delete", leadId });
   };
 
   const handleViewLead = (lead: Lead) => {
@@ -476,7 +472,7 @@ const AdminLeadCreationPageTemplate = () => {
       status: lead.status as LeadStatus,
       assignedTo: lead.assignedTo,
       phoneNumber: lead.phoneNumber,
-      createdBy: lead.createdBy, // ✅ FIXED: Preserve original creator
+      createdBy: lead.createdBy,
     });
     setIsEditModalOpen(true);
   };
@@ -493,10 +489,7 @@ const AdminLeadCreationPageTemplate = () => {
     const remarksForState = inputValue || undefined;
     const remarksForApi = inputValue || null;
 
-    const updatedLead = {
-      ...remarksLead,
-      remarks: remarksForState,
-    };
+    const updatedLead = { ...remarksLead, remarks: remarksForState };
 
     setLeads((prev) =>
       prev.map((lead) => (lead._id === remarksLead._id ? updatedLead : lead)),
@@ -520,23 +513,17 @@ const AdminLeadCreationPageTemplate = () => {
   const handleCreateInvoiceFromLead = (lead: Lead) => {
     if (lead.status !== "completed") {
       toast.warn(
-        "Only the Invoice will be created when the lead status will be completed",
+        "Invoice can only be created when the lead status is completed",
       );
       return;
     }
-
-    // Open custom modal instead of confirm()
-    setInvoiceConfirmModal({
-      isOpen: true,
-      lead,
-    });
+    setInvoiceConfirmModal({ isOpen: true, lead });
   };
 
   const handleConfirmCreateInvoice = async () => {
     const lead = invoiceConfirmModal.lead;
     if (!lead) return;
 
-    // ✅ Set loading state for this specific lead
     setCreatingInvoiceForLeadId(lead._id);
     setInvoiceConfirmModal({ isOpen: false, lead: null });
 
@@ -556,24 +543,190 @@ const AdminLeadCreationPageTemplate = () => {
 
       await invoiceService.createInvoice(formData);
 
-      // ✅ Update the lead in the UI to show it has an invoice
       setLeads((prev) =>
         prev.map((l) =>
-          l._id === lead._id
-            ? { ...l, invoice_id: "pending" } // Temporary marker
-            : l,
+          l._id === lead._id ? { ...l, invoice_id: "pending" } : l,
         ),
       );
 
       toast.success("Invoice created successfully!");
-
-      // ✅ Refresh leads to get updated data
       await fetchLeads(currentPage);
     } catch (error) {
       console.error("Failed to create invoice:", error);
       toast.error("Failed to create invoice. Please try again.");
     } finally {
       setCreatingInvoiceForLeadId(null);
+    }
+  };
+
+  const handleGenerateDownload = async () => {
+    setIsGeneratingDownload(true);
+    try {
+      let fromDate: Date | undefined;
+      let toDate: Date | undefined;
+      const now = new Date();
+
+      switch (downloadRange) {
+        case "today":
+          fromDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          toDate = new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            now.getDate(),
+            23,
+            59,
+            59,
+            999,
+          );
+          break;
+        case "yesterday":
+          fromDate = new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            now.getDate() - 1,
+          );
+          toDate = new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            now.getDate() - 1,
+            23,
+            59,
+            59,
+            999,
+          );
+          break;
+        case "last7":
+          fromDate = subDays(now, 6);
+          fromDate.setHours(0, 0, 0, 0);
+          toDate = new Date(now);
+          toDate.setHours(23, 59, 59, 999);
+          break;
+        case "last30":
+          fromDate = subDays(now, 29);
+          fromDate.setHours(0, 0, 0, 0);
+          toDate = new Date(now);
+          toDate.setHours(23, 59, 59, 999);
+          break;
+        case "custom":
+          if (!customDownloadDateRange.from || !customDownloadDateRange.to) {
+            toast.error("Please select both From and To dates.");
+            setIsGeneratingDownload(false);
+            return;
+          }
+          fromDate = new Date(customDownloadDateRange.from);
+          fromDate.setHours(0, 0, 0, 0);
+          toDate = new Date(customDownloadDateRange.to);
+          toDate.setHours(23, 59, 59, 999);
+          break;
+      }
+
+      if (!fromDate || !toDate) {
+        toast.error("Invalid date range.");
+        setIsGeneratingDownload(false);
+        return;
+      }
+
+      // Fetch all leads for the selected period (limit 10000 to ensure we get everything)
+      const response = await soLeadService.getLeadsReportedToAdmin(1, 10000, {
+        dateFrom: format(fromDate, "yyyy-MM-dd"),
+        dateTo: format(toDate, "yyyy-MM-dd"),
+      });
+
+      const dataToExport = response.data;
+
+      if (!dataToExport || dataToExport.length === 0) {
+        toast.info("No leads found for the selected period.");
+        setIsGeneratingDownload(false);
+        return;
+      }
+
+      if (downloadFormat === "pdf") {
+        const doc = new jsPDF();
+        doc.setFontSize(18);
+        doc.setTextColor(20, 44, 75);
+        doc.text("Fatima Marketing", 14, 20);
+        doc.setFontSize(14);
+        doc.setTextColor(100, 116, 139);
+        doc.text("Leads Report", 14, 28);
+        doc.setFontSize(10);
+        doc.setTextColor(71, 85, 105);
+        doc.text(
+          `Period: ${format(fromDate, "dd MMM yyyy")} – ${format(toDate, "dd MMM yyyy")}`,
+          14,
+          36,
+        );
+        doc.text(
+          `Generated: ${format(new Date(), "dd MMM yyyy HH:mm")}`,
+          14,
+          42,
+        );
+
+        autoTable(doc, {
+          startY: 50,
+          head: [
+            [
+              "User",
+              "Phone",
+              "Location",
+              "Created By",
+              "Reported To",
+              "Time",
+              "Status",
+              "Remarks",
+            ],
+          ],
+          body: dataToExport.map((lead: Lead) => [
+            lead.userName,
+            lead.phoneNumber || "N/A",
+            lead.location || "-",
+            lead.createdBy?.full_name || "N/A",
+            lead.reportedTo?.full_name || "N/A",
+            format(new Date(lead.time), "dd MMM yyyy"),
+            lead?.status?.replace(/_/g, " "),
+            lead.remarks || "-",
+          ]),
+          theme: "grid",
+          styles: { fontSize: 8, cellPadding: 2 },
+          headStyles: {
+            fillColor: [0, 183, 232],
+            textColor: [255, 255, 255],
+            fontStyle: "bold",
+          },
+          alternateRowStyles: { fillColor: [248, 250, 252] },
+        });
+
+        doc.save(
+          `Leads_Report_${format(fromDate, "yyyy-MM-dd")}_to_${format(toDate, "yyyy-MM-dd")}.pdf`,
+        );
+      } else {
+        // Excel Export
+        const worksheetData = dataToExport.map((lead: Lead) => ({
+          User: lead.userName,
+          "Phone Number": lead.phoneNumber || "N/A",
+          Location: lead.location || "-",
+          "Created By": lead.createdBy?.full_name || "N/A",
+          "Reported To": lead.reportedTo?.full_name || "N/A",
+          Time: format(new Date(lead.time), "dd MMM yyyy"),
+          Status: lead?.status?.replace(/_/g, " "),
+          Remarks: lead.remarks || "-",
+        }));
+
+        const ws = XLSX.utils.json_to_sheet(worksheetData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Leads");
+        XLSX.writeFile(
+          wb,
+          `Leads_Report_${format(fromDate, "yyyy-MM-dd")}_to_${format(toDate, "yyyy-MM-dd")}.xlsx`,
+        );
+      }
+
+      toast.success("Report downloaded successfully!");
+      setIsDownloadModalOpen(false);
+    } catch (error) {
+      console.error("Failed to generate download:", error);
+      toast.error("Failed to generate report. Please try again.");
+    } finally {
+      setIsGeneratingDownload(false);
     }
   };
 
@@ -587,33 +740,42 @@ const AdminLeadCreationPageTemplate = () => {
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-[#00B7E8] font-bold text-xs uppercase tracking-widest mb-2 bg-slate-100 border border-slate-100 px-3 py-1 rounded-full w-max">
               <FiFileText className="text-base" />
-              Lead Management
+              Reported Leads Management
             </div>
             <h2 className="text-2xl lg:text-3xl font-bold tracking-tight text-[#142C4B]">
-              Manage Leads
+              Manage Reported Leads
             </h2>
             <p className="text-slate-500 max-w-xl">
-              Create, assign, and track customer leads with real-time status
-              updates.
+              View, track, and manage customer leads reported to you with
+              real-time status updates.
             </p>
           </div>
-          <Button
-            onClick={() => setIsCreateModalOpen(true)}
-            disabled={isCreating}
-            className="flex items-center gap-2 text-white bg-[#00B7E8] hover:bg-[#029ec9] transition-colors font-medium duration-150 cursor-pointer shadow-none rounded"
-          >
-            {isCreating ? (
-              <>
-                <Loader2 className="animate-spin text-lg" />
-                Creating...
-              </>
-            ) : (
-              <>
-                <FiPlus className="text-lg" />
-                Create Lead
-              </>
-            )}
-          </Button>
+          <div className="flex gap-3">
+            <Button
+              onClick={() => setIsDownloadModalOpen(true)}
+              className="flex items-center gap-2 text-white bg-slate-800 hover:bg-slate-900 transition-colors font-medium duration-150 cursor-pointer shadow-none rounded"
+            >
+              <FiDownload className="text-lg" />
+              Download Leads
+            </Button>
+            {/* <Button
+              onClick={() => setIsCreateModalOpen(true)}
+              disabled={isCreating}
+              className="flex items-center gap-2 text-white bg-[#00B7E8] hover:bg-[#029ec9] transition-colors font-medium duration-150 cursor-pointer shadow-none rounded"
+            >
+              {isCreating ? (
+                <>
+                  <Loader2 className="animate-spin text-lg" />
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <FiPlus className="text-lg" />
+                  Create Lead
+                </>
+              )}
+            </Button> */}
+          </div>
         </div>
 
         <section className="bg-white rounded-xl border border-slate-200 overflow-hidden mb-8 shadow-sm">
@@ -689,7 +851,7 @@ const AdminLeadCreationPageTemplate = () => {
                     setStatusFilter("all");
                     setDateFilter(undefined);
                   }}
-                  className="w-full border bg-[#00B7E8] hover:bg-[#01a7d5]  font-medium py-5 rounded-lg text-white"
+                  className="w-full border bg-[#00B7E8] hover:bg-[#01a7d5] font-medium py-5 rounded-lg text-white"
                 >
                   Clear Filters
                 </Button>
@@ -741,9 +903,12 @@ const AdminLeadCreationPageTemplate = () => {
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
                       Location
                     </th>
-                    <th className="px-6 py-4 text-xs font-bold truncate max-w-[170px] uppercase tracking-wider text-slate-600">
-                      Assigned To
+                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
+                      Created By
                     </th>
+                    {/* <th className="px-6 py-4 text-xs font-bold truncate max-w-[170px] uppercase tracking-wider text-slate-600">
+                      Assigned To
+                    </th> */}
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-600">
                       Time
                     </th>
@@ -760,10 +925,8 @@ const AdminLeadCreationPageTemplate = () => {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {leads.map((lead) => {
-                    // ✅ Check if this lead is currently creating invoice
                     const isCreatingInvoice =
                       creatingInvoiceForLeadId === lead._id;
-                    // ✅ Check if lead has invoice
                     const hasInvoice = !!lead.invoice_id;
 
                     return (
@@ -776,19 +939,22 @@ const AdminLeadCreationPageTemplate = () => {
                             : "hover:bg-slate-50/50",
                         )}
                       >
-                        <td className="px-6 py-4 truncate max-w-[200px] font-semibold">
+                        <td className="px-6 py-4 truncate max-w-50 font-semibold">
                           {lead.userName}
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-600">
                           {lead.phoneNumber || "N/A"}
                         </td>
-                        <td className="px-6 py-4 truncate max-w-[200px] text-sm text-slate-600">
+                        <td className="px-6 py-4 truncate max-w-50 text-sm text-slate-600">
                           {lead.location || "-"}
                         </td>
-                        <td className="px-6 py-4 text-sm truncate max-w-[200px] capitalize text-slate-600">
-                          {lead?.assignedTo?.full_name}
+                        <td className="px-6 py-4 text-sm truncate max-w-50 capitalize text-slate-600">
+                          {lead.createdBy?.full_name || "N/A"}
                         </td>
-                        <td className="px-6 truncate max-w-[170px] py-4">
+                        {/* <td className="px-6 py-4 text-sm truncate max-w-[200px] capitalize text-slate-600">
+                          {lead?.assignedTo?.full_name}
+                        </td> */}
+                        <td className="px-6 truncate max-w-42.5 py-4">
                           {format(new Date(lead.time), "dd MMM yyyy")}
                         </td>
                         <td className="px-6 py-4">
@@ -804,7 +970,7 @@ const AdminLeadCreationPageTemplate = () => {
                         <td className="px-1 py-4">
                           <div
                             className={cn(
-                              "w-[130px] px-3 capitalize py-2 text-center rounded-full text-xs font-semibold border-none",
+                              "w-32.5 px-3 capitalize py-2 text-center rounded-full text-xs font-semibold border-none",
                               leadsStatusOptions.find(
                                 (opt) => opt.value === lead.status,
                               )?.color || "bg-slate-100 text-slate-700",
@@ -815,7 +981,6 @@ const AdminLeadCreationPageTemplate = () => {
                         </td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
-                            {/* ✅ INVOICE BUTTON - Conditional rendering */}
                             {hasInvoice ? (
                               <button
                                 type="button"
@@ -823,10 +988,9 @@ const AdminLeadCreationPageTemplate = () => {
                                   setShowInvoice(true);
                                   setInvoiceId(lead.invoice_id!);
                                 }}
-                                className="flex items-center  px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-xs font-medium transition-colors cursor-pointer border border-emerald-200"
+                                className="flex items-center px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-xs font-medium transition-colors cursor-pointer border border-emerald-200"
                                 title="View Invoice"
                               >
-                                {/* <FiFileText className="text-sm" /> */}
                                 View
                               </button>
                             ) : (
@@ -865,14 +1029,14 @@ const AdminLeadCreationPageTemplate = () => {
                             >
                               <FiEye className="text-base" />
                             </button>
-                            <button
+                            {/* <button
                               onClick={() => handleEditLead(lead)}
                               className="p-2 hover:bg-blue-50 rounded-lg text-slate-600 hover:text-blue-600 transition-colors"
                               title="Edit"
                               disabled={isUpdating}
                             >
                               <FiEdit2 className="text-base" />
-                            </button>
+                            </button> */}
                             <button
                               onClick={() => handleDeleteLead(lead._id)}
                               className="p-2 hover:bg-red-50 rounded-lg text-slate-600 hover:text-red-600 transition-colors"
@@ -940,6 +1104,7 @@ const AdminLeadCreationPageTemplate = () => {
         </section>
       </main>
 
+      {/* Modals */}
       {isCreateModalOpen && (
         <CreateLeadModal
           setIsCreateModalOpen={setIsCreateModalOpen}
@@ -991,16 +1156,229 @@ const AdminLeadCreationPageTemplate = () => {
           updatingRemarks={updatingRemarks}
         />
       )}
-
-      {/* Invoice View Modal */}
       {showInvoice && invoiceId && (
         <FetchAndViewInvoice
           invoiceId={invoiceId}
           setIsViewModalOpen={setShowInvoice}
         />
       )}
+
+      {/* ===== DOWNLOAD REPORT MODAL ===== */}
+      {isDownloadModalOpen && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full animate-in zoom-in-95 duration-200">
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-gradient-to-br from-[#00B7E8] to-[#0095c4] shadow-lg shadow-[#00B7E8]/20">
+                  <FiDownload className="text-white text-lg" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Download Leads Report
+                  </h3>
+                  <p className="text-xs text-gray-500">
+                    Export leads data as PDF or Excel
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsDownloadModalOpen(false)}
+                className="w-8 h-8 rounded-lg hover:bg-gray-100 transition-all duration-200 flex items-center justify-center text-gray-400 hover:text-gray-600"
+              >
+                <FiX className="text-xl" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-3">
+                  Select Time Period
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  {(["today", "yesterday", "last7", "last30"] as const).map(
+                    (range) => (
+                      <Button
+                        key={range}
+                        variant={
+                          downloadRange === range ? "default" : "outline"
+                        }
+                        onClick={() => setDownloadRange(range)}
+                        className={cn(
+                          "h-11 rounded-lg font-medium transition-all duration-200",
+                          downloadRange === range
+                            ? "bg-gradient-to-r from-[#00B7E8] to-[#0095c4] hover:from-[#0095c4] hover:to-[#0080a8] text-white shadow-sm shadow-[#00B7E8]/20"
+                            : "border-gray-200 hover:bg-gray-50 hover:border-gray-300",
+                        )}
+                      >
+                        {range === "today"
+                          ? "Today"
+                          : range === "yesterday"
+                            ? "Yesterday"
+                            : range === "last7"
+                              ? "Last 7 Days"
+                              : "Last 30 Days"}
+                      </Button>
+                    ),
+                  )}
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-3">
+                  Custom Date Range
+                </label>
+                <div className="flex gap-3">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="flex-1 justify-start text-left font-normal h-11 rounded-lg border-gray-200 hover:border-[#00B7E8]"
+                      >
+                        {customDownloadDateRange.from ? (
+                          format(customDownloadDateRange.from, "dd MMM yyyy")
+                        ) : (
+                          <span className="text-gray-400">From...</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0 rounded-xl border-gray-200 shadow-xl">
+                      <Calendar
+                        mode="single"
+                        selected={customDownloadDateRange.from}
+                        onSelect={(date) => {
+                          setCustomDownloadDateRange((prev) => ({
+                            ...prev,
+                            from: date,
+                          }));
+                          setDownloadRange("custom");
+                        }}
+                        initialFocus
+                        classNames={{
+                          day_selected:
+                            "bg-[#00B7E8] text-white hover:bg-[#0095c4] rounded-lg",
+                          day_today: "bg-gray-100 text-gray-900 rounded-lg",
+                          day: "hover:bg-gray-50 rounded-lg",
+                        }}
+                      />
+                    </PopoverContent>
+                  </Popover>
+
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="flex-1 justify-start text-left font-normal h-11 rounded-lg border-gray-200 hover:border-[#00B7E8]"
+                      >
+                        {customDownloadDateRange.to ? (
+                          format(customDownloadDateRange.to, "dd MMM yyyy")
+                        ) : (
+                          <span className="text-gray-400">To...</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0 rounded-xl border-gray-200 shadow-xl">
+                      <Calendar
+                        mode="single"
+                        selected={customDownloadDateRange.to}
+                        onSelect={(date) => {
+                          setCustomDownloadDateRange((prev) => ({
+                            ...prev,
+                            to: date,
+                          }));
+                          setDownloadRange("custom");
+                        }}
+                        initialFocus
+                        classNames={{
+                          day_selected:
+                            "bg-[#00B7E8] text-white hover:bg-[#0095c4] rounded-lg",
+                          day_today: "bg-gray-100 text-gray-900 rounded-lg",
+                          day: "hover:bg-gray-50 rounded-lg",
+                        }}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-3">
+                  Export Format
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    variant={downloadFormat === "pdf" ? "default" : "outline"}
+                    onClick={() => setDownloadFormat("pdf")}
+                    className={cn(
+                      "h-11 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2",
+                      downloadFormat === "pdf"
+                        ? "hover:from-[#0095c4] hover:to-[#0080a8] text-white shadow-sm shadow-[#00B7E8]/20"
+                        : "border-gray-200 hover:bg-gray-50 hover:border-gray-300",
+                    )}
+                  >
+                    <Image
+                      src={PDFLogo}
+                      alt="MS Excel logo"
+                      width={20}
+                      height={20}
+                      priority
+                    />
+                    PDF File
+                  </Button>
+                  <Button
+                    variant={downloadFormat === "excel" ? "default" : "outline"}
+                    onClick={() => setDownloadFormat("excel")}
+                    className={cn(
+                      "h-11 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2",
+                      downloadFormat === "excel"
+                        ? "bg-gradient-to-r from-[#00B7E8] to-[#0095c4] hover:from-[#0095c4] hover:to-[#0080a8] text-white shadow-sm shadow-[#00B7E8]/20"
+                        : "border-gray-200 hover:bg-gray-50 hover:border-gray-300",
+                    )}
+                  >
+                    <Image
+                      src={MSExcelLogo}
+                      alt="MS Excel logo"
+                      width={20}
+                      height={20}
+                      priority
+                    />
+                    Excel File
+                  </Button>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsDownloadModalOpen(false)}
+                  className="flex-1 h-11 rounded-lg border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300 font-medium"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleGenerateDownload}
+                  disabled={isGeneratingDownload}
+                  className="flex-1 h-11 rounded-lg font-medium bg-gradient-to-r from-[#00B7E8] to-[#0095c4] hover:from-[#0095c4] hover:to-[#0080a8] text-white shadow-sm shadow-[#00B7E8]/20 hover:shadow-lg hover:shadow-[#00B7E8]/30 transition-all duration-200 disabled:opacity-70"
+                >
+                  {isGeneratingDownload ? (
+                    <>
+                      <Loader2 className="animate-spin mr-2 h-4 w-4" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <FiDownload className="mr-2 h-4 w-4" />
+                      Download
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
-export default AdminLeadCreationPageTemplate;
+export default AdminLeadsCreatedBySOPageTemplate;

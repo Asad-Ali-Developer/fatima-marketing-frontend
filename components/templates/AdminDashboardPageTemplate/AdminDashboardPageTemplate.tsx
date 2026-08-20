@@ -214,7 +214,7 @@ const AdminDashboardPageTemplate = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 text-slate-900 font-sans">
-      <main className="max-w-[90%] mx-auto px-6 py-10">
+      <main className="max-w-[95%] mx-auto px-1 lg:px-6 py-10">
         {/* Page Heading */}
         <div className="mb-10">
           <div className="flex items-center gap-2 text-[#00B7E8] font-bold text-xs uppercase tracking-widest mb-2 bg-slate-100 border border-slate-100 px-3 py-1 rounded-full w-max">
